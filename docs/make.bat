@@ -10,6 +10,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=source
 set BUILDDIR=build
+rd/s/q %BUILDDIR%
 python3 %SOURCEDIR%/autopackage.py %SOURCEDIR%
 if "%1" == "" goto help
 
