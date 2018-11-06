@@ -37,7 +37,149 @@
 <h1>Welcome to condition_identification’s documentation!<a class="headerlink" href="#welcome-to-condition-identification-s-documentation" title="永久链接至标题">¶</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<span class="target" id="module-condition_identification.document_parsing"></span><span class="target" id="module-condition_identification.entity_link"></span><span class="target" id="module-condition_identification.predicate_extraction"></span><span class="target" id="module-condition_identification.syntax_analysis"></span><span class="target" id="module-condition_identification.tests"></span><span class="target" id="module-condition_identification.word_segmentation"></span><span class="target" id="module-condition_identification"></span></div>
+<span class="target" id="module-condition_identification.condition_id"></span><span class="target" id="module-condition_identification.dict_management.dict_management"></span><dl class="class">
+<dt id="condition_identification.dict_management.dict_management.EntityDict">
+<em class="property">class </em><code class="descclassname">condition_identification.dict_management.dict_management.</code><code class="descname">EntityDict</code><a class="reference internal" href="_modules/condition_identification/dict_management/dict_management.html#EntityDict"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.dict_management.dict_management.EntityDict" title="永久链接至目标">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="condition_identification.dict_management.dict_management.EntityDict.entity_set">
+<code class="descname">entity_set</code><a class="headerlink" href="#condition_identification.dict_management.dict_management.EntityDict.entity_set" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="condition_identification.dict_management.dict_management.EntityDict.load_dict">
+<code class="descname">load_dict</code><span class="sig-paren">(</span><em>path</em>, <em>category</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/dict_management/dict_management.html#EntityDict.load_dict"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.dict_management.dict_management.EntityDict.load_dict" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="condition_identification.dict_management.dict_management.entity">
+<em class="property">class </em><code class="descclassname">condition_identification.dict_management.dict_management.</code><code class="descname">entity</code><span class="sig-paren">(</span><em>name</em>, <em>category</em><span class="sig-paren">)</span><a class="headerlink" href="#condition_identification.dict_management.dict_management.entity" title="永久链接至目标">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="condition_identification.dict_management.dict_management.entity.category">
+<code class="descname">category</code><a class="headerlink" href="#condition_identification.dict_management.dict_management.entity.category" title="永久链接至目标">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="condition_identification.dict_management.dict_management.entity.name">
+<code class="descname">name</code><a class="headerlink" href="#condition_identification.dict_management.dict_management.entity.name" title="永久链接至目标">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-condition_identification.dict_management"></span><span class="target" id="module-condition_identification.document_parsing.html_parser"></span><dl class="class">
+<dt id="condition_identification.document_parsing.html_parser.DocHTMLParser">
+<em class="property">class </em><code class="descclassname">condition_identification.document_parsing.html_parser.</code><code class="descname">DocHTMLParser</code><a class="reference internal" href="_modules/condition_identification/document_parsing/html_parser.html#DocHTMLParser"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.document_parsing.html_parser.DocHTMLParser" title="永久链接至目标">¶</a></dt>
+<dd><p>处理html格式的政策文档</p>
+<dl class="method">
+<dt id="condition_identification.document_parsing.html_parser.DocHTMLParser.handle_data">
+<code class="descname">handle_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/document_parsing/html_parser.html#DocHTMLParser.handle_data"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.document_parsing.html_parser.DocHTMLParser.handle_data" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="condition_identification.document_parsing.html_parser.DocHTMLParser.handle_starttag">
+<code class="descname">handle_starttag</code><span class="sig-paren">(</span><em>tag</em>, <em>attrs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/document_parsing/html_parser.html#DocHTMLParser.handle_starttag"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.document_parsing.html_parser.DocHTMLParser.handle_starttag" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="condition_identification.document_parsing.html_parser.DocHTMLParser.sentence">
+<code class="descname">sentence</code><a class="headerlink" href="#condition_identification.document_parsing.html_parser.DocHTMLParser.sentence" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="condition_identification.document_parsing.html_parser.HtmlParser">
+<em class="property">class </em><code class="descclassname">condition_identification.document_parsing.html_parser.</code><code class="descname">HtmlParser</code><a class="reference internal" href="_modules/condition_identification/document_parsing/html_parser.html#HtmlParser"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.document_parsing.html_parser.HtmlParser" title="永久链接至目标">¶</a></dt>
+<dd><p>处理html格式的政策文档</p>
+<dl class="method">
+<dt id="condition_identification.document_parsing.html_parser.HtmlParser.load_file">
+<code class="descname">load_file</code><span class="sig-paren">(</span><em>file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/document_parsing/html_parser.html#HtmlParser.load_file"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.document_parsing.html_parser.HtmlParser.load_file" title="永久链接至目标">¶</a></dt>
+<dd><p>加载文件，返回文档字符串</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">参数:</th><td class="field-body"><strong>file</strong> (<em>file</em>) – 文档文件</td>
+</tr>
+<tr class="field-even field"><th class="field-name">返回:</th><td class="field-body">文档字符串</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="condition_identification.document_parsing.html_parser.HtmlParser.parse_document">
+<code class="descname">parse_document</code><span class="sig-paren">(</span><em>doc_str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/document_parsing/html_parser.html#HtmlParser.parse_document"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.document_parsing.html_parser.HtmlParser.parse_document" title="永久链接至目标">¶</a></dt>
+<dd><p>将输入的文档字符串切分成多个句子</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">参数:</th><td class="field-body"><strong>doc_str</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(在 Python v3.7)"><em>str</em></a>) – 文档字符串</td>
+</tr>
+<tr class="field-even field"><th class="field-name">返回:</th><td class="field-body">使用tuple保存切分后的句子</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-condition_identification.document_parsing"></span><span class="target" id="module-condition_identification.entity_link.entity_linker"></span><dl class="class">
+<dt id="condition_identification.entity_link.entity_linker.EntityLinker">
+<em class="property">class </em><code class="descclassname">condition_identification.entity_link.entity_linker.</code><code class="descname">EntityLinker</code><a class="reference internal" href="_modules/condition_identification/entity_link/entity_linker.html#EntityLinker"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.entity_link.entity_linker.EntityLinker" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-condition_identification.entity_link.entity_recognizer"></span><dl class="class">
+<dt id="condition_identification.entity_link.entity_recognizer.EntityRecognizer">
+<em class="property">class </em><code class="descclassname">condition_identification.entity_link.entity_recognizer.</code><code class="descname">EntityRecognizer</code><a class="reference internal" href="_modules/condition_identification/entity_link/entity_recognizer.html#EntityRecognizer"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.entity_link.entity_recognizer.EntityRecognizer" title="永久链接至目标">¶</a></dt>
+<dd><dl class="method">
+<dt id="condition_identification.entity_link.entity_recognizer.EntityRecognizer.entity_mark">
+<code class="descname">entity_mark</code><span class="sig-paren">(</span><em>sentence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/entity_link/entity_recognizer.html#EntityRecognizer.entity_mark"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.entity_link.entity_recognizer.EntityRecognizer.entity_mark" title="永久链接至目标">¶</a></dt>
+<dd><p>识别是否
+:param sentence:
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-condition_identification.entity_link"></span><span class="target" id="module-condition_identification.predicate_extraction"></span><span class="target" id="module-condition_identification.syntax_analysis"></span><span class="target" id="module-condition_identification.tests.document_parsing_test"></span><dl class="function">
+<dt id="condition_identification.tests.document_parsing_test.test_html_parser">
+<code class="descclassname">condition_identification.tests.document_parsing_test.</code><code class="descname">test_html_parser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/tests/document_parsing_test.html#test_html_parser"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.tests.document_parsing_test.test_html_parser" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-condition_identification.tests.jieba_segmentation_test"></span><dl class="function">
+<dt id="condition_identification.tests.jieba_segmentation_test.test_cut">
+<code class="descclassname">condition_identification.tests.jieba_segmentation_test.</code><code class="descname">test_cut</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/tests/jieba_segmentation_test.html#test_cut"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.tests.jieba_segmentation_test.test_cut" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-condition_identification.tests.main"></span><span class="target" id="module-condition_identification.tests"></span><span class="target" id="module-condition_identification.word_segmentation.jieba_segmentation"></span><dl class="class">
+<dt id="condition_identification.word_segmentation.jieba_segmentation.Segmentation">
+<em class="property">class </em><code class="descclassname">condition_identification.word_segmentation.jieba_segmentation.</code><code class="descname">Segmentation</code><span class="sig-paren">(</span><em>dict_path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/word_segmentation/jieba_segmentation.html#Segmentation"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.word_segmentation.jieba_segmentation.Segmentation" title="永久链接至目标">¶</a></dt>
+<dd><dl class="method">
+<dt id="condition_identification.word_segmentation.jieba_segmentation.Segmentation.cut">
+<code class="descname">cut</code><span class="sig-paren">(</span><em>sentence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/word_segmentation/jieba_segmentation.html#Segmentation.cut"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.word_segmentation.jieba_segmentation.Segmentation.cut" title="永久链接至目标">¶</a></dt>
+<dd><p>将句子分词
+:param sentence:
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="condition_identification.word_segmentation.jieba_segmentation.Segmentation.mark">
+<code class="descname">mark</code><span class="sig-paren">(</span><em>sentence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/condition_identification/word_segmentation/jieba_segmentation.html#Segmentation.mark"><span class="viewcode-link">[源代码]</span></a><a class="headerlink" href="#condition_identification.word_segmentation.jieba_segmentation.Segmentation.mark" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="condition_identification.word_segmentation.jieba_segmentation.Segmentation.tokenizer">
+<code class="descname">tokenizer</code><a class="headerlink" href="#condition_identification.word_segmentation.jieba_segmentation.Segmentation.tokenizer" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-condition_identification.word_segmentation"></span><span class="target" id="module-condition_identification"></span></div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="永久链接至标题">¶</a></h1>
 <ul class="simple">
@@ -84,6 +226,14 @@
     </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
@@ -92,8 +242,8 @@
       &copy;2018, Chinning Leung.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="_sources/index.rst.txt"

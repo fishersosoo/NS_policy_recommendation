@@ -19,6 +19,9 @@ class DocHTMLParser(HTMLParser):
     def handle_data(self, data):
         # print(data)
         if self.tag == "p" or self.tag=='span' or self.tag=='br':
+            data = data.strip()
+            if data == "":
+                return
             self._sentence.append(data)
 
     @property

@@ -12,7 +12,31 @@ Welcome to condition_identification's documentation!
     :caption: Contents:
 
 
+..  automodule:: condition_identification.condition_id
+    :members:
+    :undoc-members:
+
+..  automodule:: condition_identification.dict_management.dict_management
+    :members:
+    :undoc-members:
+
+..  automodule:: condition_identification.dict_management
+    :members:
+    :undoc-members:
+
+..  automodule:: condition_identification.document_parsing.html_parser
+    :members:
+    :undoc-members:
+
 ..  automodule:: condition_identification.document_parsing
+    :members:
+    :undoc-members:
+
+..  automodule:: condition_identification.entity_link.entity_linker
+    :members:
+    :undoc-members:
+
+..  automodule:: condition_identification.entity_link.entity_recognizer
     :members:
     :undoc-members:
 
@@ -28,7 +52,23 @@ Welcome to condition_identification's documentation!
     :members:
     :undoc-members:
 
+..  automodule:: condition_identification.tests.document_parsing_test
+    :members:
+    :undoc-members:
+
+..  automodule:: condition_identification.tests.jieba_segmentation_test
+    :members:
+    :undoc-members:
+
+..  automodule:: condition_identification.tests.main
+    :members:
+    :undoc-members:
+
 ..  automodule:: condition_identification.tests
+    :members:
+    :undoc-members:
+
+..  automodule:: condition_identification.word_segmentation.jieba_segmentation
     :members:
     :undoc-members:
 
