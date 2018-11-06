@@ -4,7 +4,6 @@ from collections import namedtuple
 import jieba
 
 
-
 class Segmentation:
     def __init__(self, dict_path=None):
         self._tokenizer = jieba.Tokenizer()
@@ -19,7 +18,7 @@ class Segmentation:
         """
         return self._tokenizer.cut(sentence)
 
-    def mark(self,sentence):
+    def mark(self, sentence):
         pass
 
     @property
