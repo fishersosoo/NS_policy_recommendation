@@ -5,53 +5,29 @@ import os
 
 word_entity = namedtuple('word_entity', ['order','word','category'])
 three_tuple_entity = namedtuple('three_tuple_entity', ['S','P','O'])
+syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA'])
 
 class HanlpSynataxAnalysis:
     def __init__(self):
         pass
-    #调用HanLp的句子依存分析
+    #调用HanLp的句子依存分析,返回保存依存关系的元组供抽取类作分析
     def parseDependency(self,sentence):
-        return HanLP.parseDependency(sentence)
-
-    #传入单个句子，以及句子中识别出的实体，获取该句子中存在的政策条件三元组（S,P,0）
-    def predicate_extraction(self,sentence,entity):
-        res = self.parseDependency(sentence).getWordArray()
-        entity_array = []
-        for ents in entity:
-            entity_array.append(ents.word)
-        #print(entity_array)
-
-        keyword = ""
-
-        for word in res:
-            if word.DEPREL == "核心关系" :
-                keyword = word.LEMMA
-
-        s_array = []
-        o_array = []
-
-        for word in res:
-            if word.DEPREL == "主谓关系" and word.HEAD.LEMMA == keyword:
-                s_array.append(word.LEMMA)
-            elif word.DEPREL == "动宾关系" and word.HEAD.LEMMA == keyword:
-                o_array.append(word.LEMMA)
-        if len(s_array) == 0:
-            s_array.append("NONE")
-
-        if len(o_array) == 0:
-            o_array.append("NONE")
-
-        return three_tuple_entity(S=s_array[0], P=keyword, O=o_array[0])
-
+        parseresult = HanLP.parseDependency(sentence)
+        word_array = parseresult.getWordArray()
+        syntax_tuples = []
+        for word in word_array:
+            syntax_tuples.append(syntax_tuple(LEMMA = word.LEMMA, DEPREL = word.DEPREL, HEADLEMMA = word.HEAD.LEMMA))
+            #print("%s --(%s)--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA))
+        return syntax_tuples
 
 if __name__ == "__main__":
     synataxanalysis = HanlpSynataxAnalysis()
     entity = [word_entity(order='16', word='营业收入', category='norm'), word_entity(order='17|18', word='1亿元', category='number')]
-    sentence = '①现代物流业：上一年度纳入我区统计核算的营业收入6000万元以上;上一年度在我区纳税总额不低于1000万元。'
+    sentence = '②其他先进制造业：上一年度纳入我区统计核算的营业收入超过5亿元'
+    sentence2 = '世界1000强企业属于大型企业'
     try:
-        sentences = sentence.split(';')
-        for one_sentence in sentences:
-            res = synataxanalysis.predicate_extraction(one_sentence,entity)
-            print(res)
+        res = synataxanalysis.parseDependency(sentence2)
+        print('\n')
+
     finally:
         pass

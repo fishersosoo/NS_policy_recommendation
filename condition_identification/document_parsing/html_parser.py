@@ -14,12 +14,13 @@ class DocHTMLParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         self.tag = tag
-        # print(self.tag)
+        #print(self.tag)
 
     def handle_data(self, data):
-        # print(data)
-        if self.tag == "p" or self.tag=='span' or self.tag=='br':
+        #print(data)
+        if self.tag == "p" or self.tag=='span' or self.tag=='br' or self.tag == 'strong' or self.tag == 'font':
             data = data.strip()
+            #print(data)
             if data == "":
                 return
             self._sentence.append(data)
