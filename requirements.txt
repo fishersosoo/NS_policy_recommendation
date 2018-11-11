@@ -1,0 +1,4 @@
+jieba==0.39
+pyhanlp==0.1.44
+pytest==3.10.0
+
