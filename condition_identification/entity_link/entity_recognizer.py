@@ -1,7 +1,7 @@
 #coding=utf-8
 from collections import namedtuple
 
-word_entity = namedtuple('word_entity', ['order','word','category'])
+word_entity = namedtuple('word_entity', ['order','word','category','len','ordercount'])
 
 class EntityRecognizer:
     def __init__(self):
@@ -10,20 +10,22 @@ class EntityRecognizer:
     def entity_mark(self, sentence,entity_set):#sentence为分词后的句子，以元组形式传入
         word_entitys = []
         money_rep = ["万元","亿元","千元","元","百元"]
+        curlen = 0
         for i ,wordpair in enumerate(sentence):
             #判断是否资格、类型实体
             word = wordpair.word
             for entity in entity_set:
                 if word == entity.name:
-                    word_entitys.append(word_entity(order=str(i),word=word,category=entity.category))
+                    word_entitys.append(word_entity(order=str(i),word=word,category=entity.category,len=curlen,ordercount=1))
             #判断是否值
             if word.isdigit():
                 if i+1 <len(sentence):
                     if sentence[i+1].word in money_rep:
-                        orders=[]
-                        orders.append(str(i))
-                        orders.append(str(i+1))
-                        word_entitys.append(word_entity(order='|'.join(orders), word=word+sentence[i+1].word, category="number"))
+                        # orders=[]
+                        # orders.append(str(i))
+                        # orders.append(str(i+1))
+                        word_entitys.append(word_entity(order=str(i), word=word+sentence[i+1].word, category="number",len=curlen,ordercount=2))
+            curlen = curlen + len(word)
         return word_entitys
 
 
@@ -33,5 +35,5 @@ if __name__ == "__main__":
     entityRecognizer = EntityRecognizer()
     sentence = ('1', '.', '属于', '世界1000强企业', '、', '中央大型企业', '、', '中国企业500强', '、', '中国民营企业500强', '、', '商务部', '认定', '或', '备案', '的',
     '跨国公司', '1000', '万元')
-    print(entityRecognizer.entity_mark(sentence,entity_set))
+    #print(entityRecognizer.entity_mark(sentence,entity_set))
 
