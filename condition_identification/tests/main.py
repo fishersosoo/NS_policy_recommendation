@@ -47,27 +47,21 @@ if __name__=="__main__":
         result = entityrecognizer.entity_mark(sentence,entity_set.entity_set)
         if len(result) > 0:
             sentence_entity_dict[i] = result
-    #print(sentence_entity_dict)
+
     # analyse sentence and extract three-tuples
     hanlpanalysis = HanlpSynataxAnalysis()
     extracter = TupleExtracter()
     sentence_tuple = []
     sentence_spo_dict= {}
-
     for key in sentence_entity_dict:
-        sentence_entity = sentence_entity_dict[key]
-
         sentence = sentences[key]
-        #sentence = hanlpanalysis.sentencePreprocessing(sentence,sentence_entity)
-
-        sentences[key] = sentence
-        split_sentence = re.split("[;；。,，]",sentence)
+        sentence_entity = sentence_entity_dict[key]
+        split_sentence = re.split("[;；。]",sentence)
         spoarray=[]
 
         for one_sentence in split_sentence:
             if len(one_sentence) == 0:
                 continue
-
             syntaxtuple = hanlpanalysis.parseDependency(one_sentence)
             spo_tuple = extracter.predicate_extraction(syntaxtuple,sentence_entity)
             if spo_tuple != None:
