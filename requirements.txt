@@ -35,3 +35,4 @@ traitlets==4.3.2
 urllib3==1.22
 wcwidth==0.1.7
 wrapt==1.10.11
+treelib==1.5.3
