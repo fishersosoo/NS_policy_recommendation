@@ -21,16 +21,7 @@ class Requirement(BaseInterface):
             node.update(kwargs)
         graph_.push(node)
 
-    @classmethod
-    def remove_by_id(cls, id_):
-        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
-        if node is None:
-            raise Exception(f"{cls.__name__} not found")
-        graph_.delete(node)
 
-    @classmethod
-    def find_by_id(cls, id_):
-        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
-        if node is None:
-            return None, None
-        return node.labels, dict(**node)
+
+if __name__=="__main__":
+    Requirement.t()
