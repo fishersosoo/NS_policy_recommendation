@@ -1,20 +1,43 @@
 # coding=utf-8
-from py2neo.ogm import Property, Label, RelatedFrom
+from py2neo import Node, NodeMatcher
 
-from data_management.models import PolicyGraphObject
+from data_management.models import BaseInterface, UUID, graph_
+
+SubjectType = ["Norm", "Null", "Requirement"]
 
 
-class Subject(PolicyGraphObject):
-    __primarylabel__ = "Subject"
-    norm = Label("Norm")
+class Subject(BaseInterface):
+    @classmethod
+    def create(cls, subject_type, **kwargs):
+        if subject_type not in SubjectType:
+            raise Exception(f"subject_type must in {SubjectType}")
+        node = Node(cls.__name__, subject_type, id=UUID(), **kwargs)
+        cls.create = graph_.create(node)
+        return node["id"]
 
-    value = Property("value")
+    @classmethod
+    def update_by_id(cls, id_, *args, **kwargs):
+        for arg in args:
+            if arg not in SubjectType and arg != cls.__name__:
+                raise Exception(f"label must in {SubjectType,cls.__name__}")
+        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        if node is None:
+            raise Exception(f"{cls.__name__} not found")
+        else:
+            node.labels.update(args)
+            node.update(kwargs)
+        graph_.push(node)
 
-    in_requirement = RelatedFrom("Requirement", "HAS_SUBJECT")
-    in_sub_requirement = RelatedFrom("SubRequirement", "HAS_SUBJECT")
+    @classmethod
+    def remove_by_id(cls, id_):
+        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        if node is None:
+            raise Exception(f"{cls.__name__} not found")
+        graph_.delete(node)
 
-    def __init__(self, label="Norm", value=None):
-        super().__init__()
-        self.__setattr__(label, True)
-        if value is not None:
-            self.value = value
+    @classmethod
+    def find_by_id(cls, id_):
+        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        if node is None:
+            return None, None
+        return node.labels, dict(**node)

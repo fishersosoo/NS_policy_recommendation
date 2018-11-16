@@ -1,31 +1,36 @@
 # coding=utf-8
-from py2neo.ogm import RelatedTo, RelatedFrom
+from py2neo import NodeMatcher, Node
 
-from data_management.models import PolicyGraphObject
-from data_management.models.boon import Boon
-from data_management.models.object_ import Object
-from data_management.models.predicate import Predicate
-from data_management.models.subject import Subject
+from data_management.models import BaseInterface, UUID, graph_
 
 
-class SubRequirement(PolicyGraphObject):
-    in_requirement = RelatedFrom("Requirement", "HAS_SUBREQUIREMENT")
-    in_sub_requirement = RelatedFrom("SubRequirement", "HAS_SUBREQUIREMENT")
-    sub_requirements = RelatedTo("SubRequirement", "HAS_SUBREQUIREMENT")
-    subject = RelatedTo(Subject, "HAS_SUBJECT")
-    object_ = RelatedTo(Object, "HAS_OBJECT")
-    predicate = RelatedTo(Predicate, "HAS_PREDICATE")
+class Requirement(BaseInterface):
+    @classmethod
+    def create(cls, **kwargs):
+        node = Node(cls.__name__, id=UUID(), **kwargs)
+        cls.create = graph_.create(node)
+        return node["id"]
 
-    def set_subject(self, subject_node):
-        self.subject.add(subject_node)
+    @classmethod
+    def update_by_id(cls, id_,*args, **kwargs):
+        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        if node is None:
+            raise Exception(f"{cls.__name__} not found")
+        else:
+            node.labels.update(args)
+            node.update(kwargs)
+        graph_.push(node)
 
-    def set_object_(self, object_node):
-        self.object_.add(object_node)
+    @classmethod
+    def remove_by_id(cls, id_):
+        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        if node is None:
+            raise Exception(f"{cls.__name__} not found")
+        graph_.delete(node)
 
-
-class Requirement(PolicyGraphObject):
-    predicate = RelatedTo(Predicate, "HAS_PREDICATE")
-    sub_requirements = RelatedTo(SubRequirement, "HAS_SUBREQUIREMENT")
-    support = RelatedFrom(Boon, "NEED")
-    subject = RelatedTo(Subject, "HAS_SUBJECT")
-    object_ = RelatedTo(Object, "HAS_OBJECT")
+    @classmethod
+    def find_by_id(cls, id_):
+        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        if node is None:
+            return None, None
+        return node.labels, dict(**node)
