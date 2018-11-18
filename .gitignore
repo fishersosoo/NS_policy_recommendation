@@ -1,2 +1,10 @@
-
-.idea/workspace.xml
+.idea/
+condition_identification/__pycache__/
+condition_identification/bonus_identify/__pycache__/
+condition_identification/bonus_identify/.idea/
+venv/
+docs/build/
+docs/make.bat
+docs/Makefile
+*.pyc
+.pytest_cache/
