@@ -1,7 +1,7 @@
 from collections import namedtuple
 import os
 
-word_entity = namedtuple('word_entity', ['order','word','category','len','ordercount'])
+word_entity = namedtuple('word_entity', ['order','word','category'])
 three_tuple_entity = namedtuple('three_tuple_entity', ['S','P','O'])
 syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA'])
 
@@ -10,12 +10,10 @@ class TupleExtracter:
         pass
 
     def complete_tuple(self,word,syntaxtuple):
-        add_word = [""]
+        add_word = []
         for tuple in syntaxtuple:
             if tuple.HEADLEMMA == word and tuple.DEPREL == "定中关系":
                 add_word.append(tuple.LEMMA)
-            if tuple.HEADLEMMA == word and tuple.DEPREL == "状中结构" :
-                add_word[0] = tuple.LEMMA
         last_word = ""
         for oneword in add_word:
             last_word = last_word + oneword
@@ -28,7 +26,6 @@ class TupleExtracter:
         tuple_s = spotuple.S
         tuple_p = spotuple.P
         tuple_o = spotuple.O
-        #print(spotuple)
         category = []
         norm = []
         qualification =[]
@@ -47,11 +44,8 @@ class TupleExtracter:
         res_tuple = None
 
         #主语为指标名
-        if tuple_s in norm and tuple_o != None :
-            if "元" in tuple_o :
-                res_tuple =  three_tuple_entity(S=tuple_s, P=self.complete_tuple(tuple_p,syntaxtuple), O=self.complete_tuple(tuple_o,syntaxtuple))
-            if "以上" in tuple_o :
-                res_tuple =  three_tuple_entity(S=tuple_s, P=tuple_p, O=self.complete_tuple(tuple_o,syntaxtuple))
+        if tuple_s in norm and tuple_o != None and "元" in tuple_o:
+            res_tuple =  three_tuple_entity(S=tuple_s, P=tuple_p, O=self.complete_tuple(tuple_o,syntaxtuple))
 
         #宾语为资格名、类型名
         elif tuple_o in qualification or tuple_o in category:
@@ -62,8 +56,8 @@ class TupleExtracter:
     #对单个句子进行三元组抽取
     def predicate_extraction(self,syntaxtuple,recognizedentity):
 
-        #处理主谓宾结构
         keyword = ""
+
         for word in syntaxtuple:
             if word.DEPREL == "核心关系" :
                 keyword = word.LEMMA
@@ -76,9 +70,6 @@ class TupleExtracter:
                 s_array.append(word.LEMMA)
             elif word.DEPREL == "动宾关系" and word.HEADLEMMA == keyword:
                 o_array.append(word.LEMMA)
-            elif word.DEPREL == "介宾关系" and word.HEADLEMMA == keyword:
-                o_array.append(word.LEMMA)
-
         if len(s_array) == 0:
             s_array.append("NONE")
 
