@@ -34,8 +34,8 @@ class HanlpSynataxAnalysis:
 if __name__ == "__main__":
     synataxanalysis = HanlpSynataxAnalysis()
     entity = [word_entity(order='16', word='营业收入', category='norm',len=1,ordercount = 4), word_entity(order='17', word='1亿元', category='number',len=2,ordercount = 3)]
-    sentence = '教育、卫生、文化、创意、体育、娱乐业和其他服务业：上一年度纳入我区统计核算的营业收入5000万元以上；且上一年度在我区纳税总额不低于1000万元'
-    sentence2 = '专业服务业：上一年度纳入我区统计核算的营业收入在1亿元以上'
+    sentence = '教育、卫生、文化、创意、体育、娱乐业和其他服务业：上一年度纳入我区统计核算的营业收入高于5000万元；上一年度在我区纳税总额不低于1000万元'
+    sentence2 = '1.对内资企业'
     try:
         #presentence = synataxanalysis.sentencePreprocessing(sentence,entity)
         res = synataxanalysis.parseDependency(sentence2)

@@ -8,6 +8,7 @@ class EntityRecognizer:
         pass
 
     def entity_mark(self, sentence,entity_set):#sentence为分词后的句子，以元组形式传入
+        #print(sentence)
         word_entitys = []
         money_rep = ["万元","亿元","千元","元","百元"]
         curlen = 0

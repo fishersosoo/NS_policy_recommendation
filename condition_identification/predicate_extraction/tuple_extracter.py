@@ -92,14 +92,8 @@ class TupleExtracter:
         return res_tuple
 
 if __name__=="__main__":
-    syntaxtuple = [syntax_tuple(LEMMA='上一', DEPREL='定中关系', HEADLEMMA='年度'), syntax_tuple(LEMMA='年度', DEPREL='定中关系', HEADLEMMA='纳税总额'),
-     syntax_tuple(LEMMA='在', DEPREL='定中关系', HEADLEMMA='纳税总额'), syntax_tuple(LEMMA='我', DEPREL='定中关系', HEADLEMMA='区'),
-     syntax_tuple(LEMMA='区', DEPREL='介宾关系', HEADLEMMA='在'), syntax_tuple(LEMMA='纳税总额', DEPREL='主谓关系', HEADLEMMA='低于'),
-     syntax_tuple(LEMMA='不', DEPREL='状中结构', HEADLEMMA='低于'),
-     syntax_tuple(LEMMA='低于', DEPREL='核心关系', HEADLEMMA='##核心##'),
-     syntax_tuple(LEMMA='1000', DEPREL='定中关系', HEADLEMMA='万元'), syntax_tuple(LEMMA='万元', DEPREL='动宾关系', HEADLEMMA='低于'),
-     syntax_tuple(LEMMA='。', DEPREL='标点符号', HEADLEMMA='低于')]
-    recognizedentity=entity = [word_entity(order='16', word='纳税总额', category='norm'), word_entity(order='17|18', word='1亿元', category='number')]
+    syntaxtuple = [syntax_tuple(LEMMA='1.', DEPREL='状中结构', HEADLEMMA='对'), syntax_tuple(LEMMA='对', DEPREL='核心关系', HEADLEMMA='##核心##'), syntax_tuple(LEMMA='内资企业', DEPREL='介宾关系', HEADLEMMA='对')]
+    recognizedentity=entity = [word_entity(order='16', word='内资企业', category='category',len='1',ordercount='1'), word_entity(order='17|18', word='1亿元', category='number',len='1',ordercount='1')]
 
     tupleextract = TupleExtracter()
     res = tupleextract.predicate_extraction(syntaxtuple,recognizedentity)
