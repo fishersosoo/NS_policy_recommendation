@@ -36,3 +36,8 @@ urllib3==1.22
 wcwidth==0.1.7
 wrapt==1.10.11
 treelib==1.5.3
+pyhanlp==0.1.44
+scikit-learn==0.20.0
+sklearn==0.0
+
+
