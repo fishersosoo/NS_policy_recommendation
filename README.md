@@ -27,3 +27,22 @@ bolt地址：bolt://cn.fishersosoo.xyz:7687
 用户名：neo4j
 
 密码：1995
+
+## 展示的函数
+test demo代码如下:
+
+      from bonus_identify.Tree import DocTree
+      from predicate_extraction.tuple_bonus_recognize import TupleBonus
+
+      def test_subtree():
+          tree=DocTree('../bonus_identify/广州南沙新区(自贸片区)促进总部经济发展扶持办法｜广州市南沙区人民政府.txt')
+          tree.construct()
+          tuplebonus = TupleBonus()
+          tuplebonus.bonus_tuple_analysis(tree)
+          tuplebonus.get_bonus_tree().show()
+
+
+      if __name__ == "__main__":
+          test_subtree()
+
+打印结果为优惠与条件的关系，以多叉树结构展示
