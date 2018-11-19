@@ -27,18 +27,20 @@ class TupleBonus:
         self.extracter = TupleExtracter()
         self.bonus_tree = Tree()
 
-        self.segementation_construct()
+        #self.segementation_construct()
 
 
-    def segementation_construct(self):
-        # load dict
+    def segementation_construct(self,dic_path = None):
+        if dic_path == None:
+            dic_path = r"..\..\res\word_segmentation"
+
         self.entity_set.load_dict(
-            r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\norm_dict', "norm")
+            os.path.join(dic_path, "norm_dict"), "norm")
         self.entity_set.load_dict(
-            r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\category_dict',
+            os.path.join(dic_path, "category_dict"),
             "category")
         self.entity_set.load_dict(
-            r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\qualification_dict',
+            os.path.join(dic_path, "qualification_dict"),
             "qualification")
         # print(entity_set.entity_set)
         for entity in self.entity_set.entity_word:
