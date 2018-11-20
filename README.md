@@ -36,9 +36,11 @@ bolt地址：bolt://cn.fishersosoo.xyz:7687
 密码：1995
 
 ## hanlp库配置
-首次部署环境/依赖词典或数据库有更新时，调用sentence_analysis.py 中HanlpSynataxAnalysis类的reloadHanlpCustomDictionary函数：
+首次部署环境/依赖词典或数据库有更新时，调用HanlpSynataxAnalysis.reloadHanlpCustomDictionary函数：
+      
       def reloadHanlpCustomDictionary(self,dict_path)
-传入dict_path的路径
+      
+参数传入dict_path的路径
 
 ## 优惠&&条件智能理解相关注意事项
 运行 demo代码如下:
@@ -75,8 +77,11 @@ POLICY,BONUS,LOGIC,CONDITION
 
 CONTENT:
 POLICY对应的CONTENT为空;
+
 BONUS对应的CONTENT为优惠内容;
+
 LOGIC对应的CONTENT为 “AND”/“OR”;
+
 CONDITION对应的CONTENT为SPO三元组,定义如下：('three_tuple_entity', ['S','P','O'])
  
 该多叉树的其他函数调用可参考https://blog.csdn.net/kalbertlee/article/details/70158015 或者 https://treelib.readthedocs.io/en/latest/
