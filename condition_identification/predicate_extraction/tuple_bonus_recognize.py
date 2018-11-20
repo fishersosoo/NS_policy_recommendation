@@ -9,7 +9,7 @@ from syntax_analysis.sentence_analysis import HanlpSynataxAnalysis
 from predicate_extraction.tuple_extracter import TupleExtracter
 
 from collections import namedtuple
-import os
+from os import path
 from treelib import Node,Tree
 from bonus_identify.Tree import DocTree
 
@@ -18,7 +18,7 @@ three_tuple_entity = namedtuple('three_tuple_entity', ['S','P','O'])
 syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA'])
 
 class TupleBonus:
-    def __init__(self,dict = None):
+    def __init__(self,dict_dir = None,if_edit_hanlpdict = 0):
 
         self.segmentation = Segmentation()
         self.entity_set = EntityDict()
@@ -27,23 +27,29 @@ class TupleBonus:
         self.extracter = TupleExtracter()
         self.bonus_tree = Tree()
 
-        self.segementation_construct(dict)
+        self.segementation_construct(dict_dir=dict_dir)
+        if if_edit_hanlpdict == 1 and dict_dir != None:
+            self.hanlpanalysis.reloadHanlpCustomDictionary(dict_dir)
+        # print(self.entity_set.entity_word)
 
-
-    def segementation_construct(self,dic_path = None):
-        if dic_path == None:
-            dic_path = r"..\..\res\word_segmentation"
-
-        self.entity_set.load_dict(
-            os.path.join(dic_path, "norm_dict"), "norm")
-        self.entity_set.load_dict(
-            os.path.join(dic_path, "category_dict"),
-            "category")
-        self.entity_set.load_dict(
-            os.path.join(dic_path, "qualification_dict"),
-            "qualification")
+    def segementation_construct(self, dict_dir=None):
+        # load dict
+        if dict_dir is not None:
+            self.entity_set.load_dict(path.join(dict_dir, "norm_dict"), "norm")
+            self.entity_set.load_dict(path.join(dict_dir, "category_dict"), "category")
+            self.entity_set.load_dict(path.join(dict_dir, "qualification_dict"), "qualification")
+        else:
+            self.entity_set.load_dict(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\norm_dict', "norm")
+            self.entity_set.load_dict(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\category_dict',
+                "category")
+            self.entity_set.load_dict(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\qualification_dict',
+                "qualification")
         # print(entity_set.entity_set)
         for entity in self.entity_set.entity_word:
+            #print(entity)
             self.segmentation.tokenizer.add_word(entity, 1000)
 
 
