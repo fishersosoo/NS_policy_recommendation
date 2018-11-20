@@ -18,7 +18,7 @@ three_tuple_entity = namedtuple('three_tuple_entity', ['S','P','O'])
 syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA'])
 
 class TupleBonus:
-    def __init__(self):
+    def __init__(self,dict = None):
 
         self.segmentation = Segmentation()
         self.entity_set = EntityDict()
@@ -27,7 +27,7 @@ class TupleBonus:
         self.extracter = TupleExtracter()
         self.bonus_tree = Tree()
 
-        #self.segementation_construct()
+        self.segementation_construct(dict)
 
 
     def segementation_construct(self,dic_path = None):
