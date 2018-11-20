@@ -35,21 +35,45 @@ bolt地址：bolt://cn.fishersosoo.xyz:7687
 
 密码：1995
 
-## 展示的函数
-test demo代码如下:
+## hanlp库配置
+首次部署环境/依赖词典或数据库有更新时，调用sentence_analysis.py 中HanlpSynataxAnalysis类的reloadHanlpCustomDictionary函数：
+      def reloadHanlpCustomDictionary(self,dict_path)
+传入dict_path的路径
+
+## 优惠&&条件智能理解相关注意事项
+运行 demo代码如下:
 
       from bonus_identify.Tree import DocTree
       from predicate_extraction.tuple_bonus_recognize import TupleBonus
 
       def test_subtree():
-          tree=DocTree('../bonus_identify/广州南沙新区(自贸片区)促进总部经济发展扶持办法｜广州市南沙区人民政府.txt')
-          tree.construct()
-          tuplebonus = TupleBonus()
+          tree=DocTree()
+          tree.construct('../bonus_identify/广州南沙新区(自贸片区)促进总部经济发展扶持办法｜广州市南沙区人民政府.txt')
+          dict_dir=r"Y:\Nansha AI Services\condition_identification\res\word_segmentation"
+          tuplebonus = TupleBonus(dict_dir)
           tuplebonus.bonus_tuple_analysis(tree)
-          tuplebonus.get_bonus_tree().show()
-
-
+          bonus_tree = tuplebonus.get_bonus_tree()
+    
       if __name__ == "__main__":
           test_subtree()
 
 打印结果为优惠与条件的关系，以多叉树结构展示
+通过函数 get_bonus_tree（）获得条件优惠树
+
+## 条件优惠树相关函数
+      def get_all_bonus(self):
+            获取该树的所有优惠内容
+      
+      def get_node_data(self,node):
+            函数参数为节点，返回节点的data。data为字典形式，包括 TYPE 以及 CONTENT 两个关键词，指种类和内容
+            
+            TYPE：POLICY,BONUS,LOGIC,CONDITION
+            
+            CONTENT:
+               POLICY对应的CONTENT为空
+               BONUS对应的CONTENT为优惠内容
+               LOGIC对应的CONTENT为 “AND”/“OR”
+               CONDITION对应的CONTENT为SPO三元组 定义如下：('three_tuple_entity', ['S','P','O'])
+ 
+该多叉树的其他函数调用可参考https://blog.csdn.net/kalbertlee/article/details/70158015 或者 https://treelib.readthedocs.io/en/latest/
+            
