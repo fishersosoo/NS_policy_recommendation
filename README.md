@@ -1,6 +1,13 @@
 # 南沙政策推荐模块
 
 python版本：3.6+
+java版本: 9.0.1 (pyhanlp库需要依赖java环境）
+
+如仍然出现下列错误：
+
+jpype._jvmfinder.JVMNotFoundException: No JVM shared library file (jvm.dll) found. Try setting up the JAVA_HOME environment variable properly.
+
+则需要添加一个JAVA_HOME变量，变量值为java的bin目录的绝对路径
 
 请勿将python虚拟环境上传。
 
