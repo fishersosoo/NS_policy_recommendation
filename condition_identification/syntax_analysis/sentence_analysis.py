@@ -1,6 +1,8 @@
 # coding=utf-8
 from collections import namedtuple
 from pyhanlp import *
+import sys
+from os import path
 import os
 
 word_entity = namedtuple('word_entity', ['order','word','category','len','ordercount'])
@@ -31,15 +33,53 @@ class HanlpSynataxAnalysis:
             # print("%s --(%s)--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA))
         return syntax_tuples
 
-if __name__ == "__main__":
-    synataxanalysis = HanlpSynataxAnalysis()
-    entity = [word_entity(order='16', word='营业收入', category='norm',len=1,ordercount = 4), word_entity(order='17', word='1亿元', category='number',len=2,ordercount = 3)]
-    sentence = '教育、卫生、文化、创意、体育、娱乐业和其他服务业：上一年度纳入我区统计核算的营业收入高于5000万元；上一年度在我区纳税总额不低于1000万元'
-    sentence2 = '1.对内资企业'
-    try:
-        #presentence = synataxanalysis.sentencePreprocessing(sentence,entity)
-        res = synataxanalysis.parseDependency(sentence2)
-        print(res)
+    def reloadHanlpCustomDictionary(self,dict_path):
+        custompath = sys.prefix + r"\Lib\site-packages\pyhanlp\static\data\dictionary\custom\CustomDictionary.txt"
+        # print(path)
+        dicts = []
+        if dict_path is not None:
+            dicts.append(path.join(dict_path, "norm_dict"))
+            dicts.append(path.join(dict_path, "category_dict"))
+            dicts.append(path.join(dict_path, "qualification_dict"))
+        else:
+            dicts.append(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\norm_dict')
+            dicts.append(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\category_dict')
+            dicts.append(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\qualification_dict')
 
-    finally:
-        pass
+        f = open(custompath, 'a', encoding='utf-8')
+        #print(dicts)
+        try:
+            for dict_dir in dicts:
+
+                with open(dict_dir, 'r', encoding='utf-8') as fl:
+                    word = fl.readline()
+
+                    while word != "":
+                        #print(word.strip())
+                        f.write('\n'+word.strip() )
+                        word = fl.readline()
+        except FileNotFoundError:
+            print("FileNotFoundError")
+
+        finally:
+            f.close()
+            fl.close()
+        #CustomDictionary.reload()
+
+if __name__ == "__main__":
+    #CustomDictionary.reload()
+    synataxanalysis = HanlpSynataxAnalysis()
+    synataxanalysis.reloadHanlpCustomDictionary(r'I:\NS_policy_recommendation\res\word_segmentation')
+    # entity = [word_entity(order='16', word='营业收入', category='norm',len=1,ordercount = 4), word_entity(order='17', word='1亿元', category='number',len=2,ordercount = 3)]
+    # sentence = '教育、卫生、文化、创意、体育、娱乐业和其他服务业：上一年度纳入我区统计核算的营业收入高于5000万元；上一年度在我区纳税总额不低于1000万元'
+    # sentence2 = ''
+    # try:
+    #     #presentence = synataxanalysis.sentencePreprocessing(sentence,entity)
+    #     res = synataxanalysis.parseDependency(sentence2)
+    #     print(res)
+    #
+    # finally:
+    #     pass

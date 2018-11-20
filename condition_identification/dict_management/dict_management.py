@@ -9,11 +9,14 @@ class EntityDict:
         self._entity_set = []
 
     def load_dict(self, path, category):
-        with open(path, 'r', encoding='utf-8') as f:
-            word = f.readline()
-            while word != "":
-                self._entity_set.append(entity(name=word.strip('\n'), category=category))
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
                 word = f.readline()
+                while word != "":
+                    self._entity_set.append(entity(name=word.strip('\n'), category=category))
+                    word = f.readline()
+        except FileNotFoundError:
+            print(path+":"+category+"-dict is not exist")
 
     @property
     def entity_set(self):
