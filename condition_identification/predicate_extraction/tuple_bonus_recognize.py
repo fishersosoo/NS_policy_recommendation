@@ -17,6 +17,27 @@ word_entity = namedtuple('word_entity', ['order','word','category','len','orderc
 three_tuple_entity = namedtuple('three_tuple_entity', ['S','P','O'])
 syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA'])
 
+class Bonus_Condition_Tree(Tree):
+    def __init__(self):
+        super().__init__()
+
+    def get_all_bonus(self):
+        bonus = []
+        bonus_node = self.children("root")
+        for single_bonus in bonus_node:
+            bonus.append(single_bonus.tag)
+        return bonus
+
+    def get_node_type(self,node):
+        return node.data['TYPE']
+
+    def get_node_content(self,node):
+        return node.data['CONTENT']
+
+    def get_node_data(self,node):
+        return node.data
+
+
 class TupleBonus:
     def __init__(self,dict_dir = None,if_edit_hanlpdict = 0):
 
@@ -25,7 +46,7 @@ class TupleBonus:
         self.entityrecognizer = EntityRecognizer()
         self.hanlpanalysis = HanlpSynataxAnalysis()
         self.extracter = TupleExtracter()
-        self.bonus_tree = Tree()
+        self.bonus_tree = Bonus_Condition_Tree()
 
         self.segementation_construct(dict_dir=dict_dir)
         if if_edit_hanlpdict == 1 and dict_dir != None:
@@ -72,22 +93,29 @@ class TupleBonus:
                 spo_arrays.append(spo_tuple)
         return spo_arrays
 
+    def get_node_data_dic(self,type,content):
+        data_dic = {'TYPE' : '','CONTENT' : ''}
+        data_dic["TYPE"] = type
+        data_dic["CONTENT"] = content
+        return data_dic
+
     def bonus_tuple_analysis(self,doctree):
         pytree = doctree.get_tree()
         bonuslist = doctree.get_bonus_nodes()
         leaves = pytree.leaves()
 
-        self.bonus_tree.create_node("BONUS_ROOT","root")
+        self.bonus_tree.create_node("BONUS_ROOT","root",data = self.get_node_data_dic("ROOT","None"))
 
         tagnumber = 1
         for bonus in bonuslist:
             bonus_content = pytree.get_node(bonus).data[0]
-            self.bonus_tree.create_node(bonus_content,str(tagnumber), parent="root")
+            self.bonus_tree.create_node(bonus_content,str(tagnumber), parent="root",data = self.get_node_data_dic("BONUS",bonus_content))
             subtree = Tree(pytree.subtree(bonus), deep=True)
             self.analysis_single_bonus(bonus_content,subtree,str(tagnumber))
             #print('\n')
             tagnumber = tagnumber + 1
         #self.bonus_tree.show()
+
 
     def analysis_single_bonus(self,bonus,subtree,tagnumber):
 
@@ -97,13 +125,13 @@ class TupleBonus:
             if len(subtree.leaves()[0].data)>1:
                 k=1
             rootsentence = subtree.leaves()[0].data[k]
-            self.bonus_tree.create_node("AND", bonus, parent=tagnumber)
+            self.bonus_tree.create_node("AND", bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","AND"))
             for onetuple in self.tuple_extract(rootsentence):
                 if onetuple is not None:
-                    self.bonus_tree.create_node(str(tuple(onetuple)), parent=bonus)
+                    self.bonus_tree.create_node(str(tuple(onetuple)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(onetuple))))
             return
 
-        self.bonus_tree.create_node("OR", bonus, parent=tagnumber)
+        self.bonus_tree.create_node("OR", bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","OR"))
         allnodes = subtree.leaves()
         #print(allnodes)
         for node in allnodes:
@@ -114,7 +142,8 @@ class TupleBonus:
             nodedepth = subtree.depth(node)
             for spo in self.tuple_extract(sentence):
                 if spo is not None:
-                    self.bonus_tree.create_node(str(tuple(spo)), parent=bonus)
+                    self.bonus_tree.create_node(str(tuple(spo)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(spo))))
+
 
     def get_bonus_tree(self):
         return self.bonus_tree
