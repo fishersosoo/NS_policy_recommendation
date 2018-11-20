@@ -28,7 +28,7 @@ class HanlpSynataxAnalysis:
         syntax_tuples = []
         for word in word_array:
             syntax_tuples.append(syntax_tuple(LEMMA = word.LEMMA, DEPREL = word.DEPREL, HEADLEMMA = word.HEAD.LEMMA))
-            #print("%s --(%s)--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA))
+            # print("%s --(%s)--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA))
         return syntax_tuples
 
 if __name__ == "__main__":
