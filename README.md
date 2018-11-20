@@ -65,16 +65,21 @@ bolt地址：bolt://cn.fishersosoo.xyz:7687
       
 获取该树的所有优惠内容
       
+      
       def get_node_data(self,node):
       
 函数参数为节点，返回节点的data。data为字典形式，包括 TYPE 以及 CONTENT 两个关键词，指种类和内容
+
 
 TYPE：POLICY,BONUS,LOGIC,CONDITION
 
 CONTENT:
       POLICY对应的CONTENT为空
+      
       BONUS对应的CONTENT为优惠内容
+      
       LOGIC对应的CONTENT为 “AND”/“OR”
+      
       CONDITION对应的CONTENT为SPO三元组 定义如下：('three_tuple_entity', ['S','P','O'])
  
 该多叉树的其他函数调用可参考https://blog.csdn.net/kalbertlee/article/details/70158015 或者 https://treelib.readthedocs.io/en/latest/
