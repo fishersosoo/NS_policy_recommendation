@@ -149,4 +149,12 @@ class TupleBonus:
         return self.bonus_tree
 
 if __name__=="__main__":
-    tree = Tree()
+    tuple_bonus = TupleBonus()
+
+    sentence2 = '对在南沙港区完成年度外贸集装箱吞吐量达到10万TEU的新落户船公司给予250万元的一次性奖励'
+    try:
+        res = tuple_bonus.tuple_extract(sentence2)
+        print(res)
+
+    finally:
+        pass

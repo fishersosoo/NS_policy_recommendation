@@ -44,7 +44,7 @@ class TupleExtracter:
             elif ents.category == "number":
                 number.append(ents.word)
 
-        res_tuple = None
+        res_tuple = spotuple
 
         #主语为指标名
         if tuple_s in norm and tuple_o != None :

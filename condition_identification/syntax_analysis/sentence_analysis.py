@@ -30,7 +30,7 @@ class HanlpSynataxAnalysis:
         syntax_tuples = []
         for word in word_array:
             syntax_tuples.append(syntax_tuple(LEMMA = word.LEMMA, DEPREL = word.DEPREL, HEADLEMMA = word.HEAD.LEMMA))
-            # print("%s --(%s)--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA))
+            #print("%s --(%s)--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA))
         return syntax_tuples
 
     def reloadHanlpCustomDictionary(self,dict_path):
@@ -72,14 +72,14 @@ class HanlpSynataxAnalysis:
 if __name__ == "__main__":
     #CustomDictionary.reload()
     synataxanalysis = HanlpSynataxAnalysis()
-    synataxanalysis.reloadHanlpCustomDictionary(r'I:\NS_policy_recommendation\res\word_segmentation')
-    # entity = [word_entity(order='16', word='营业收入', category='norm',len=1,ordercount = 4), word_entity(order='17', word='1亿元', category='number',len=2,ordercount = 3)]
-    # sentence = '教育、卫生、文化、创意、体育、娱乐业和其他服务业：上一年度纳入我区统计核算的营业收入高于5000万元；上一年度在我区纳税总额不低于1000万元'
-    # sentence2 = ''
-    # try:
-    #     #presentence = synataxanalysis.sentencePreprocessing(sentence,entity)
-    #     res = synataxanalysis.parseDependency(sentence2)
-    #     print(res)
-    #
-    # finally:
-    #     pass
+    #synataxanalysis.reloadHanlpCustomDictionary(r'I:\NS_policy_recommendation\res\word_segmentation')
+    entity = [word_entity(order='16', word='营业收入', category='norm',len=1,ordercount = 4), word_entity(order='17', word='1亿元', category='number',len=2,ordercount = 3)]
+    sentence = '教育、卫生、文化、创意、体育、娱乐业和其他服务业：上一年度纳入我区统计核算的营业收入高于5000万元；上一年度在我区纳税总额不低于1000万元'
+    sentence2 = '对在南沙港区完成年度外贸集装箱吞吐量达到10万TEU的新落户船公司给予250万元的一次性奖励'
+    try:
+        #presentence = synataxanalysis.sentencePreprocessing(sentence,entity)
+        res = synataxanalysis.parseDependency(sentence2)
+        print(res)
+
+    finally:
+        pass
