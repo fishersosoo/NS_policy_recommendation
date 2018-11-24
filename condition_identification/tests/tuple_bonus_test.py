@@ -1,6 +1,7 @@
 # coding=utf-8
 import sys
 import re
+
 sys.path.append("..")
 try:
     from ..bonus_identify.Tree import DocTree
@@ -10,18 +11,23 @@ except Exception:
     from bonus_identify.Tree import DocTree
     from predicate_extraction.tuple_bonus_recognize import TupleBonus
     from predicate_extraction.tuple_bonus_recognize import Bonus_Condition_Tree
+
+from syntax_analysis.sentence_analysis import HanlpSynataxAnalysis
+
 def test_subtree():
     tree=DocTree()
-    tree.construct('../bonus_identify/test.txt')
+    tree.construct('../bonus_identify/广州南沙新区(自贸片区)促进总部经济发展扶持办法｜广州市南沙区人民政府.txt')
 
-    dict_dir=r"Y:\Nansha AI Services\condition_identification\res\word_segmentation"
-    tuplebonus = TupleBonus()
+    dict_dir=r"I:\NS_policy_recommendation\res\word_segmentation"
+    tuplebonus = TupleBonus(dict_dir)
+    pytree = tree.get_bonus_tree()
 
-    tuplebonus.bonus_tuple_analysis(tree)
+    tuplebonus.bonus_tuple_analysis(pytree)
     bonus_tree = tuplebonus.get_bonus_tree()
-    for node in bonus_tree.all_nodes():
-        print(bonus_tree.get_node_type(node))
-        print(bonus_tree.get_node_content(node))
+    bonus_tree.show()
+    # for node in bonus_tree.all_nodes():
+    #     print(bonus_tree.get_node_type(node))
+    #     print(bonus_tree.get_node_content(node))
 
 def test_tupleextract(sentence):
     tuple_bonus = TupleBonus()
@@ -33,6 +39,11 @@ def test_tupleextract(sentence):
         pass
 
 if __name__ == "__main__":
-    sentence = '对在南沙港区完成年度外贸集装箱吞吐量达到10万TEU的新落户船公司给予250万元的一次性奖励'
+
+    synataxanalysis = HanlpSynataxAnalysis()
+    synataxanalysis.reloadHanlpCustomDictionary(r'I:\NS_policy_recommendation\res\word_segmentation')
+    sentence = '是外资企业：'
+
     test_tupleextract(sentence)
+    #test_subtree()
 

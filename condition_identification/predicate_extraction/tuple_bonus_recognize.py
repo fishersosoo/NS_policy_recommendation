@@ -15,7 +15,7 @@ from bonus_identify.Tree import DocTree
 
 word_entity = namedtuple('word_entity', ['order','word','category','len','ordercount'])
 three_tuple_entity = namedtuple('three_tuple_entity', ['S','P','O'])
-syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA'])
+syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA','POSTAG','HEAD'])
 
 class Bonus_Condition_Tree(Tree):
     def __init__(self):
@@ -39,7 +39,7 @@ class Bonus_Condition_Tree(Tree):
 
 
 class TupleBonus:
-    def __init__(self,dict_dir = None,if_edit_hanlpdict = 0):
+    def __init__(self,dict_dir = None,if_edit_hanlpdict = 1):
 
         self.segmentation = Segmentation()
         self.entity_set = EntityDict()
@@ -90,7 +90,7 @@ class TupleBonus:
             syntaxtuple = self.hanlpanalysis.parseDependency(one_sentence)
             spo_tuple = self.extracter.predicate_extraction(syntaxtuple,entities)
             if spo_tuple != None:
-                spo_arrays.append(spo_tuple)
+                spo_arrays = spo_arrays + spo_tuple
         return spo_arrays
 
     def get_node_data_dic(self,type,content):
@@ -99,51 +99,116 @@ class TupleBonus:
         data_dic["CONTENT"] = content
         return data_dic
 
-    def bonus_tuple_analysis(self,doctree):
-        pytree = doctree.get_tree()
-        bonuslist = doctree.get_bonus_nodes()
-        leaves = pytree.leaves()
+    def get_all_bonus_content(self,bonusnode,pytree):
+        bonus_content = ""
+        tree_path = tuple(pytree.rsearch(bonusnode))
+        length = len(tree_path)
+        for i,node in enumerate(tree_path):
+            if i+1<length:
+                content = pytree.get_node(node).tag[0]
+                bonus_content = content + " " +bonus_content
+        return bonus_content
+        print(bonus_content)
 
-        self.bonus_tree.create_node("BONUS_ROOT","root",data = self.get_node_data_dic("ROOT","None"))
+    def get_all_bonus_list(self,t):
+        count = 0
+        bonus_list=[]
+        while t.get_node('c'+'root'+str(count)):
+            node = t.parent('c'+'root'+str(count))
+            bonus_list.append(node.identifier)
+            count += 1
+
+        return bonus_list
+
+    def bonus_tuple_analysis(self,doctree):
+        pytree = doctree
+        bonuslist = self.get_all_bonus_list(doctree)
+
+        self.bonus_tree.create_node(tag = "BONUS_ROOT",identifier = "root",data = self.get_node_data_dic("ROOT","None"))
 
         tagnumber = 1
+
         for bonus in bonuslist:
-            bonus_content = pytree.get_node(bonus).data[0]
-            self.bonus_tree.create_node(bonus_content,str(tagnumber), parent="root",data = self.get_node_data_dic("BONUS",bonus_content))
-            subtree = Tree(pytree.subtree(bonus), deep=True)
-            self.analysis_single_bonus(bonus_content,subtree,str(tagnumber))
+            all_bonus_content = self.get_all_bonus_content(bonus,pytree)
+            bonus_content = pytree.get_node(bonus).tag[0]
+            bonus_node = self.bonus_tree.create_node(tag = all_bonus_content,identifier = str(tagnumber),parent = "root",
+                                        data = self.get_node_data_dic("BONUS",all_bonus_content))
+
+            #构建每个优惠的条件节点树
+            bonus_childrens = pytree.children(bonus)
+            if len(bonus_childrens) == 0:
+                continue
+            subtree = Tree(pytree.subtree(bonus_childrens[0].identifier), deep=True)
+            flag = self.analysis_single_bonus(bonus_content,subtree,str(tagnumber))
+
+            if flag == False:
+                self.bonus_tree.remove_subtree(str(tagnumber))
             #print('\n')
             tagnumber = tagnumber + 1
         #self.bonus_tree.show()
 
 
     def analysis_single_bonus(self,bonus,subtree,tagnumber):
+        #print("subtree:")
+        #print(subtree)
 
-        treedepth = subtree.depth()
-        if treedepth == 0:
-            k = 0
-            if len(subtree.leaves()[0].data)>1:
-                k=1
-            rootsentence = subtree.leaves()[0].data[k]
-            self.bonus_tree.create_node("AND", bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","AND"))
-            for onetuple in self.tuple_extract(rootsentence):
-                if onetuple is not None:
-                    self.bonus_tree.create_node(str(tuple(onetuple)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(onetuple))))
-            return
+        flag = False
 
-        self.bonus_tree.create_node("OR", bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","OR"))
-        allnodes = subtree.leaves()
-        #print(allnodes)
-        for node in allnodes:
-            k = 0
-            if len(node.data)>1:
-                k=1
-            sentence = node.data[k]
-            nodedepth = subtree.depth(node)
+        path_lists = subtree.paths_to_leaves()
+        path_list=[]
+
+        if len(path_lists) > 0:
+            path_list = path_lists[0]
+        else:
+            return flag
+
+        logictag = "and"+str(tagnumber)
+        self.bonus_tree.create_node("AND", identifier=logictag, parent=tagnumber,
+                                    data=self.get_node_data_dic("LOGIC", "AND"))
+        for i,id in enumerate(path_list):
+            if i == 0 :
+                continue
+            sentence = subtree.get_node(id).tag[0]
+            print(sentence)
             for spo in self.tuple_extract(sentence):
                 if spo is not None:
-                    self.bonus_tree.create_node(str(tuple(spo)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(spo))))
+                    flag = True
+                    self.bonus_tree.create_node(tag = str(tuple(spo)), parent=logictag,
+                                                data = self.get_node_data_dic("CONDITION",str(tuple(spo))))
 
+        print("\n")
+        return flag
+
+        # treedepth = subtree.depth()
+        # if treedepth == 0:
+        #     k = 0
+        #     if len(subtree.leaves()[0].data)>1:
+        #         k=1
+        #     rootsentence = subtree.leaves()[0].data[k]
+        #     self.bonus_tree.create_node(tag = "AND", identifier=bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","AND"))
+        #     for onetuple in self.tuple_extract(rootsentence):
+        #         if onetuple is not None:
+        #             flag = True
+        #             self.bonus_tree.create_node(tag = str(tuple(onetuple)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(onetuple))))
+        #     return flag
+        #
+        # self.bonus_tree.create_node("AND", identifier=bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","AND"))
+        # allnodes = subtree.leaves()
+        # #print(allnodes)
+        #
+        # return
+        #
+        # for node in allnodes:
+        #     k = 0
+        #     if len(node.data)>1:
+        #         k=1
+        #     sentence = node.data[k]
+        #     nodedepth = subtree.depth(node)
+        #     for spo in self.tuple_extract(sentence):
+        #         if spo is not None:
+        #             flag = True
+        #             self.bonus_tree.create_node(tag = str(tuple(spo)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(spo))))
+        # return flag
 
     def get_bonus_tree(self):
         return self.bonus_tree
