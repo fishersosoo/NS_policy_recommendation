@@ -3,12 +3,12 @@ from pyhanlp import *
 from treelib import Node,Tree
 from util import get_namecombine
 class DocTree:
-    d1={0: ['root']}
-    d={}
-    tree=Tree()
+
 
     def __init__(self):
-        pass
+        self.d1 = {0: ['root']}
+        self.d = {}
+        self.tree = Tree()
     # 获取树
     def get_tree(self):
         return self.tree
@@ -21,7 +21,9 @@ class DocTree:
         html_list = []
         with open(file, 'r', encoding='utf8') as f:
             for line in f.readlines():
-                html_list.append(line.strip())
+                line=line.strip()
+                if line:
+                    html_list.append(line)
         return html_list
     # 解析html结构成树
     def parse_totree(self,html_list):
@@ -31,9 +33,10 @@ class DocTree:
         tree = self.tree
         tree.create_node('root', 'root', data='partition')
         j = 0
-        d = self.d
-        d1 = self.d1
+        head=0
+
         h_level = 1
+        id_key=None
         for i in range(0, len(html_list)):
             word = html_list[i]
             # 判断是否满足正则表达式，可否作为节点
@@ -42,22 +45,26 @@ class DocTree:
                 # 根据j来构建独一无二的id
                 id_key = key + str(j)
                 # 确定属于第几层
-                if key not in d:
-                    d[key] = h_level
+                if key not in self.d:
+                    self.d[key] = h_level
                     h_level += 1
 
-                c_level = d[key]
+                c_level = self.d[key]
                 # 把第几层的id存起来
-                if c_level not in d1:
-                    d1[c_level] = [id_key]
+                if c_level not in self.d1:
+                    self.d1[c_level] = [id_key]
                 else:
-                    d1[c_level].append(id_key)
+                    self.d1[c_level].append(id_key)
                 # 归属父节点即当前上一层最后一个id，即最近的上一层ID
-                tree.create_node(word, id_key, d1[c_level - 1][-1], data=[word])
+                tree.create_node(word, id_key, self.d1[c_level - 1][-1], data=[word])
                 j += 1
             else:
                 # 如果当前不是一个节点，则把内容归属上一次最近的节点
-                tree.get_node(id_key).data.append(word)
+                if id_key:
+                    tree.get_node(id_key).data.append(word)
+                else:
+                    tree.create_node(word,key+str(head),'root', data=[word])
+                    head+=1
 
 
     # 判断是否一个节点，即是否存在一些前缀词1.一.
