@@ -11,6 +11,14 @@ class DocTree:
     def get_tree(self):
         return self.tree
     # 通过文档名字构建树
+    def construct_from_bytes(self,bytes):
+        text=bytes.decode("utf-8")
+        html_list = []
+        for line in text.split('\n'):
+            # print(line)
+            html_list.append(line.strip())
+        self.parse_totree( html_list)
+
     def construct(self,filename):
         html_list=self.file_tolist(filename)
         self.parse_totree( html_list)
