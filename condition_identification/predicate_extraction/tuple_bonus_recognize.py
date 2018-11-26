@@ -128,7 +128,7 @@ class TupleBonus:
             self.bonus_tree.create_node("AND", bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","AND"))
             for onetuple in self.tuple_extract(rootsentence):
                 if onetuple is not None:
-                    self.bonus_tree.create_node(str(tuple(onetuple)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(onetuple))))
+                    self.bonus_tree.create_node(tuple(onetuple), parent=bonus,data = self.get_node_data_dic("CONDITION",tuple(onetuple)))
             return
 
         self.bonus_tree.create_node("OR", bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","OR"))
@@ -142,7 +142,7 @@ class TupleBonus:
             nodedepth = subtree.depth(node)
             for spo in self.tuple_extract(sentence):
                 if spo is not None:
-                    self.bonus_tree.create_node(str(tuple(spo)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(spo))))
+                    self.bonus_tree.create_node(tuple(spo), parent=bonus,data = self.get_node_data_dic("CONDITION",tuple(spo)))
 
 
     def get_bonus_tree(self):

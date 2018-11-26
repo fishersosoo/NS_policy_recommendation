@@ -34,6 +34,8 @@ class HanlpSynataxAnalysis:
         return syntax_tuples
 
     def reloadHanlpCustomDictionary(self,dict_path):
+        # from distutils.sysconfig import get_python_lib;
+        # lib_path=get_python_lib()
         custompath = sys.prefix + r"\Lib\site-packages\pyhanlp\static\data\dictionary\custom\CustomDictionary.txt"
         # print(path)
         dicts = []
@@ -58,7 +60,6 @@ class HanlpSynataxAnalysis:
                     word = fl.readline()
 
                     while word != "":
-                        #print(word.strip())
                         f.write('\n'+word.strip() )
                         word = fl.readline()
         except FileNotFoundError:
