@@ -18,11 +18,9 @@ def test_subtree():
     tree=DocTree()
     tree.construct('../bonus_identify/广州南沙新区(自贸片区)促进总部经济发展扶持办法｜广州市南沙区人民政府.txt')
 
-
     dict_dir=r"I:\NS_policy_recommendation\res\word_segmentation"
     tuplebonus = TupleBonus(dict_dir)
     pytree = tree.get_bonus_tree()
-
 
     tuplebonus.bonus_tuple_analysis(pytree)
     bonus_tree = tuplebonus.get_bonus_tree()
