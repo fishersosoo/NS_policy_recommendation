@@ -12,7 +12,7 @@ class Subject(BaseInterface):
         if subject_type not in SubjectType:
             raise Exception(f"subject_type must in {SubjectType}")
         node = Node(cls.__name__, subject_type, id=UUID(), **kwargs)
-        cls.create = graph_.create(node)
+        graph_.create(node)
         return node["id"]
 
     @classmethod
