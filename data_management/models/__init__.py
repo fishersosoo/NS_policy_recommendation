@@ -19,16 +19,6 @@ class BaseInterface:
         pass
 
     @classmethod
-    def update_by_id(cls, id_, *args, **kwargs):
-        node = NodeMatcher(graph_).match( id=id_).first()
-        if node is None:
-            raise Exception(f"node {id_} not found")
-        else:
-            node.labels.update(args)
-            node.update(kwargs)
-        graph_.push(node)
-
-    @classmethod
     def remove_by_id(cls, id_):
         node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
         if node is None:
@@ -39,15 +29,8 @@ class BaseInterface:
     def find_by_id(cls, id_):
         node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
         if node is None:
-            return [], dict(), None
-        return node.labels, dict(**node), node
-
-    @classmethod
-    def find_by_id_in_graph(cls, id_):
-        node = NodeMatcher(graph_).match( id=id_).first()
-        if node is None:
-            return [], dict(), None
-        return node.labels, dict(**node), node
+            return None, None
+        return node.labels, dict(**node)
 
 
 if __name__ == "__main__":

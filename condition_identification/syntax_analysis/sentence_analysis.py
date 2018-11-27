@@ -65,9 +65,7 @@ class HanlpSynataxAnalysis:
         return syntax_tuples
 
     def reloadHanlpCustomDictionary(self,dict_path):
-
         #custompath = sys.prefix + r"\Lib\site-packages\pyhanlp\static\data\dictionary\custom\CustomDictionary.txt"
-
         # print(path)
         dicts = []
         if dict_path is not None:
@@ -93,11 +91,9 @@ class HanlpSynataxAnalysis:
                     word = fl.readline()
 
                     while word != "":
-
                         #print(word.strip())
                         #f.write('\n'+word.strip() )
                         CustomDictionary.add(word.strip())
-
                         word = fl.readline()
         except FileNotFoundError:
             print("FileNotFoundError")

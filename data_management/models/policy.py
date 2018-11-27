@@ -1,8 +1,7 @@
 # coding=utf-8
-from py2neo import Node, NodeMatcher, Relationship, Subgraph
+from py2neo import Node, NodeMatcher
 
 from data_management.models import graph_, BaseInterface, UUID
-from models.boon import Boon
 
 
 class Policy(BaseInterface):
@@ -22,22 +21,13 @@ class Policy(BaseInterface):
             node.update(kwargs)
         graph_.push(node)
 
-    @classmethod
-    def add_boons(cls, id_, boons=None):
-        if boons is None:
-            boons = []
-        _, _, policy = Policy.find_by_id(id_)
-        # sub_graph = Subgraph(policy)
-        boon_list = list(NodeMatcher(graph_).match("Boon").where(f"_.id in {boons}"))
-        relationships=[]
-        for boon in boon_list:
-            relationships.append( Relationship(policy, "HAS_BOON", boon))
-        sub_graph = Subgraph(boon_list+[policy],relationships)
-        graph_.create(sub_graph)
+
 
 
 if __name__ == "__main__":
-    p_id = Policy.create(content="广州南沙新区_自贸片区_促进总部经济发展扶持办法.txt")
-    b_id_1 = Boon.create(content="优惠1")
-    b_id_2 = Boon.create(content="优惠2")
-    Policy.add_boons(p_id, [b_id_1, b_id_2])
+    id = Policy.create(content="广州南沙新区_自贸片区_促进总部经济发展扶持办法.txt")
+    print(Policy.find_by_id(id))
+    Policy.update_by_id(id, content="广州南沙新区（自贸片区）集聚人才创新发展的若干措施｜广州市南沙区人民政府.txt")
+    print(Policy.find_by_id(id))
+    Policy.remove_by_id(id)
+    print(Policy.find_by_id(id))

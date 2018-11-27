@@ -12,7 +12,7 @@ class Object(BaseInterface):
         if object_type not in ObjectType:
             raise Exception(f"object_type must in {ObjectType}")
         node = Node(cls.__name__, object_type, id=UUID(), **kwargs)
-        graph_.create(node)
+        cls.create = graph_.create(node)
         return node["id"]
 
     @classmethod
