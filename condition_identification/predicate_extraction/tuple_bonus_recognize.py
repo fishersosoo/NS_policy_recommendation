@@ -1,214 +1,194 @@
+import sys
 import re
-from pyhanlp import *
+sys.path.append("..")
+from dict_management.dict_management import EntityDict
+from document_parsing.html_parser import HtmlParser
+from word_segmentation.jieba_segmentation import Segmentation
+from entity_link.entity_recognizer import EntityRecognizer
+from syntax_analysis.sentence_analysis import HanlpSynataxAnalysis
+from predicate_extraction.tuple_extracter import TupleExtracter
+
+from collections import namedtuple
+from os import path
 from treelib import Node,Tree
-from util import get_namecombine
-class DocTree:
+from bonus_identify.Tree import DocTree
 
+word_entity = namedtuple('word_entity', ['order','word','category','len','ordercount'])
+three_tuple_entity = namedtuple('three_tuple_entity', ['S','P','O'])
+syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA','POSTAG','HEAD'])
 
+class Bonus_Condition_Tree(Tree):
     def __init__(self):
-        self.d1 = {0: ['root']}
-        self.d = {}
-        self.tree = Tree()
-    # 获取树
-    def get_tree(self):
-        return self.tree
-    # 通过文档名字构建树
-    def construct(self,filename):
-        html_list=self.file_tolist(filename)
-        self.parse_totree( html_list)
-    # 读取文件成list
-    def file_tolist(self,file):
-        html_list = []
-        with open(file, 'r', encoding='utf8') as f:
-            for line in f.readlines():
-                line=line.strip()
-                if line:
-                    html_list.append(line)
-        return html_list
-    # 解析html结构成树
-    def parse_totree(self,html_list):
-        level_words = [r'第.+章', r'第.+条', r'\d+\.', r'[一二三四五六七八九十]+、', r'\(\d+\)', r'\([一二三四五六七八九十]+\)',
-                       r'（[一二三四五六七八九十]+）', 'r（\d+）',r'[①②③④⑤⑥⑦⑧⑨⑩]']
-        self.tree = Tree()
-        tree = self.tree
-        tree.create_node('root', 'root', data='partition')
-        j = 0
-        head=0
+        super().__init__()
 
-        h_level = 1
-        id_key=None
-        for i in range(0, len(html_list)):
-            word = html_list[i]
-            # 判断是否满足正则表达式，可否作为节点
-            flag, key = self.is_node(level_words, word)
-            if flag:
-                # 根据j来构建独一无二的id
-                id_key = key + str(j)
-                # 确定属于第几层
-                if key not in self.d:
-                    self.d[key] = h_level
-                    h_level += 1
+    def get_all_bonus(self):
+        bonus = []
+        bonus_node = self.children("root")
+        for single_bonus in bonus_node:
+            bonus.append(single_bonus.tag)
+        return bonus
 
-                c_level = self.d[key]
-                # 把第几层的id存起来
-                if c_level not in self.d1:
-                    self.d1[c_level] = [id_key]
-                else:
-                    self.d1[c_level].append(id_key)
-                # 归属父节点即当前上一层最后一个id，即最近的上一层ID
-                tree.create_node(word, id_key, self.d1[c_level - 1][-1], data=[word])
-                j += 1
-            else:
-                # 如果当前不是一个节点，则把内容归属上一次最近的节点
-                if id_key:
-                    tree.get_node(id_key).data.append(word)
-                else:
-                    tree.create_node(word,key+str(head),'root', data=[word])
-                    head+=1
+    def get_node_type(self,node):
+        return node.data['TYPE']
+
+    def get_node_content(self,node):
+        return node.data['CONTENT']
+
+    def get_node_data(self,node):
+        return node.data
 
 
-    # 判断是否一个节点，即是否存在一些前缀词1.一.
-    def is_node(self,level_words, word):
-        word = word[0:5]
-        Flag = False
-        key = ''
-        for level_word in level_words:
-            re_result = re.search(level_word, word)
-            if re_result:
-                Flag = True
-                key = level_word
-                break
-        return Flag, key
+class TupleBonus:
+    def __init__(self,dict_dir = None,if_edit_hanlpdict = 1):
 
+        self.segmentation = Segmentation()
+        self.entity_set = EntityDict()
+        self.entityrecognizer = EntityRecognizer()
+        self.hanlpanalysis = HanlpSynataxAnalysis()
+        self.extracter = TupleExtracter()
+        self.bonus_tree = Bonus_Condition_Tree()
 
+        self.segementation_construct(dict_dir=dict_dir)
+        if if_edit_hanlpdict == 1 and dict_dir != None:
+            self.hanlpanalysis.reloadHanlpCustomDictionary(dict_dir)
+        # print(self.entity_set.entity_word)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    ########################### 识别奖励
-    keywords = ['奖', '奖励', '资助', '补贴', '补助', '支持','资金']
-
-    # 识别量词和数词 q和m必须两个同时都有
-    def identify_quantifier(self,parse_words,i,interval):
-        flag=False
-        m_flag=False
-        q_flag=False
-        if i<0:
-            i = 0
-
-        while i<len(parse_words) and i <=i+interval:
-            term = parse_words[i]
-            if str(term.nature)=='m' or str(term.nature)=='mq':
-                m_flag=True
-            if str(term.nature)=='q':
-                q_flag=True
-            if m_flag and q_flag:
-                flag=True
-                break
-            i+=1
-        return flag
-
-    # 识别优惠
-    def identify_bonus(self,word):
-        e=0
-        if word=='第二条 【落户奖】':
-            e=1
-            print(e)
-        flag=False
-        parse_words=HanLP.segment(word)
-        for i in range(len(parse_words)):
-            term=parse_words[i]
-            for key in self.keywords:
-                if key in term.word:
-                    # 加入量词的查找，取关键词所在的前后几个词之内看是否存在量词
-                    if self.identify_quantifier(parse_words,i-10,10)==False:
-                        flag=self.identify_quantifier(parse_words,i,10)
-                    else:
-                        flag=True
-        if word=='第二条 【落户奖】':
-            print(flag)
-        return flag
-
-
-    def get_bonus_nodes(self):
-        right_word=[]
-        return self.dfs('root',right_word)
-    def dfs(self,node_name,right_word):
-        node=self.tree.get_node(node_name)
-        word = ''.join(node.data)
-        if self.identify_bonus(word):
-            right_word.append(node_name)
-        if node.is_leaf():
-            return right_word
+    def segementation_construct(self, dict_dir=None):
+        # load dict
+        if dict_dir is not None:
+            self.entity_set.load_dict(path.join(dict_dir, "norm_dict"), "norm")
+            self.entity_set.load_dict(path.join(dict_dir, "category_dict"), "category")
+            self.entity_set.load_dict(path.join(dict_dir, "qualification_dict"), "qualification")
         else:
-            for children_node in self.tree.children(node_name):
-                right_word=self.dfs(children_node.identifier,right_word)
-        return right_word
+            self.entity_set.load_dict(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\norm_dict', "norm")
+            self.entity_set.load_dict(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\category_dict',
+                "category")
+            self.entity_set.load_dict(
+                r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\qualification_dict',
+                "qualification")
+        # print(entity_set.entity_set)
+        for entity in self.entity_set.entity_word:
+            #print(entity)
+            self.segmentation.tokenizer.add_word(entity, 1000)
+
+
+    def entity_recognize(self,sentence):
+        words_sentence = self.segmentation.psegcut(sentence)
+        #print(words_sentence)
+        result = self.entityrecognizer.entity_mark(tuple(words_sentence), self.entity_set.entity_set)
+        return result
+
+    def tuple_extract(self,sentence):
+        entities =  self.entity_recognize(sentence)
+        split_sentence = re.split("[;；。,，：:]", sentence)
+        spo_arrays = []
+        for one_sentence in split_sentence:
+            if len(one_sentence) == 0:
+                continue
+            syntaxtuple = self.hanlpanalysis.parseDependency(one_sentence)
+            spo_tuple = self.extracter.predicate_extraction(syntaxtuple,entities)
+            if spo_tuple != None:
+                spo_arrays = spo_arrays + spo_tuple
+        return spo_arrays
+
+    def get_node_data_dic(self,type,content):
+        data_dic = {'TYPE' : '','CONTENT' : ''}
+        data_dic["TYPE"] = type
+        data_dic["CONTENT"] = content
+        return data_dic
+
+    def get_all_bonus_content(self,bonusnode,pytree):
+        bonus_content = ""
+        tree_path = tuple(pytree.rsearch(bonusnode))
+        length = len(tree_path)
+        for i,node in enumerate(tree_path):
+            if i+1<length:
+                content = pytree.get_node(node).tag[0]
+                bonus_content = content + " " +bonus_content
+        return bonus_content
+        print(bonus_content)
+
+    def get_all_bonus_list(self,t):
+        count = 0
+        bonus_list=[]
+        while t.get_node('c'+'root'+str(count)):
+            node = t.parent('c'+'root'+str(count))
+            bonus_list.append(node.identifier)
+            count += 1
+
+        return bonus_list
+
+    def bonus_tuple_analysis(self,doctree):
+        pytree = doctree
+        bonuslist = self.get_all_bonus_list(doctree)
+
+        self.bonus_tree.create_node(tag = "BONUS_ROOT",identifier = "root",data = self.get_node_data_dic("ROOT","None"))
+
+        tagnumber = 1
+
+        for bonus in bonuslist:
+            all_bonus_content = self.get_all_bonus_content(bonus,pytree)
+            bonus_content = pytree.get_node(bonus).tag[0]
+            bonus_node = self.bonus_tree.create_node(tag = all_bonus_content,identifier = str(tagnumber),parent = "root",
+                                        data = self.get_node_data_dic("BONUS",all_bonus_content))
+
+            #构建每个优惠的条件节点树
+            bonus_childrens = pytree.children(bonus)
+            if len(bonus_childrens) == 0:
+                continue
+            subtree = Tree(pytree.subtree(bonus_childrens[0].identifier), deep=True)
+            flag = self.analysis_single_bonus(bonus_content,subtree,str(tagnumber))
+
+            if flag == False:
+                self.bonus_tree.remove_subtree(str(tagnumber))
+            #print('\n')
+            tagnumber = tagnumber + 1
+        #self.bonus_tree.show()
+
+
+    def analysis_single_bonus(self,bonus,subtree,tagnumber):
+        #print("subtree:")
+        #print(subtree)
+
+        flag = False
+
+        path_lists = subtree.paths_to_leaves()
+        path_list=[]
+
+        if len(path_lists) > 0:
+            path_list = path_lists[0]
+        else:
+            return flag
+
+        logictag = "and"+str(tagnumber)
+        self.bonus_tree.create_node("AND", identifier=logictag, parent=tagnumber,
+                                    data=self.get_node_data_dic("LOGIC", "AND"))
+        for i,id in enumerate(path_list):
+            if i == 0 :
+                continue
+            sentence = subtree.get_node(id).tag[0]
+            print(sentence)
+            for spo in self.tuple_extract(sentence):
+                if spo is not None:
+                    flag = True
+                    self.bonus_tree.create_node(tag = str(tuple(spo)), parent=logictag,
+                                                data = self.get_node_data_dic("CONDITION",str(tuple(spo))))
+
+        print("\n")
+        return flag
 
     def get_bonus_tree(self):
-        bonus_tree=Tree()
-        doc_tree=self.get_tree()
-        bonus_tree.create_node('root','root')
-        bonus_node_names=self.get_bonus_nodes()
-        for bonus_node_name in bonus_node_names:
-            bonus_node=self.tree.get_node(bonus_node_name)
-            if bonus_node.is_leaf():
-                b_name=get_namecombine('b',bonus_node.identifier,0)
-                c_name=get_namecombine('c',bonus_node.identifier,0)
-                bonus_tree.create_node(bonus_node.data,b_name,parent='root')
-                bonus_tree.create_node(bonus_node.data,c_name, parent=b_name)
-                bonus_tree=self.findparent(b_name,bonus_node_name,c_name,bonus_node_names,bonus_tree,doc_tree)
-        bonus_tree.show()
-        return bonus_tree
+        return self.bonus_tree
 
+if __name__=="__main__":
+    tuple_bonus = TupleBonus()
 
+    sentence2 = '对在南沙港区完成年度外贸集装箱吞吐量达到10万TEU的新落户船公司给予250万元的一次性奖励'
+    try:
+        res = tuple_bonus.tuple_extract(sentence2)
+        print(res)
 
-
-    def findparent(self,b_name,n_name,c_name,bonus_node_names,bonus_tree,tree):
-        # 记录叶子结点-固定
-        leave_name=b_name
-        # 记录初始位置-会一直变化
-        node_name=n_name
-        diff=0
-        while node_name!='root':
-            parent=tree.parent(node_name)
-            parent_name=parent.identifier
-
-
-            if parent_name in bonus_node_names:
-                p_name=get_namecombine('b',parent_name,0)
-                # 为了避免id重复定义的一个区别符
-                while bonus_tree.get_node(p_name):
-                    diff+=1
-                    p_name = get_namecombine('b', parent_name, diff)
-                bonus_tree.create_node(parent.data,p_name,parent='root')
-                # 都是从子移动到父亲下面
-                bonus_tree.move_node(b_name,p_name)
-
-                b_name=p_name
-                diff=0
-
-
-            cp_name=get_namecombine('c',parent_name,0)
-            while bonus_tree.get_node(cp_name):
-                diff+=1
-                cp_name = get_namecombine('c', parent_name, diff)
-            bonus_tree.create_node(parent.data, cp_name, parent=leave_name)
-            # 都是从子移动到父亲下面
-            bonus_tree.move_node(c_name, cp_name)
-            diff = 0
-            c_name=cp_name
-            node_name = parent_name
-        return bonus_tree
+    finally:
+        pass
