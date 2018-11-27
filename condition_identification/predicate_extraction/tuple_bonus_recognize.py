@@ -179,6 +179,37 @@ class TupleBonus:
         print("\n")
         return flag
 
+        # treedepth = subtree.depth()
+        # if treedepth == 0:
+        #     k = 0
+        #     if len(subtree.leaves()[0].data)>1:
+        #         k=1
+        #     rootsentence = subtree.leaves()[0].data[k]
+        #     self.bonus_tree.create_node(tag = "AND", identifier=bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","AND"))
+        #     for onetuple in self.tuple_extract(rootsentence):
+        #         if onetuple is not None:
+        #             flag = True
+        #             self.bonus_tree.create_node(tag = str(tuple(onetuple)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(onetuple))))
+        #     return flag
+        #
+        # self.bonus_tree.create_node("AND", identifier=bonus, parent=tagnumber,data = self.get_node_data_dic("LOGIC","AND"))
+        # allnodes = subtree.leaves()
+        # #print(allnodes)
+        #
+        # return
+        #
+        # for node in allnodes:
+        #     k = 0
+        #     if len(node.data)>1:
+        #         k=1
+        #     sentence = node.data[k]
+        #     nodedepth = subtree.depth(node)
+        #     for spo in self.tuple_extract(sentence):
+        #         if spo is not None:
+        #             flag = True
+        #             self.bonus_tree.create_node(tag = str(tuple(spo)), parent=bonus,data = self.get_node_data_dic("CONDITION",str(tuple(spo))))
+        # return flag
+
     def get_bonus_tree(self):
         return self.bonus_tree
 
