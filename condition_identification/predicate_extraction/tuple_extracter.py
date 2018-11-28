@@ -3,7 +3,7 @@ import os
 
 word_entity = namedtuple('word_entity', ['order','word','category','len','ordercount'])
 three_tuple_entity = namedtuple('three_tuple_entity', ['S','P','O'])
-syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA'])
+syntax_tuple = namedtuple('syntax_tuple',['LEMMA','DEPREL','HEADLEMMA','POSTAG','HEAD'])
 
 class TupleExtracter:
     def __init__(self):
@@ -44,8 +44,8 @@ class TupleExtracter:
             elif ents.category == "number":
                 number.append(ents.word)
 
+        res_tuple = spotuple
         res_tuple = None
-
         #主语为指标名
         if tuple_s in norm and tuple_o != None :
             if "元" in tuple_o :
@@ -61,35 +61,79 @@ class TupleExtracter:
 
     #对单个句子进行三元组抽取
     def predicate_extraction(self,syntaxtuple,recognizedentity):
-
-        #处理主谓宾结构
-        keyword = ""
+        res_tuples = []
+        # 处理主谓宾结构
+        syntax_dict = {}
+        #syntaxdict_dict = {}
         for word in syntaxtuple:
-            if word.DEPREL == "核心关系" :
-                keyword = word.LEMMA
 
-        s_array = []
-        o_array = []
+            try:
+                if str(word.DEPREL).strip() == "主谓关系" or str(word.DEPREL).strip() == "动宾关系":
+                    syntaxdict_dict = {}
 
-        for word in syntaxtuple:
-            if word.DEPREL == "主谓关系" and word.HEADLEMMA == keyword:
-                s_array.append(word.LEMMA)
-            elif word.DEPREL == "动宾关系" and word.HEADLEMMA == keyword:
-                o_array.append(word.LEMMA)
-            elif word.DEPREL == "介宾关系" and word.HEADLEMMA == keyword:
-                o_array.append(word.LEMMA)
+                    if str(word.HEAD.LEMMA) in syntax_dict.keys():
+                        syntax_dict[str(word.HEAD.LEMMA)][str(word.DEPREL)] = str(word.LEMMA)
+                    else:
+                        syntaxdict_dict[str(word.DEPREL)] = str(word.LEMMA)
+                        syntax_dict[str(word.HEAD.LEMMA)] = syntaxdict_dict
+                    #print(syntax_dict)
 
-        if len(s_array) == 0:
-            s_array.append("NONE")
+            except:
+                print("predicate_extraction error")
+        #print(syntax_dict)
+        for key in syntax_dict:
+            s = ""
+            o = ""
+            if "主谓关系" in syntax_dict[key].keys() or "动宾关系" in syntax_dict[key].keys():
 
-        if len(o_array) == 0:
-            o_array.append("NONE")
+                try:
+                    s = syntax_dict[key]['主谓关系']
+                except:
+                    pass
+                    #print("没有主谓关系")
 
+                try:
+                    o = syntax_dict[key]['动宾关系']
+                except:
+                    pass
+                    #print("没有动宾关系")
 
-        if o_array[0] == "NONE" and s_array[0] == "NONE":
-            return
-        res_tuple = self.tuple_fillter_svo(syntaxtuple,recognizedentity,three_tuple_entity(S=s_array[0], P=keyword, O=o_array[0]))
-        return res_tuple
+                res_tuple = self.tuple_fillter_svo(syntaxtuple, recognizedentity,
+                                                   three_tuple_entity(S=s, P=key, O=o))
+                res_tuples.append(res_tuple)
+
+        return res_tuples
+        #
+        # keywords = []
+        # for word in syntaxtuple:
+        #     if word.DEPREL == "核心关系" or word.POSTAG=="v" :
+        #         #print (word.POSTAG)
+        #         keywords.append(word.LEMMA)
+        #
+        # for keyword in keywords:
+        #     s_array = []
+        #     o_array = []
+        #
+        #     for word in syntaxtuple:
+        #         if word.DEPREL == "主谓关系" and word.HEADLEMMA == keyword:
+        #             s_array.append(word.LEMMA)
+        #         elif word.DEPREL == "动宾关系" and word.HEADLEMMA == keyword:
+        #             o_array.append(word.LEMMA)
+        #         elif word.DEPREL == "介宾关系" and word.HEADLEMMA == keyword:
+        #             o_array.append(word.LEMMA)
+        #
+        #     if len(s_array) == 0:
+        #         s_array.append("NONE")
+        #
+        #     if len(o_array) == 0:
+        #         o_array.append("NONE")
+        #
+        #
+        #     if o_array[0] == "NONE" and s_array[0] == "NONE":
+        #         return
+        #     res_tuple = self.tuple_fillter_svo(syntaxtuple,recognizedentity,three_tuple_entity(S=s_array[0], P=keyword, O=o_array[0]))
+        #     res_tuples.append(res_tuple)
+        # return res_tuples
 
 if __name__=="__main__":
     syntaxtuple = [syntax_tuple(LEMMA='1.', DEPREL='状中结构', HEADLEMMA='对'), syntax_tuple(LEMMA='对', DEPREL='核心关系', HEADLEMMA='##核心##'), syntax_tuple(LEMMA='内资企业', DEPREL='介宾关系', HEADLEMMA='对')]
