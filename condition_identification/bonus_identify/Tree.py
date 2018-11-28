@@ -130,10 +130,6 @@ class DocTree:
 
     # 识别优惠
     def identify_bonus(self,word):
-        e=0
-        if word=='第二条 【落户奖】':
-            e=1
-            print(e)
         flag=False
         parse_words=HanLP.segment(word)
         for i in range(len(parse_words)):
@@ -145,8 +141,6 @@ class DocTree:
                         flag=self.identify_quantifier(parse_words,i,10)
                     else:
                         flag=True
-        if word=='第二条 【落户奖】':
-            print(flag)
         return flag
 
 
