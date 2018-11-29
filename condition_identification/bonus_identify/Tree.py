@@ -36,7 +36,7 @@ class DocTree:
     # 解析html结构成树
     def parse_totree(self,html_list):
         level_words = [r'第.+章', r'第.+条', r'\d+\.', r'[一二三四五六七八九十]+、', r'\(\d+\)', r'\([一二三四五六七八九十]+\)',
-                       r'（[一二三四五六七八九十]+）', 'r（\d+）',r'[①②③④⑤⑥⑦⑧⑨⑩]']
+                       r'（[一二三四五六七八九十]+）', 'r（\d+）',r'[①②③④⑤⑥⑦⑧⑨⑩]',r'第.+节']
         self.tree = Tree()
         tree = self.tree
         tree.create_node('root', 'root', data='partition')
@@ -77,7 +77,7 @@ class DocTree:
 
     # 判断是否一个节点，即是否存在一些前缀词1.一.
     def is_node(self,level_words, word):
-        word = word[0:5]
+        word = word[0:10]
         Flag = False
         key = ''
         for level_word in level_words:
