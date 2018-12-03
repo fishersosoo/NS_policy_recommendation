@@ -1,7 +1,7 @@
 import sys
 import re
 sys.path.append("..")
-from dict_management.dict_management import EntityDict
+from dict_management.dict_manage import EntityDict
 from document_parsing.html_parser import HtmlParser
 from word_segmentation.jieba_segmentation import Segmentation
 from entity_link.entity_recognizer import EntityRecognizer

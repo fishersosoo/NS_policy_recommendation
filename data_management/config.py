@@ -2,6 +2,7 @@
 """
 数据库访问配置
 """
+import os
 from configparser import ConfigParser
 
 cfg = ConfigParser()
