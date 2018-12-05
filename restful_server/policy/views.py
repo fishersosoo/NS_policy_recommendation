@@ -39,13 +39,14 @@ def x():
 @policy_service.route("understand_file/", methods=["GET","POST"])
 def UnderstandPolicyFile():
     file = request.files['file'].read()
-    # print(file)
     policy = Policy.create(content=request.files['file'].filename)
     tree = DocTree()
     tree.construct_from_bytes(file)
-    dict_dir = r"Y:\Nansha AI Services\condition_identification\res\word_segmentation"
-    tuplebonus = TupleBonus(dict_dir, if_edit_hanlpdict=0)
-    tuplebonus.bonus_tuple_analysis(tree)
+    tuplebonus = TupleBonus(None, if_edit_hanlpdict=0)
+    pytree=tree.get_bonus_tree()
+    print("pytree.show()")
+    pytree.show()
+    tuplebonus.bonus_tuple_analysis(pytree)
     build_policy_graph(policy, tuplebonus.get_bonus_tree())
     return "", 200
 
@@ -53,5 +54,4 @@ def UnderstandPolicyFile():
 policy_api.add_resource(PolicyUnderstandAPI, "understand/")
 policy_api.add_resource(PolicyRecommendAPI, "recommend/")
 
-# def policy_understand():
-#     pass
+

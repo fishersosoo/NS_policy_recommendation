@@ -2,6 +2,7 @@
 
 import os
 
+from jpype import JClass
 from pyhanlp import SafeJClass
 
 os.chdir("..")
@@ -64,8 +65,11 @@ class DictManagement:
             words = [node["word"] for node in Word.list_all(dict_type)]
             with open(os.path.join(dictionary_dir, f"{dict_type.lower()}.txt"), "w", encoding="utf-8") as file:
                 file.write("\n".join(words))
-        CustomDictionary = SafeJClass("com.hankcs.hanlp.dictionary.CustomDictionary")
+        print("reloading dictionary")
+        from pyhanlp import CustomDictionary
         CustomDictionary.reload()
+        print("done reload dictionary")
+
 
     @classmethod
     def upload_dict(cls, directory):
@@ -87,6 +91,6 @@ class DictManagement:
 
 
 if __name__ == "__main__":
-    # DictManagement.upload_dict("../res/word_segmentation")
+    DictManagement.upload_dict("../res/word_segmentation")
     DictManagement.reload_dict()
 

@@ -3,11 +3,10 @@
 数据库访问配置
 """
 import os
-from configparser import ConfigParser
-
-cfg = ConfigParser()
-cfg.read('../config.ini')
-
-neo4j_config = dict(host=cfg.get("neo4j", "host"),
-                    user=cfg.get("neo4j", "user"),
-                    password=cfg.get("neo4j", "password"))
+# from configparser import ConfigParser
+#
+# cfg = ConfigParser()
+# cfg.read('config.ini')
+neo4j_config = dict(host="ns.fishersosoo.xyz",
+                    user="neo4j",
+                    password="1995")

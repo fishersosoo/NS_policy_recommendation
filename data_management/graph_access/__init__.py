@@ -29,6 +29,7 @@ def build_policy_graph(p_id, tree):
 
     :type tree: Bonus_Condition_Tree
     """
+    print("build graph")
     root = tree.root
     for boon_node in tree.children(root):
         boon_id = DFS_bulid_graph(boon_node, tree)
@@ -45,6 +46,7 @@ def DFS_bulid_graph(root, tree):
     :type tree: Bonus_Condition_Tree
 
     """
+    print("build node",root)
     if root.data["TYPE"] == "BONUS":
         boon_id = Boon.create(content=root.data["CONTENT"])
         for child in tree.children(root.identifier):
