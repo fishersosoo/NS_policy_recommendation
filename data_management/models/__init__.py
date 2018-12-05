@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from uuid import uuid1
 
-from py2neo import Graph, NodeMatcher
+from py2neo import Graph, NodeMatcher, RelationshipMatcher
 
 from data_management.config import neo4j_config
 
@@ -20,7 +20,7 @@ class BaseInterface:
 
     @classmethod
     def update_by_id(cls, id_, *args, **kwargs):
-        node = NodeMatcher(graph_).match( id=id_).first()
+        node = NodeMatcher(graph_).match(id=id_).first()
         if node is None:
             raise Exception(f"node {id_} not found")
         else:
@@ -36,6 +36,13 @@ class BaseInterface:
         graph_.delete(node)
 
     @classmethod
+    def clear(cls):
+        for node in NodeMatcher(graph_).match(cls.__name__):
+            for relationship in RelationshipMatcher(graph_).match({node}):
+                graph_.separate(relationship)
+            graph_.delete(node)
+
+    @classmethod
     def find_by_id(cls, id_):
         node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
         if node is None:
@@ -44,7 +51,7 @@ class BaseInterface:
 
     @classmethod
     def find_by_id_in_graph(cls, id_):
-        node = NodeMatcher(graph_).match( id=id_).first()
+        node = NodeMatcher(graph_).match(id=id_).first()
         if node is None:
             return [], dict(), None
         return node.labels, dict(**node), node

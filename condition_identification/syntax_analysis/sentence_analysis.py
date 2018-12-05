@@ -105,7 +105,7 @@ class HanlpSynataxAnalysis:
         finally:
             #f.close()
             fl.close()
-        #CustomDictionary.reload()
+        CustomDictionary.reload()
 
 if __name__ == "__main__":
     # #CustomDictionary.reload()
