@@ -2,9 +2,8 @@ import re
 from pyhanlp import *
 from treelib import Node,Tree
 from util import get_namecombine
+from collections import defaultdict
 class DocTree:
-
-
     def __init__(self):
         self.d1 = {0: ['root']}
         self.d = {}
@@ -128,6 +127,38 @@ class DocTree:
             i+=1
         return flag
 
+
+    # 句法依存识别
+    def identify_dependency(self,sentence,key):
+        word_array = HanLP.parseDependency(sentence).getWordArray()
+        parse_dict=defaultdict(list)
+        flag=False
+        # 构造字典
+        for word in word_array:
+            if word.LEMMA in parse_dict:
+                parse_dict[word.LEMMA].extend([word.DEPREL, word.HEAD.LEMMA])
+            else:
+                parse_dict[word.LEMMA] = [word.DEPREL, word.HEAD.LEMMA]
+        # 构造动宾结构
+        for i in range(0,len(parse_dict[key]),2):
+            if parse_dict[key][i]=='动宾关系':
+                flag=True
+                break
+
+
+        # 如果并列就往上找动宾
+        if not flag:
+            while '并列关系' in parse_dict[key]:
+                for i in range(0,len(parse_dict[key]),2):
+                    if parse_dict[key][i]=='并列关系':
+                        parse_dict[key].pop(i)
+                        # 因为pop下标就改变了出来两次
+                        key=parse_dict[key].pop(i)
+                        break
+        return flag
+
+
+
     # 识别优惠
     def identify_bonus(self,word):
         flag=False
@@ -141,6 +172,9 @@ class DocTree:
                         flag=self.identify_quantifier(parse_words,i,10)
                     else:
                         flag=True
+                    # 再量词识别的基础上识别依赖关系
+                    if flag:
+                        flag=self.identify_dependency(word,term.word)
         return flag
 
 

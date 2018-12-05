@@ -3,7 +3,7 @@ from util import get_namecombine
 from Tree import DocTree
 import os
 if __name__ == '__main__':
-    # files = os.listdir('doc')
+    files = os.listdir('doc')
     # for f_name in files:
     #     print(f_name)
     #     tree = DocTree()
