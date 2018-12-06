@@ -1,6 +1,33 @@
-# 南沙政策推荐模块
+# 南沙政策智能平台
 
-python版本：3.6+
+## 项目结构与规范
+
+| 目录                                    | 作用                      | 注意事项                                                     |
+| --------------------------------------- | ------------------------- | ------------------------------------------------------------ |
+| ./bin                                   | 存放脚本及可执行文件      | 应在发布可部署版本时候将系统环境配置、服务启动、测试脚本都放在这里 |
+| ./bin/linux                             | linux系统执行文件         |                                                              |
+| ./bin/windows                           | windows系统执行文件       |                                                              |
+| ./docs                                  | 存放文档                  | 根目录下存放markdown文件便于进行文档的版本控制               |
+| ./docs/pdf                              | 存放文档对应的pdf格式文件 | 更新md文档之后需要导出pdf到这里                              |
+| ./ns_ai_system                          | 存放源代码及相关资源      |                                                              |
+| ./ns_ai_system/res                      | 存放资源                  | 请将所有非代码内容放在这里，包括政策文件、词典               |
+| ./ns_ai_system/condition_identification | 政策理解核心源代码        |                                                              |
+| ./ns_ai_system/data_management          | 数据库相关代码            |                                                              |
+| ./ns_ai_system/restful_server           | restful服务相关代码       |                                                              |
+| ./tests                                 | 测试代码                  | 在测试脚本中需要导入包通过`sys.path.insert`来导入。测试文档要放在`./docs` |
+|                                         |                           |                                                              |
+
+不同模块的函数调用和代码说明放在`./docs`下，不要放在这里了。
+
+请勿将python虚拟环境上传。
+
+每次在虚拟环境安装新的包后，记得更新requirements.txt。
+
+`pip freeze > requirements.txt`
+
+## 配置需求概述
+
+python版本： 3.6.7
 
 java版本: 9.0.1 (pyhanlp库需要依赖java环境）
 
@@ -10,80 +37,14 @@ jpype._jvmfinder.JVMNotFoundException: No JVM shared library file (jvm.dll) foun
 
 则需要添加一个JAVA_HOME变量，变量值为java的bin目录的绝对路径
 
-请勿将python虚拟环境上传。
-
-每次在虚拟环境安装新的包后，记得更新requirements.txt。
-
-```
-pip freeze > requirements.txt
-```
-
-## 项目结构
-
-项目资源例如政策文件、字典文件放在res目录下。可运行的二进制文件放在bin目录下。condition_identification目录下为从政策文件中识别条件的python包。
-
-文档放在docs目录下，目前还没将之前的文档上传。
-
 ## 数据库配置
 
 neo4j数据库
 
-http地址：http://cn.fishersosoo.xyz:7474
+http地址：http://ns.fishersosoo.xyz:7474
 
-bolt地址：bolt://cn.fishersosoo.xyz:7687
+bolt地址：bolt://ns.fishersosoo.xyz:7687
 
 用户名：neo4j
 
 密码：1995
-
-## hanlp库配置
-首次部署环境/依赖词典或数据库有更新时，调用HanlpSynataxAnalysis.reloadHanlpCustomDictionary函数：
-      
-      def reloadHanlpCustomDictionary(self,dict_path)
-      
-参数传入dict_path的路径
-
-## 优惠&&条件智能理解相关注意事项
-运行 demo代码如下:
-
-      from bonus_identify.Tree import DocTree
-      from predicate_extraction.tuple_bonus_recognize import TupleBonus
-
-      def test_subtree():
-          tree=DocTree()
-          tree.construct('../bonus_identify/广州南沙新区(自贸片区)促进总部经济发展扶持办法｜广州市南沙区人民政府.txt')
-          dict_dir=r"Y:\Nansha AI Services\condition_identification\res\word_segmentation"
-          tuplebonus = TupleBonus(dict_dir)
-          tuplebonus.bonus_tuple_analysis(tree)
-          bonus_tree = tuplebonus.get_bonus_tree()
-    
-      if __name__ == "__main__":
-          test_subtree()
-
-打印结果为优惠与条件的关系，以多叉树结构展示
-通过函数 get_bonus_tree（）获得条件优惠树
-
-## 条件优惠树相关函数
-      def get_all_bonus(self):
-      
-获取该树的所有优惠内容
-      
-      
-      def get_node_data(self,node):
-     
-函数参数为节点，返回节点的data。data为字典形式，包括 TYPE 以及 CONTENT 两个关键词，指种类和内容
-
-TYPE：
-[POLICY,BONUS,LOGIC,CONDITION]
-
-CONTENT:
-[POLICY对应的CONTENT为空;
-
-BONUS对应的CONTENT为优惠内容;
-
-LOGIC对应的CONTENT为 “AND”/“OR”;
-
-CONDITION对应的CONTENT为SPO三元组,定义如下：('three_tuple_entity', ['S','P','O'])]
- 
-该多叉树的其他函数调用可参考https://blog.csdn.net/kalbertlee/article/details/70158015 或者 https://treelib.readthedocs.io/en/latest/
-            
