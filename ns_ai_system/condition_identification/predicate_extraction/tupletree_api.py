@@ -6,7 +6,7 @@ def construct_tupletree_by_file(filename):
 
     try:
         tree = DocTree()
-        tree.construct(filename)
+        tree.construct(filename,1)
         t = tree.get_bonus_tree()
         tuplebonus = TupleBonus()
         tuplebonus.bonus_tuple_analysis(t)
@@ -15,12 +15,12 @@ def construct_tupletree_by_file(filename):
     finally:
         pass
 
-def construct_tupletree_by_byte(byte):
+def construct_tupletree_by_bytestr(byte):
     try:
         tree = DocTree()
 
         #   需要换成使用二进制流构建树的接口
-        #   tree.construct(byte)
+        tree.construct(byte,2)
         #
 
         t = tree.get_bonus_tree()
