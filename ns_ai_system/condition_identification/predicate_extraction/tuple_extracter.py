@@ -10,18 +10,36 @@ class TupleExtracter:
         pass
 
     def complete_tuple(self,word,syntaxtuple):
-        add_word = [""]
+        # add_word = [""]
+        # for tuple in syntaxdict:
+        #     if tuple.HEADLEMMA == word and tuple.DEPREL == "定中关系":
+        #         add_word.append(tuple.LEMMA)
+        #     if tuple.HEADLEMMA == word and tuple.DEPREL == "状中结构" :
+        #         add_word[0] = tuple.LEMMA
+        # last_word = ""
+        # for oneword in add_word:
+        #     last_word = last_word + oneword
+        # last_word = last_word + word
+        # #print(last_word)
+        # return last_word
+        #print("completetuple"+word)
+
         for tuple in syntaxtuple:
             if tuple.HEADLEMMA == word and tuple.DEPREL == "定中关系":
-                add_word.append(tuple.LEMMA)
-            if tuple.HEADLEMMA == word and tuple.DEPREL == "状中结构" :
-                add_word[0] = tuple.LEMMA
-        last_word = ""
-        for oneword in add_word:
-            last_word = last_word + oneword
-        last_word = last_word + word
-        #print(last_word)
-        return last_word
+                addword = tuple.LEMMA
+                word = self.complete_tuple(addword,syntaxtuple)+word
+            else:
+                continue
+        return word
+        # if word in syntaxdict.keys():
+        #     if '定中关系' in syntaxdict[word].keys():
+        #         addword = syntaxdict[word]['定中关系']
+        #         word =self.complete_tuple(addword,syntaxdict)+ word
+        #     else:
+        #         return word
+        # else:
+        #     return word
+        # return word
 
     #对主谓宾结构三元组进行过滤补充
     def tuple_fillter_svo(self,syntaxtuple,recognizedentity,spotuple):
@@ -45,7 +63,7 @@ class TupleExtracter:
                 number.append(ents.word)
 
         res_tuple = spotuple
-        res_tuple = None
+        #res_tuple = None
         #主语为指标名
         if tuple_s in norm and tuple_o != None :
             if "元" in tuple_o :
@@ -56,6 +74,8 @@ class TupleExtracter:
         #宾语为资格名、类型名
         elif tuple_o in qualification or tuple_o in category:
             res_tuple = spotuple
+        else:
+            res_tuple = three_tuple_entity(S=self.complete_tuple(tuple_s, syntaxtuple), P=tuple_p, O=self.complete_tuple(tuple_o, syntaxtuple))
 
         return res_tuple
 
@@ -64,15 +84,25 @@ class TupleExtracter:
         res_tuples = []
         # 处理主谓宾结构
         syntax_dict = {}
+
+        keywords = []
+        for word in syntaxtuple:
+            if word.DEPREL == "核心关系":
+                keywords.append(word.LEMMA)
+
         #syntaxdict_dict = {}
         for word in syntaxtuple:
 
             try:
-                if str(word.DEPREL).strip() == "主谓关系" or str(word.DEPREL).strip() == "动宾关系":
+                if str(word.DEPREL).strip() == "主谓关系" or str(word.DEPREL).strip() == "动宾关系"or str(word.DEPREL).strip() == "介宾关系":
                     syntaxdict_dict = {}
 
                     if str(word.HEAD.LEMMA) in syntax_dict.keys():
-                        syntax_dict[str(word.HEAD.LEMMA)][str(word.DEPREL)] = str(word.LEMMA)
+                        if str(word.DEPREL) in syntax_dict[str(word.HEAD.LEMMA)].keys():
+                            syntax_dict[str(word.HEAD.LEMMA)][str(word.DEPREL)] = str(syntax_dict[str(word.HEAD.LEMMA)][str(word.DEPREL)])\
+                                                                                  +str(word.LEMMA)
+                        else:
+                            syntax_dict[str(word.HEAD.LEMMA)][str(word.DEPREL)] = str(word.LEMMA)
                     else:
                         syntaxdict_dict[str(word.DEPREL)] = str(word.LEMMA)
                         syntax_dict[str(word.HEAD.LEMMA)] = syntaxdict_dict
@@ -80,27 +110,35 @@ class TupleExtracter:
 
             except:
                 print("predicate_extraction error")
-        #print(syntax_dict)
+        print(syntax_dict)
+
         for key in syntax_dict:
             s = ""
             o = ""
-            if "主谓关系" in syntax_dict[key].keys() or "动宾关系" in syntax_dict[key].keys():
+            if key in keywords:
+                if "主谓关系" in syntax_dict[key].keys() or "动宾关系" in syntax_dict[key].keys() \
+                        or "介宾关系" in syntax_dict[key].keys():
 
-                try:
-                    s = syntax_dict[key]['主谓关系']
-                except:
-                    pass
-                    #print("没有主谓关系")
+                    try:
+                        s = syntax_dict[key]['主谓关系']
+                    except:
+                        pass
+                        #print("没有主谓关系")
 
-                try:
-                    o = syntax_dict[key]['动宾关系']
-                except:
-                    pass
-                    #print("没有动宾关系")
+                    try:
+                        o = syntax_dict[key]['动宾关系']
+                    except:
+                        pass
+                        #print("没有动宾关系")
+                    try:
+                        o = syntax_dict[key]['介宾关系']
+                    except:
+                        pass
+                        #print("没有动宾关系")
 
-                res_tuple = self.tuple_fillter_svo(syntaxtuple, recognizedentity,
-                                                   three_tuple_entity(S=s, P=key, O=o))
-                res_tuples.append(res_tuple)
+                    res_tuple = self.tuple_fillter_svo(syntaxtuple, recognizedentity,
+                                                       three_tuple_entity(S=s, P=key, O=o))
+                    res_tuples.append(res_tuple)
 
         return res_tuples
         #

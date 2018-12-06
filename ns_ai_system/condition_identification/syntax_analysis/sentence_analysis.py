@@ -22,14 +22,16 @@ class HanlpSynataxAnalysis:
             i = j
             flag = False
             case_digit = 0
-            while case_digit != 2:
+            search_window = 10
+            while case_digit != 2 and i>j-search_window:
                 if str(sentence[i - 1]).isdigit():
                     case_digit = 1
                 elif case_digit == 1:
                     flag = True
                     case_digit = 2
-                if i > 0:
-                    i = i - 1
+                i = i - 1
+                if i == 0:
+                    break
             if flag == True:
                 sentence = sentence[0:i + 1] + "超过" + sentence[i + 1:j] + sentence[j + 2:]
                 # print(sentence)
@@ -37,14 +39,16 @@ class HanlpSynataxAnalysis:
             i = j
             flag = False
             case_digit = 0
-            while case_digit != 2:
+            search_window = 10
+            while case_digit != 2 and i>j-search_window:
                 if str(sentence[i - 1]).isdigit():
                     case_digit = 1
                 elif case_digit == 1:
                     flag = True
                     case_digit = 2
-                if i > 0:
-                    i = i - 1
+                i = i - 1
+                if i == 0:
+                    break
             if flag == True:
                 sentence = sentence[0:i + 1] + "低于" + sentence[i + 1:j] + sentence[j + 2:]
 
@@ -54,8 +58,6 @@ class HanlpSynataxAnalysis:
         sentence = self.sentencePreprocessing(sentence)
         parseresult = HanLP.parseDependency(sentence)
         word_array = parseresult.getWordArray()
-
-        # print(sentence)
         syntax_tuples = []
         for word in word_array:
             # print(word)
@@ -63,7 +65,7 @@ class HanlpSynataxAnalysis:
                 syntax_tuple(LEMMA=word.LEMMA, DEPREL=word.DEPREL, HEADLEMMA=word.HEAD.LEMMA, POSTAG=word.POSTAG,
                              HEAD=word.HEAD))
             # if str(word.POSTAG).strip() == "v":
-            # print("%s --%s--> %s--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA,word.POSTAG))
+            print("%s --%s--> %s--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA,word.POSTAG))
         # print(syntax_dict)
         return syntax_tuples
 
@@ -113,14 +115,11 @@ class HanlpSynataxAnalysis:
 if __name__ == "__main__":
     # #CustomDictionary.reload()
     synataxanalysis = HanlpSynataxAnalysis()
-    synataxanalysis.reloadHanlpCustomDictionary(r'I:\NS_policy_recommendation\res\word_segmentation')
+    # synataxanalysis.reloadHanlpCustomDictionary(r'I:\NS_policy_recommendation\res\word_segmentation')
 
-    entity = [word_entity(order='16', word='营业收入', category='norm', len=1, ordercount=4),
-              word_entity(order='17', word='1亿元', category='number', len=2, ordercount=3)]
-    sentence = '上一年度纳入我区统计核算的营业收入高于5000万元'
-    sentence2 = '2.是外资企业：'
+
+    sentence2 = '（二）企业申报当年须是区内规模以上工业企业'
     try:
-        # presentence = synataxanalysis.sentencePreprocessing(sentence,entity)
         res = synataxanalysis.parseDependency(sentence2)
         print(res)
 

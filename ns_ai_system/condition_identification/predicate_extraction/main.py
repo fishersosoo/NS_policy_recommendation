@@ -1,0 +1,10 @@
+from condition_identification.predicate_extraction.tupletree_api import construct_tupletree_by_file
+
+if __name__ == '__main__':
+    filename = r'C:\Users\edward\Desktop\10.txt'
+    tree = construct_tupletree_by_file(filename)
+
+
+    for node in tree.get_all_nodes():
+        print(node['TYPE']+" : "+node['CONTENT'])
+
