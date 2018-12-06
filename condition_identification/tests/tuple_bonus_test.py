@@ -1,6 +1,7 @@
 # coding=utf-8
 import sys
 import re
+import os
 
 sys.path.append("..")
 try:
@@ -14,9 +15,9 @@ except Exception:
 
 from syntax_analysis.sentence_analysis import HanlpSynataxAnalysis
 
-def test_subtree():
+def test_subtree(text):
     tree=DocTree()
-    tree.construct('../bonus_identify/广州南沙新区(自贸片区)促进总部经济发展扶持办法｜广州市南沙区人民政府.txt')
+    tree.construct(text)
 
 
     dict_dir=r"I:\NS_policy_recommendation\res\word_segmentation"
@@ -41,11 +42,24 @@ def test_tupleextract(sentence):
         pass
 
 if __name__ == "__main__":
+    #synataxanalysis = HanlpSynataxAnalysis()
+    #synataxanalysis.reloadHanlpCustomDictionary(r'I:\NS_policy_recommendation\res\word_segmentation')
+    # sentence = '爸爸爱运动'
+    #
+    # test_tupleextract(sentence)
+    #test_subtree(text)
 
-    synataxanalysis = HanlpSynataxAnalysis()
-    synataxanalysis.reloadHanlpCustomDictionary(r'I:\NS_policy_recommendation\res\word_segmentation')
-    sentence = '是外资企业：'
+    files = os.listdir(r'bonus_identify\doc')
+    for f_name in files:
+        print(f_name)
+        tree = DocTree()
+        tree.construct(r'bonus_identify/doc/'+f_name)
+        t=tree.get_bonus_tree()
+        t.show()
 
-    test_tupleextract(sentence)
-    #test_subtree()
+        tuplebonus = TupleBonus()
+        tuplebonus.bonus_tuple_analysis(t)
+        tuplebonus.get_bonus_tree().show()
+        break
+
 

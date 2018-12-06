@@ -110,13 +110,16 @@ class TupleBonus:
         print(bonus_content)
 
     def get_all_bonus_list(self, t):
-        count = 0
-        bonus_list = []
-        while t.get_node('c' + 'root' + str(count)):
-            node = t.parent('c' + 'root' + str(count))
-            bonus_list.append(node.identifier)
-            count += 1
+        # count = 0
+        # bonus_list = []
+        # while t.get_node('c' + 'root' + str(count)):
+        #     node = t.parent('c' + 'root' + str(count))
+        #     bonus_list.append(node.identifier)
+        #     count += 1
+        node = t.all_nodes()[0]
 
+        bonus_list = []
+        bonus_list.append(node.identifier)
         return bonus_list
 
     def bonus_tuple_analysis(self, doctree):
@@ -128,10 +131,12 @@ class TupleBonus:
         tagnumber = 1
 
         for bonus in bonuslist:
-            all_bonus_content = self.get_all_bonus_content(bonus, pytree)
-            bonus_content = pytree.get_node(bonus).tag[0]
-            bonus_node = self.bonus_tree.create_node(tag=all_bonus_content, identifier=str(tagnumber), parent="root",
-                                                     data=self.get_node_data_dic("BONUS", all_bonus_content))
+
+            #all_bonus_content = self.get_all_bonus_content(bonus, pytree)
+            bonus_content = pytree.get_node(bonus).tag
+
+            bonus_node = self.bonus_tree.create_node(tag=bonus_content, identifier=str(tagnumber), parent="root",
+                                                     data=self.get_node_data_dic("BONUS", bonus_content))
 
             # 构建每个优惠的条件节点树
             bonus_childrens = pytree.children(bonus)
@@ -140,6 +145,7 @@ class TupleBonus:
             subtree = Tree(pytree.subtree(bonus_childrens[0].identifier), deep=True)
             flag = self.analysis_single_bonus(bonus_content, subtree, str(tagnumber))
 
+            flag = True
             if flag == False:
                 self.bonus_tree.remove_subtree(str(tagnumber))
             # print('\n')
@@ -149,24 +155,26 @@ class TupleBonus:
     def analysis_single_bonus(self, bonus, subtree, tagnumber):
         # print("subtree:")
         # print(subtree)
-
         flag = False
 
-        path_lists = subtree.paths_to_leaves()
-        path_list = []
+        path_list = subtree.paths_to_leaves()
 
-        if len(path_lists) > 0:
-            path_list = path_lists[0]
+        if len(path_list) > 0:
+            pass
         else:
             return flag
 
         logictag = "and" + str(tagnumber)
         self.bonus_tree.create_node("AND", identifier=logictag, parent=tagnumber,
                                     data=self.get_node_data_dic("LOGIC", "AND"))
-        for i, id in enumerate(path_list):
+        print(path_list)
+
+        for i, idlist in enumerate(path_list):
+
             if i == 0:
                 continue
-            sentence = subtree.get_node(id).tag[0]
+            id = idlist[1]
+            sentence = subtree.get_node(id).tag
             print(sentence)
             for spo in self.tuple_extract(sentence):
                 if spo is not None:
