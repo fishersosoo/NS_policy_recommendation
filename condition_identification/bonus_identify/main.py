@@ -1,7 +1,7 @@
 # coding=UTF-8
 from util import get_namecombine
 from Tree import DocTree
-import docx
+
 from win32com import client as wc
 import os
 def doc2docx(doc_name,docx_name):

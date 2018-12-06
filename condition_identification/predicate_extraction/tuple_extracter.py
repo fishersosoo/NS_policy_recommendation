@@ -45,7 +45,7 @@ class TupleExtracter:
                 number.append(ents.word)
 
         res_tuple = spotuple
-        res_tuple = None
+        #res_tuple = None
         #主语为指标名
         if tuple_s in norm and tuple_o != None :
             if "元" in tuple_o :

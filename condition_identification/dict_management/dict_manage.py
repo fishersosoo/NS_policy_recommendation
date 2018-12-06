@@ -2,8 +2,6 @@
 
 import os
 
-from jpype import JClass
-from pyhanlp import SafeJClass
 
 os.chdir("..")
 

@@ -1,9 +1,8 @@
 import re
 from pyhanlp import *
-import docx
 from treelib import Node,Tree
 import queue
-from util import get_namecombine
+from bonus_identify.util import get_namecombine
 from collections import defaultdict
 # 注意事项：
 # 所有树的操作都是共享的，所以必须要使用copy函数new新的空间，哪怕是paste或者取子树，最后都是对同一个对象进行操作
