@@ -1,43 +1,50 @@
 # coding=UTF-8
-import os
-
-from docx import Document
+from util import get_namecombine
+from Tree import DocTree
+import docx
 from win32com import client as wc
-
-from condition_identification.bonus_identify.Tree import DocTree
-
-
-def doc2docx(doc_name, docx_name):
+import os
+def doc2docx(doc_name,docx_name):
     # 首先将doc转换成docx
-    word = wc.Dispatch("Word.Application")
+    word = client.Dispatch("Word.Application")
     doc = word.Documents.Open(doc_name)
-    # 使用参数16表示将doc转换成docx
-    doc.SaveAs(docx_name, 16)
+    #使用参数16表示将doc转换成docx
+    doc.SaveAs(docx_name,16)
     doc.Close()
     word.Quit()
-
-
-def doc2txt(doc_name, txt_name):
+def doc2txt(doc_name,txt_name):
     doc2docx(doc_name, 'tmp.docx')
     document = Document('tmp.docx')
-    F = open(txt_name, 'w')
+    F=open(txt_name,'w')
     ps = document.paragraphs
     for x in ps:
         F.write(x.text)
         F.write('\n')
         print(x.text)
     F.close()
-
-
 if __name__ == '__main__':
-    files = os.listdir('guide_doc')
+    files = os.listdir('doc')
     for f_name in files:
         print(f_name)
         tree = DocTree()
-        tree.construct('guide_doc/' + f_name)
-        t = tree.get_bonus_tree()
+        tree.construct('doc/'+f_name,1)
+        t=tree.get_bonus_tree()
         t.show()
+    tree.construct('2017年度专利质押融资贴息办事指南\n一、政策依据\n1.《广州南沙新区（自贸片区）促进科技创新产业发展扶持办法》（穗南开管办〔2017〕1号）第二十五条\n2.《广州南沙新区（自贸片区）促进科技创新产业发展扶持办法实施细则》（穗南开工科信〔2017〕13号）第三十九条\n二、申请条件',2)
+    tree.get_tree().show()
     # tree = DocTree()
     # tree.construct('t.txt')
     # tree.get_tree().show()
     # b=tree.get_bonus_tree().show()
+
+
+
+
+
+
+
+
+
+
+
+
