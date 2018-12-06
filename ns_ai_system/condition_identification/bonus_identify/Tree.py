@@ -3,6 +3,7 @@ from pyhanlp import *
 import docx
 from treelib import Node,Tree
 import queue
+from util import get_namecombine
 from collections import defaultdict
 # 注意事项：
 # 所有树的操作都是共享的，所以必须要使用copy函数new新的空间，哪怕是paste或者取子树，最后都是对同一个对象进行操作
@@ -19,9 +20,31 @@ class DocTree:
         def get_tree(self):
             return self.tree
         # 通过文档名字构建树
-        def construct(self,filename):
-            html_list=self.file_tolist(filename)
+        def construct(self,str,type):
+            self.level_key = {0: ['root']}
+            self.key_level = {}
+            self.tree = Tree()
+            self.title=''
+            try:
+                if type==1:
+                    html_list=self.file_tolist(str)
+                if type==2:
+                    html_list = self.str_tolist(str)
+            except:
+                print('无法解析')
             self.parse_totree( html_list)
+        # 读取字符串
+        def str_tolist(self,str):
+            html_list=[]
+            for line in str.split('\n'):
+                line = line.strip()
+                if line == '':
+                    if len(html_list) > 10:
+                        break
+                    else:
+                        continue
+                html_list.append(line)
+            return html_list
         # 读取文件成list
         def file_tolist(self,file):
             html_list = []
