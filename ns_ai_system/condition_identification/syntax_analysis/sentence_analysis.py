@@ -65,7 +65,7 @@ class HanlpSynataxAnalysis:
                 syntax_tuple(LEMMA=word.LEMMA, DEPREL=word.DEPREL, HEADLEMMA=word.HEAD.LEMMA, POSTAG=word.POSTAG,
                              HEAD=word.HEAD))
             # if str(word.POSTAG).strip() == "v":
-            print("%s --%s--> %s--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA,word.POSTAG))
+            #print("%s --%s--> %s--> %s" % (word.LEMMA, word.DEPREL, word.HEAD.LEMMA,word.POSTAG))
         # print(syntax_dict)
         return syntax_tuples
 
