@@ -24,10 +24,16 @@ class TupleExtracter:
         # return last_word
         #print("completetuple"+word)
 
+
+        if word =="立项":
+            k=1
         for tuple in syntaxtuple:
-            if tuple.HEADLEMMA == word and tuple.DEPREL == "定中关系":
+            if tuple.HEADLEMMA == word and (tuple.DEPREL == "定中关系"or tuple.DEPREL == "前置宾语"):
                 addword = tuple.LEMMA
                 word = self.complete_tuple(addword,syntaxtuple)+word
+            elif tuple.HEADLEMMA == word and tuple.DEPREL == "并列关系":
+                addword = tuple.LEMMA
+                word = word+self.complete_tuple(addword,syntaxtuple)+word
             else:
                 continue
         return word
@@ -94,7 +100,7 @@ class TupleExtracter:
         for word in syntaxtuple:
 
             try:
-                if str(word.DEPREL).strip() == "主谓关系" or str(word.DEPREL).strip() == "动宾关系"or str(word.DEPREL).strip() == "介宾关系":
+                if str(word.DEPREL).strip() == "主谓关系" or str(word.DEPREL).strip() == "动宾关系"or str(word.DEPREL).strip() == "介宾关系"or str(word.DEPREL).strip() == "动补结构":
                     syntaxdict_dict = {}
 
                     if str(word.HEAD.LEMMA) in syntax_dict.keys():
@@ -110,14 +116,14 @@ class TupleExtracter:
 
             except:
                 print("predicate_extraction error")
-        print(syntax_dict)
+        #print(syntax_dict)
 
         for key in syntax_dict:
             s = ""
             o = ""
             if key in keywords:
                 if "主谓关系" in syntax_dict[key].keys() or "动宾关系" in syntax_dict[key].keys() \
-                        or "介宾关系" in syntax_dict[key].keys():
+                        or "介宾关系" in syntax_dict[key].keys()or "动补结构" in syntax_dict[key].keys():
 
                     try:
                         s = syntax_dict[key]['主谓关系']
@@ -127,11 +133,22 @@ class TupleExtracter:
 
                     try:
                         o = syntax_dict[key]['动宾关系']
+                        if o in syntax_dict.keys():
+                            if '主谓关系' in syntax_dict[o].keys():
+                                o = o + syntax_dict[o]['主谓关系']
                     except:
                         pass
                         #print("没有动宾关系")
                     try:
                         o = syntax_dict[key]['介宾关系']
+                    except:
+                        pass
+                        #print("没有动宾关系")
+
+                    try:
+                        dongbu = syntax_dict[key]['动补结构']
+                        o = syntax_dict[dongbu]['介宾关系']
+                        key = key + dongbu
                     except:
                         pass
                         #print("没有动宾关系")

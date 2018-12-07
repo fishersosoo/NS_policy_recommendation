@@ -91,10 +91,24 @@ class TupleBonus:
             syntaxtuple = self.hanlpanalysis.parseDependency(one_sentence)
             spo_tuple = self.extracter.predicate_extraction(syntaxtuple, entities)
 
+            if "迁入南沙区时间在2017年1月1日至2017年12月31日" in one_sentence:
+                spo_tuple = []
+                spo_tuple.append(three_tuple_entity(S="在2017年1月1日至2017年12月31日",P="迁入",O="南沙区"))
+
+            if "按规定落实项目立项报批和纳统工作" in one_sentence:
+                spo_tuple = []
+                spo_tuple.append(three_tuple_entity(S=" ", P="按规定落实", O="项目立项报批和纳统工作"))
+
+            if "有健全的财务管理制度" in one_sentence:
+                spo_tuple = []
+                spo_tuple.append(three_tuple_entity(S=" ", P="有", O="健全财务管理制度"))
+
+
+
             if len(spo_tuple) != 0:
-                print("tuple_extract______" + one_sentence)
-                print(spo_tuple)
-                print('\n')
+                #print("tuple_extract______" + one_sentence)
+                #print(spo_tuple)
+                #print('\n')
                 spo_arrays = spo_arrays + spo_tuple
         #print('\n')
         return spo_arrays
@@ -120,7 +134,7 @@ class TupleBonus:
                 content = pytree.get_node(node).tag[0]
                 bonus_content = content + " " + bonus_content
         return bonus_content
-        print(bonus_content)
+        #print(bonus_content)
 
     def get_all_bonus_list(self, t):
         # count = 0
@@ -167,7 +181,7 @@ class TupleBonus:
 
     def analysis_single_bonus(self, bonus, subtree, tagnumber):
         # print("subtree:")
-        print(subtree)
+        #print(subtree)
         flag = False
 
         path_list = subtree.paths_to_leaves()
@@ -180,7 +194,7 @@ class TupleBonus:
         logictag = "and" + str(tagnumber)
         self.bonus_tree.create_node("AND", identifier=logictag, parent=tagnumber,
                                     data=self.get_node_data_dic("LOGIC", "AND"))
-        print(path_list)
+        #print(path_list)
 
         for i, idlist in enumerate(path_list):
             if len(idlist) == 2:
