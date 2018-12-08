@@ -1,12 +1,12 @@
 # coding=utf-8
-from flask import request, url_for
+import os
+
+from flask import request
 from flask_restful import Api, Resource, reqparse
 
-from condition_identification.bonus_identify.Tree import DocTree
-from condition_identification.predicate_extraction.tuple_bonus_recognize import TupleBonus
-from data_management.graph_access import build_policy_graph
-from data_management.models.policy import Policy
 from restful_server.policy import policy_service
+from service.file_processing import get_text_from_doc_bytes
+from service.policy_graph_construct import build_policy_graph
 
 policy_api = Api(policy_service)
 
@@ -30,28 +30,15 @@ class PolicyRecommendAPI(Resource):
         return {}, 200
 
 
-@policy_service.route("/")
-def x():
-    print(url_for("policy_service.UnderstandPolicyFile"))
-    return "", 200
-
-
-@policy_service.route("understand_file/", methods=["GET","POST"])
-def UnderstandPolicyFile():
-    file = request.files['file'].read()
-    policy = Policy.create(content=request.files['file'].filename)
-    tree = DocTree()
-    # tree.construct_from_bytes(file)
-    tuplebonus = TupleBonus(None, if_edit_hanlpdict=0)
-    pytree=tree.get_bonus_tree()
-    print("pytree.show()")
-    pytree.show()
-    tuplebonus.bonus_tuple_analysis(pytree)
-    build_policy_graph(policy, tuplebonus.get_bonus_tree())
+@policy_service.route("understand_file/<string:policy_id>/", methods=["POST"])
+def UnderstandPolicyFile(policy_id):
+    file_bytes = request.files['file'].read()
+    policy_name = os.path.splitext(request.files['file'].filename)[0]
+    file_text = get_text_from_doc_bytes(file_bytes)
+    # file_text=file_bytes.decode(encoding="utf-8")
+    build_policy_graph(file_text, policy_id, policy_name)
     return "", 200
 
 
 policy_api.add_resource(PolicyUnderstandAPI, "understand/")
 policy_api.add_resource(PolicyRecommendAPI, "recommend/")
-
-

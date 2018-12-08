@@ -84,5 +84,5 @@ class DictManagement:
 
 
 if __name__ == "__main__":
-    # DictManagement.upload_dict("../res/word_segmentation")
-    DictManagement.reload_dict()
+    DictManagement.upload_dict("../../res/word_segmentation")
+    # DictManagement.reload_dict()
