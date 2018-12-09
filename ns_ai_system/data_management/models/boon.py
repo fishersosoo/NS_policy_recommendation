@@ -8,7 +8,6 @@ from data_management.models.requirement import Requirement
 class Boon(BaseInterface):
     @classmethod
     def create(cls, **kwargs):
-        # kwargs["id"]=
         node = Node(cls.__name__, id=UUID(), **kwargs)
         graph_.create(node)
         return node["id"]
