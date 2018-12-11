@@ -24,9 +24,6 @@ class TupleExtracter:
         # return last_word
         #print("completetuple"+word)
 
-
-        if word =="立项":
-            k=1
         for tuple in syntaxtuple:
             if tuple.HEADLEMMA == word and (tuple.DEPREL == "定中关系"or tuple.DEPREL == "前置宾语"):
                 addword = tuple.LEMMA
@@ -52,37 +49,46 @@ class TupleExtracter:
         tuple_s = spotuple.S
         tuple_p = spotuple.P
         tuple_o = spotuple.O
-        #print(spotuple)
-        category = []
-        norm = []
-        qualification =[]
-        number = []
+        # #print(spotuple)
+        # category = []
+        # norm = []
+        # qualification =[]
+        # number = []
+        # print(recognizedentity)
+        # for ents in recognizedentity:
+        #     if ents.category == "norm":
+        #         norm.append(ents.word)
+        #     elif ents.category == "category":
+        #         category.append(ents.word)
+        #     elif ents.category == "qualification":
+        #         qualification.append(ents.word)
+        #     elif ents.category == "number":
+        #         number.append(ents.word)
+        #
+        # res_tuple = spotuple
+        # #res_tuple = None
+        # #主语为指标名
+        # if tuple_s in norm and tuple_o != None :
+        #     if "元" in tuple_o :
+        #         res_tuple =  three_tuple_entity(S=tuple_s, P=self.complete_tuple(tuple_p,syntaxtuple), O=self.complete_tuple(tuple_o,syntaxtuple))
+        #     if "以上" in tuple_o :
+        #         res_tuple =  three_tuple_entity(S=tuple_s, P=tuple_p, O=self.complete_tuple(tuple_o,syntaxtuple))
+        #
+        # #宾语为资格名、类型名
+        # elif tuple_o in qualification or tuple_o in category:
+        #     res_tuple = spotuple
+        # else:
+        #     res_tuple = three_tuple_entity(S=self.complete_tuple(tuple_s, syntaxtuple), P=tuple_p, O=self.complete_tuple(tuple_o, syntaxtuple))
 
-        for ents in recognizedentity:
-            if ents.category == "norm":
-                norm.append(ents.word)
-            elif ents.category == "category":
-                category.append(ents.word)
-            elif ents.category == "qualification":
-                qualification.append(ents.word)
-            elif ents.category == "number":
-                number.append(ents.word)
-
-        res_tuple = spotuple
-        #res_tuple = None
-        #主语为指标名
-        if tuple_s in norm and tuple_o != None :
-            if "元" in tuple_o :
-                res_tuple =  three_tuple_entity(S=tuple_s, P=self.complete_tuple(tuple_p,syntaxtuple), O=self.complete_tuple(tuple_o,syntaxtuple))
-            if "以上" in tuple_o :
-                res_tuple =  three_tuple_entity(S=tuple_s, P=tuple_p, O=self.complete_tuple(tuple_o,syntaxtuple))
-
-        #宾语为资格名、类型名
-        elif tuple_o in qualification or tuple_o in category:
-            res_tuple = spotuple
-        else:
-            res_tuple = three_tuple_entity(S=self.complete_tuple(tuple_s, syntaxtuple), P=tuple_p, O=self.complete_tuple(tuple_o, syntaxtuple))
-
+        tuple_s = self.complete_tuple(tuple_s, syntaxtuple)
+        tuple_o = self.complete_tuple(tuple_o, syntaxtuple)
+        s = {}
+        p = {}
+        o = {}
+        s["tag"] = tuple_s
+        p["tag"] = tuple_p
+        o["tag"] = tuple_o
+        res_tuple = three_tuple_entity(S=s, P=p,O=o)
         return res_tuple
 
     #对单个句子进行三元组抽取
@@ -116,7 +122,7 @@ class TupleExtracter:
 
             except:
                 print("predicate_extraction error")
-        #print(syntax_dict)
+        # print(syntax_dict)
 
         for key in syntax_dict:
             s = ""

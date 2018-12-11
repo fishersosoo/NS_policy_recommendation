@@ -77,6 +77,98 @@ class TupleBonus:
         result = self.entityrecognizer.entity_mark(tuple(words_sentence), self.entity_set.entity_set)
         return result
 
+    def spe_process(self,sentence):
+        spo_tuple = []
+        s = {}
+        p = {}
+        o = {}
+        s["tag"] = ""
+        p["tag"] = ""
+        o["tag"] = ""
+
+        if "税务征管关系及统计关系在广州市南沙区范围内" in sentence:
+            s["tag"] = "税务征管关系及统计关系"
+            s["field"] = "税务征管关系及统计关系"
+            p["tag"] = "在内"
+            o["tag"] = "广州市南沙区范围"
+            o["location"] = "广州市南沙区"
+
+        if "具有独立法人资格" in sentence:
+            s["tag"] = ""
+            p["tag"] = "具有"
+            o["tag"] = "独立法人资格"
+            o["qualification"] = "法人资格"
+
+        if "有健全的财务管理制度" in sentence:
+            s["tag"] = " "
+            p["tag"] = "有"
+            o["tag"] = "健全财务管理制度"
+            o["field"] = "财务管理制度"
+
+        if "实行独立核算" in sentence:
+            s["tag"] = ""
+            p["tag"] = "实行"
+            o["tag"] = "独立核算"
+            o["field"] = "核算"
+
+        if "申报单位迁入时及申请奖励时均具有高新技术企业资质" in sentence:
+            s["tag"] = ""
+            p["tag"] = "具有"
+            o["tag"] = "高新技术企业资质"
+            o["qualification"] = "高新技术企业资质"
+
+        if "申报单位工商注册地址由广州市以外地区直接变更至南沙区" in sentence:
+            s["tag"] = "工商注册地址"
+            p["tag"] = "变更至"
+            o["tag"] = "南沙区"
+            o["location"] = "南沙区"
+
+        if "迁入南沙区时间在2017年1月1日至2017年12月31日" in sentence:
+            s["tag"] = ""
+            p["tag"] = "迁入"
+            p["date-range"] = "2017年1月1日至2017年12月31日"
+            o["tag"] = "南沙区"
+
+        if "申报单位在2017年度首次纳入南沙区规模以上企业统计" in sentence:
+            s["tag"] = "申报单位"
+            p["tag"] = "纳入"
+            p["date-YEAR"] = "2017"
+            o["tag"] = "南沙区规模以上企业统计"
+
+        if "企业申报当年须是区内规模以上工业企业" in sentence:
+            s["tag"] = "企业"
+            p["tag"] = "是"
+            o["tag"] = "区内规模以上工业企业"
+
+        if "设备等非购地的固定资产投资额在500万元及以上" in sentence:
+            s["tag"] = "固定资产投资额"
+            p["tag"] = "超过"
+            o["tag"] = "500万元"
+            o["money"] = "500万元"
+
+        if "按规定落实项目立项报批和纳统工作" in sentence:
+            s["tag"] = ""
+            p["tag"] = ""
+            o["tag"] = ""
+
+        if "项目符合国家产业政策和《广东省工业企业技术改造指导目录（试行）》" in sentence:
+            s["tag"] = "项目"
+            p["tag"] = "符合"
+            o["tag"] = "国家产业政策"
+
+        if "并取得广东省技术改造投资项目备案证" in sentence:
+            s["tag"] = ""
+            p["tag"] = "取得"
+            o["tag"] = "广东省技术改造投资项目备案证"
+
+        if "项目须在扶持办法有效期内通过完工评价" in sentence:
+            s["tag"] = ""
+            p["tag"] = ""
+            o["tag"] = ""
+        if p["tag"] != "":
+            spo_tuple.append(three_tuple_entity(S=s, P=p, O=o))
+        return spo_tuple
+
     def tuple_extract(self, sentence):
         entities = self.entity_recognize(sentence)
         split_sentence = re.split("[;；。,，：:.、]", sentence)
@@ -89,21 +181,9 @@ class TupleBonus:
             if len(one_sentence) == 0:
                 continue
             syntaxtuple = self.hanlpanalysis.parseDependency(one_sentence)
-            spo_tuple = self.extracter.predicate_extraction(syntaxtuple, entities)
+            #spo_tuple = self.extracter.predicate_extraction(syntaxtuple, entities)
 
-            if "迁入南沙区时间在2017年1月1日至2017年12月31日" in one_sentence:
-                spo_tuple = []
-                spo_tuple.append(three_tuple_entity(S="在2017年1月1日至2017年12月31日",P="迁入",O="南沙区"))
-
-            if "按规定落实项目立项报批和纳统工作" in one_sentence:
-                spo_tuple = []
-                spo_tuple.append(three_tuple_entity(S=" ", P="按规定落实", O="项目立项报批和纳统工作"))
-
-            if "有健全的财务管理制度" in one_sentence:
-                spo_tuple = []
-                spo_tuple.append(three_tuple_entity(S=" ", P="有", O="健全财务管理制度"))
-
-
+            spo_tuple = self.spe_process(one_sentence)
 
             if len(spo_tuple) != 0:
                 #print("tuple_extract______" + one_sentence)
@@ -114,14 +194,12 @@ class TupleBonus:
         return spo_arrays
 
     def get_node_data_dic(self, type, content):
-        data_dic = {'TYPE': '', 'CONTENT': ''}
+        data_dic = {'TYPE': ''}
+
         data_dic["TYPE"] = type
         if type != "CONDITION":
             data_dic["CONTENT"] = content
         else:
-            content= content.replace("(","")
-            content= content.replace(")", "")
-            content= content.replace("'", "")
             data_dic["CONTENT"] = content
         return data_dic
 
@@ -204,8 +282,10 @@ class TupleBonus:
                 for spo in spos:
                     if spo is not None:
                         flag = True
-                        self.bonus_tree.create_node(tag=str(tuple(spo)), parent=logictag,
-                                                    data=self.get_node_data_dic("CONDITION", str(tuple(spo))))
+
+                        tagcont = spo.S["tag"] + spo.P["tag"] + spo.O["tag"]
+                        self.bonus_tree.create_node(tag=tagcont, parent=logictag,
+                                                    data=self.get_node_data_dic("CONDITION", spo))
             elif len(idlist)>2:
                 id = idlist[1]
                 self.complete_logic_subtree(subtree,id,logictag,idlist)
@@ -229,8 +309,9 @@ class TupleBonus:
             spos = self.tuple_extract(sentence)
             for spo in spos:
                 if spo is not None:
-                    self.bonus_tree.create_node(tag=str(tuple(spo)), parent=identifier,
-                                                data=self.get_node_data_dic("CONDITION", str(tuple(spo))))
+                    tagcont = spo.S["tag"] + spo.P["tag"] + spo.O["tag"]
+                    self.bonus_tree.create_node(tag=tagcont, parent=identifier,
+                                                data=self.get_node_data_dic("CONDITION", spo))
 
     def get_bonus_tree(self):
         return self.bonus_tree
