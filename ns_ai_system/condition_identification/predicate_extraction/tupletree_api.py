@@ -1,5 +1,5 @@
 # coding=utf-8
-from condition_identification.bonus_identify.Tree import DocTree
+from condition_identification.bonus_identify.DocTree import DocTree
 from condition_identification.predicate_extraction.tuple_bonus_recognize import TupleBonus
 
 
