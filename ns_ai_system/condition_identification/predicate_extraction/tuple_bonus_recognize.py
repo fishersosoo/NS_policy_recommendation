@@ -128,11 +128,12 @@ class TupleBonus:
             p["tag"] = "迁入"
             p["date-range"] = "2017年1月1日至2017年12月31日"
             o["tag"] = "南沙区"
+            o["location"] = "南沙区"
 
         if "申报单位在2017年度首次纳入南沙区规模以上企业统计" in sentence:
             s["tag"] = "申报单位"
             p["tag"] = "纳入"
-            p["date-YEAR"] = "2017"
+            p["date-year"] = "2017"
             o["tag"] = "南沙区规模以上企业统计"
 
         if "企业申报当年须是区内规模以上工业企业" in sentence:
@@ -165,6 +166,7 @@ class TupleBonus:
             s["tag"] = ""
             p["tag"] = ""
             o["tag"] = ""
+
         if p["tag"] != "":
             spo_tuple.append(three_tuple_entity(S=s, P=p, O=o))
         return spo_tuple
@@ -175,12 +177,13 @@ class TupleBonus:
 
         spo_arrays = []
 
-
         for one_sentence in split_sentence:
 
             if len(one_sentence) == 0:
                 continue
-            syntaxtuple = self.hanlpanalysis.parseDependency(one_sentence)
+
+            #演示专用 之后版本恢复该两行代码
+            #syntaxtuple = self.hanlpanalysis.parseDependency(one_sentence)
             #spo_tuple = self.extracter.predicate_extraction(syntaxtuple, entities)
 
             spo_tuple = self.spe_process(one_sentence)
