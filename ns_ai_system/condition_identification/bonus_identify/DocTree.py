@@ -15,9 +15,8 @@ class DocTree:
             self.key_level = {}
             self.tree = Tree()
             self.title=''
-        # 获取树
-        def get_tree(self):
-            return self.tree
+# 构造结构树
+
         # 通过文档名字构建树
         def construct(self,str,type):
             self.level_key = {0: ['root']}
@@ -51,7 +50,7 @@ class DocTree:
                 for line in f.readlines():
                     line=line.strip()
                     if line=='':
-                        if len(html_list)>10:
+                        if len(html_list)>20:
                             break
                         else:
                             continue
@@ -119,6 +118,43 @@ class DocTree:
 
 
 
+
+
+# 识别优惠树
+        keywords = ['奖', '奖励', '资助', '补贴', '补助', '支持', '资金'] # 奖励识别的关键字
+        # 只识别条件了
+        def get_bonus_tree(self):
+            bonus_tree=Tree()
+            doc_tree=self.get_tree()
+            c_nid=''
+            b_nid=''
+            b_data=''
+            for nid in self.level_key[1]:
+                if '条件'in doc_tree.get_node(nid).data[0]:
+                    c_nid=nid
+                for key in self.keywords:
+                    if key in doc_tree.get_node(nid).data[0]:
+                        b_nid=nid
+                        break
+            if b_nid!='':
+                for node in doc_tree.expand_tree(nid=b_nid, mode=Tree.DEPTH):
+                    if node==b_nid:
+                        continue
+                    b_data+=','.join(doc_tree[node].data)
+            # 奖励内容粘贴在root下
+            # 条件内容copy然后分别粘贴再不同的奖励下面
+                bonus_tree.create_node(identifier='root',tag=b_data,data=b_data)
+                bonus_tree.create_node('partition', 'partition', parent='root')
+                new_tree=self.copy_tree(doc_tree.subtree(c_nid),'')
+                for children in new_tree.children(''+'_'+c_nid):
+                    bonus_tree.paste('partition', new_tree.subtree(children.identifier))
+            return bonus_tree
+
+
+# 通用方法
+        # 获取树
+        def get_tree(self):
+            return self.tree
         def copy_tree(self,tree,diff):
             '''
             :param tree: 原树
@@ -138,40 +174,7 @@ class DocTree:
                 if tree.children(nid):
                     for n in tree.children(nid):
                         id_queue.put(n)
-
             return new_tree
-
-
-        keywords = ['奖', '奖励', '资助', '补贴', '补助', '支持', '资金'] # 奖励识别的关键字
-        # 只识别条件了
-        def get_bonus_tree(self):
-            bonus_tree=Tree()
-            doc_tree=self.get_tree()
-            c_nid=''
-            b_nid=''
-            b_data=''
-            for nid in self.level_key[1]:
-                if '条件'in doc_tree.get_node(nid).data[0]:
-                    c_nid=nid
-                for key in self.keywords:
-                    if key in doc_tree.get_node(nid).data[0]:
-                        b_nid=nid
-                        break
-
-            if b_nid!='':
-                for node in doc_tree.expand_tree(nid=b_nid, mode=Tree.DEPTH):
-                    if node==b_nid:
-                        continue
-                    b_data+=','.join(doc_tree[node].data)
-            # 奖励内容粘贴在root下
-            # 条件内容copy然后分别粘贴再不同的奖励下面
-                bonus_tree.create_node(identifier='root',tag=b_data,data=b_data)
-                bonus_tree.create_node('partition', 'partition', parent='root')
-                new_tree=self.copy_tree(doc_tree.subtree(c_nid),'')
-                for children in new_tree.children(''+'_'+c_nid):
-                    bonus_tree.paste('partition', new_tree.subtree(children.identifier))
-            return bonus_tree
-
 if __name__ == '__main__':
     new_tree = Tree()
     new_tree.create_node('a','a',data=[0,1])
