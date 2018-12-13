@@ -1,20 +1,14 @@
 # coding=utf-8
-import json
 
-from celery import Celery
-from flask import Flask, request
+from flask import Flask
+from flask_pymongo import PyMongo
 
-# from restful_server.celery_ import celery
+from restful_server.func import CustomJSONEncoder
 
 app = Flask(__name__)
-app.config.update(
-    CELERY_BROKER_URL='redis://ns.fishersosoo.xyz:8000',
-    CELERY_RESULT_BACKEND='redis://ns.fishersosoo.xyz:8000',
-    CELERY_RESULT_SERIALIZER='json',
-    CELERY_TASK_SERIALIZER='json',
-    CELERY_ACCEPT_CONTENT=['json'],
-)
-
+app.json_encoder = CustomJSONEncoder
+app.config["MONGO_URI"] = "mongodb://ns.fishersosoo.xyz:80/ai_system"
+mongo = PyMongo(app)
 
 from restful_server.policy import policy_service
 

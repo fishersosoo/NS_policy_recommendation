@@ -5,7 +5,7 @@ import os
 
 sys.path.append("..")
 try:
-    from ..bonus_identify.Tree import DocTree
+    from ..bonus_identify.DocTree import DocTree
     from ..predicate_extraction.tuple_bonus_recognize import TupleBonus
     from ..predicate_extraction.tuple_bonus_recognize import Bonus_Condition_Tree
 except Exception:

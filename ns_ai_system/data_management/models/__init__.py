@@ -56,17 +56,24 @@ class BaseInterface:
             return [], dict(), None
         return node.labels, dict(**node), node
 
+    @classmethod
+    def find(cls, *args, **kwargs):
+        nodes = NodeMatcher(graph_).match(*args, **kwargs).all()
+        for node in nodes:
+            yield node.labels, dict(**node), node
+
 
 if __name__ == "__main__":
+    pass
     g = Graph(host="cn.fishersosoo.xyz", user="neo4j", password="1995")
     # g.get
     # # p = PolicyGraphObject("Subject", "Requirement", x=1)
     # # # print(p)
     # # # p.save(g)
     # # # print(p)
-    for i in range(10):
-        p = PolicyGraphObject.find(g)[0]
-        print(p)
+    # for i in range(10):
+    #     p = PolicyGraphObject.find(g)[0]
+    #     print(p)
     # p.update_from_graph(g)
     # print(p)
     # p.save(g)

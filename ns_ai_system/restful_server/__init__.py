@@ -7,4 +7,4 @@ config = dict()
 # for key, value in cfg.items("server"):
 #     config[key] = value
 
-config["port"]=8000
+config["port"] = 9000

@@ -1,6 +1,7 @@
 # coding=UTF-8
-from util import get_namecombine
-from Tree import DocTree
+from util import get_doctime
+from DocTree import DocTree
+from treelib import Node,Tree
 import docx
 from win32com import client as wc
 import os
@@ -30,12 +31,13 @@ if __name__ == '__main__':
         tree.construct('doc/'+f_name,1)
         t=tree.get_bonus_tree()
         t.show()
-    tree.construct('2017年度专利质押融资贴息办事指南\n一、政策依据\n1.《广州南沙新区（自贸片区）促进科技创新产业发展扶持办法》（穗南开管办〔2017〕1号）第二十五条\n2.《广州南沙新区（自贸片区）促进科技创新产业发展扶持办法实施细则》（穗南开工科信〔2017〕13号）第三十九条\n二、申请条件',2)
-    tree.get_tree().show()
+        print(get_doctime(tree))
+
+
     # tree = DocTree()
-    # tree.construct('t.txt')
-    # tree.get_tree().show()
-    # b=tree.get_bonus_tree().show()
+    # tree.construct('2017年度专利质押融资贴息办事指南\n一、政策依据\n1.《广州南沙新区（自贸片区）促进科技创新产业发展扶持办法》（穗南开管办〔2017〕1号）第二十五条\n2.《广州南沙新区（自贸片区）促进科技创新产业发展扶持办法实施细则》（穗南开工科信〔2017〕13号）第三十九条\n二、申请条件',2)
+    # tree.get_bonus_tree().show()
+
 
 
 

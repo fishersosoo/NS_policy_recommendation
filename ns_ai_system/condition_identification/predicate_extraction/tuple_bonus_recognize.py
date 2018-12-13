@@ -1,14 +1,13 @@
 import re
+from collections import namedtuple
+
+from treelib import Tree
 
 from condition_identification.dict_management.dict_manage import EntityDict
-from condition_identification.word_segmentation.jieba_segmentation import Segmentation
 from condition_identification.entity_link.entity_recognizer import EntityRecognizer
-from condition_identification.syntax_analysis.sentence_analysis import HanlpSynataxAnalysis
 from condition_identification.predicate_extraction.tuple_extracter import TupleExtracter
-
-from collections import namedtuple
-from os import path
-from treelib import Tree
+from condition_identification.syntax_analysis.sentence_analysis import HanlpSynataxAnalysis
+from condition_identification.word_segmentation.jieba_segmentation import Segmentation
 
 word_entity = namedtuple('word_entity', ['order', 'word', 'category', 'len', 'ordercount'])
 three_tuple_entity = namedtuple('three_tuple_entity', ['S', 'P', 'O'])
@@ -182,18 +181,20 @@ class TupleBonus:
             if len(one_sentence) == 0:
                 continue
 
+
             #演示专用 之后版本恢复该两行代码
             #syntaxtuple = self.hanlpanalysis.parseDependency(one_sentence)
             #spo_tuple = self.extracter.predicate_extraction(syntaxtuple, entities)
 
             spo_tuple = self.spe_process(one_sentence)
 
+
             if len(spo_tuple) != 0:
-                #print("tuple_extract______" + one_sentence)
-                #print(spo_tuple)
-                #print('\n')
+                # print("tuple_extract______" + one_sentence)
+                # print(spo_tuple)
+                # print('\n')
                 spo_arrays = spo_arrays + spo_tuple
-        #print('\n')
+        # print('\n')
         return spo_arrays
 
     def get_node_data_dic(self, type, content):
@@ -203,6 +204,7 @@ class TupleBonus:
         if type != "CONDITION":
             data_dic["CONTENT"] = content
         else:
+
             data_dic["CONTENT"] = content
         return data_dic
 
@@ -215,7 +217,7 @@ class TupleBonus:
                 content = pytree.get_node(node).tag[0]
                 bonus_content = content + " " + bonus_content
         return bonus_content
-        #print(bonus_content)
+        # print(bonus_content)
 
     def get_all_bonus_list(self, t):
         # count = 0
@@ -240,7 +242,7 @@ class TupleBonus:
 
         for bonus in bonuslist:
 
-            #all_bonus_content = self.get_all_bonus_content(bonus, pytree)
+            # all_bonus_content = self.get_all_bonus_content(bonus, pytree)
             bonus_content = pytree.get_node(bonus).tag
 
             bonus_node = self.bonus_tree.create_node(tag=bonus_content, identifier=str(tagnumber), parent="root",
@@ -262,7 +264,7 @@ class TupleBonus:
 
     def analysis_single_bonus(self, bonus, subtree, tagnumber):
         # print("subtree:")
-        #print(subtree)
+        # print(subtree)
         flag = False
 
         path_list = subtree.paths_to_leaves()
@@ -275,7 +277,7 @@ class TupleBonus:
         logictag = "and" + str(tagnumber)
         self.bonus_tree.create_node("AND", identifier=logictag, parent=tagnumber,
                                     data=self.get_node_data_dic("LOGIC", "AND"))
-        #print(path_list)
+        # print(path_list)
 
         for i, idlist in enumerate(path_list):
             if len(idlist) == 2:
@@ -286,16 +288,18 @@ class TupleBonus:
                     if spo is not None:
                         flag = True
 
+
                         tagcont = spo.S["tag"] + spo.P["tag"] + spo.O["tag"]
                         self.bonus_tree.create_node(tag=tagcont, parent=logictag,
                                                     data=self.get_node_data_dic("CONDITION", spo))
             elif len(idlist)>2:
+
                 id = idlist[1]
-                self.complete_logic_subtree(subtree,id,logictag,idlist)
+                self.complete_logic_subtree(subtree, id, logictag, idlist)
 
         return flag
 
-    def complete_logic_subtree(self,subtree,identifier,parent,pathlist):
+    def complete_logic_subtree(self, subtree, identifier, parent, pathlist):
         sentence = subtree.get_node(identifier).tag
 
         if self.bonus_tree.get_node(identifier) == None:
