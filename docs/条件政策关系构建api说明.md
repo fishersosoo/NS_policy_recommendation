@@ -23,7 +23,7 @@
 ###1：遍历关系树
 #####返回：根据DFS遍历节点后的数组
 #####接口：get_all_nodes()
-返回值示例：[{'TYPE': 'BONUS', 'CONTENT': '关于申报2017年度高新技术企业入统奖励'}, {'TYPE': 'LOGIC', 'CONTENT': 'AND'}, {'TYPE': 'CONDITION', 'CONTENT': '税务关系, 在, 广州市南沙区范围内'}, {'TYPE': 'CONDITION', 'CONTENT': ', 具有, 独立法人资格'}, {'TYPE': 'CONDITION', 'CONTENT': ', 有, 健全财务制度'}, {'TYPE': 'CONDITION', 'CONTENT': ', 实行, 独立核算'}, {'TYPE': 'CONDITION', 'CONTENT': '申报单位地址, 变更, '}, {'TYPE': 'CONDITION', 'CONTENT': ', 迁入, 南沙区时间'}, {'TYPE': 'CONDITION', 'CONTENT': ', 具有, 高新技术企业资质'}, {'TYPE': 'CONDITION', 'CONTENT': '申报单位, 纳入, 统计'}]
+返回值示例：[{'TYPE': 'BONUS', 'CONTENT': '关于申报2017年度高新技术企业入统奖励'}, {'TYPE': 'LOGIC', 'CONTENT': 'AND'}, {'TYPE': 'CONDITION', 'CONTENT': three_tuple_entity(S={'tag': '税务征管关系及统计关系', 'field': '税务征管关系及统计关系'}, P={'tag': '在内'}, O={'tag': '广州市南沙区范围', 'location': '广州市南沙区'})}, {'TYPE': 'CONDITION', 'CONTENT': three_tuple_entity(S={'tag': ''}, P={'tag': '具有'}, O={'tag': '独立法人资格', 'qualification': '法人资格'})}, {'TYPE': 'CONDITION', 'CONTENT': three_tuple_entity(S={'tag': ''}, P={'tag': '实行'}, O={'tag': '独立核算', 'field': '核算'})}, {'TYPE': 'CONDITION', 'CONTENT': three_tuple_entity(S={'tag': '工商注册地址'}, P={'tag': '变更至'}, O={'tag': '南沙区', 'location': '南沙区'})}, {'TYPE': 'CONDITION', 'CONTENT': three_tuple_entity(S={'tag': ''}, P={'tag': '迁入', 'date-range': '2017年1月1日至2017年12月31日'}, O={'tag': '南沙区', 'location': '南沙区'})}, {'TYPE': 'CONDITION', 'CONTENT': three_tuple_entity(S={'tag': ''}, P={'tag': '具有'}, O={'tag': '高新技术企业资质', 'qualification': '高新技术企业资质'})}, {'TYPE': 'CONDITION', 'CONTENT': three_tuple_entity(S={'tag': '申报单位'}, P={'tag': '纳入', 'date-YEAR': '2017'}, O={'tag': '南沙区规模以上企业统计'})}]
 ####返回值说明：
 返回的数组为节点数据字典的集合，在节点字典中有两个关键字：TYPE以及CONTENT
 
@@ -31,4 +31,24 @@ TYPE分为： BONUS、LOGIC、CONDITION 代表了事项名、逻辑关系、以�
 
 其中LOGIC对应的值集为{AND,OR}，代表了与或关系。
 
-CONDITION对应的值是以逗号','分割的三元组字符串，通过逗号分割可获得S、P、O三个值
+CONDITION对应的值是元组类型three_tuple_entity(S,P,O),其中S、P、O对应的值都是字典，有以下关键字：
+
+注：每个对应的字典值中都有tag关键字，其他不一定会有
+
+tag：在树上的节点显示内容
+
+date-range：日期范围
+
+date-year：年份
+
+qualification：词典中定义的资格类型
+
+norm：词典中定义的指标类型
+
+category：词典中定义的种类类型
+
+location：地方名
+
+money：指代钱的金额数值
+
+field：有可能用于搜索条件的关键词，但是类型不确定
