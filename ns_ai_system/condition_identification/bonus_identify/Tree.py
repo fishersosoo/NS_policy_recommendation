@@ -57,6 +57,7 @@ class DocTree:
                             continue
                     html_list.append(line)
             return html_list
+
         # 解析html结构成树
         def parse_totree(self,html_list):
             title_flag=True
@@ -81,7 +82,6 @@ class DocTree:
                     if key not in self.key_level:
                         self.key_level[key] = h_level
                         h_level += 1
-
                     c_level = self.key_level[key]
                     # 把第几层的id存起来
                     if c_level not in self.level_key:
@@ -120,6 +120,11 @@ class DocTree:
 
 
         def copy_tree(self,tree,diff):
+            '''
+            :param tree: 原树
+            :param diff: 需要修改的id的后缀
+            :return: 树的复制
+            '''
             new_tree=Tree()
             id_queue=queue.Queue()
             id_queue.put(tree.get_node(tree.root))
@@ -137,31 +142,41 @@ class DocTree:
             return new_tree
 
 
-
-
-
+        keywords = ['奖', '奖励', '资助', '补贴', '补助', '支持', '资金'] # 奖励识别的关键字
         # 只识别条件了
         def get_bonus_tree(self):
             bonus_tree=Tree()
             doc_tree=self.get_tree()
             c_nid=''
+            b_nid=''
+            b_data=''
             for nid in self.level_key[1]:
                 if '条件'in doc_tree.get_node(nid).data[0]:
                     c_nid=nid
+                for key in self.keywords:
+                    if key in doc_tree.get_node(nid).data[0]:
+                        b_nid=nid
+                        break
+
+            if b_nid!='':
+                for node in doc_tree.expand_tree(nid=b_nid, mode=Tree.DEPTH):
+                    if node==b_nid:
+                        continue
+                    b_data+=','.join(doc_tree[node].data)
             # 奖励内容粘贴在root下
             # 条件内容copy然后分别粘贴再不同的奖励下面
-            bonus_tree.create_node(self.title,self.title)
-            bonus_tree.create_node('partition', 'partition', parent=self.title)
-            new_tree=self.copy_tree(doc_tree.subtree(c_nid),'')
-            for children in new_tree.children(''+'_'+c_nid):
-                bonus_tree.paste('partition', new_tree.subtree(children.identifier))
+                bonus_tree.create_node(identifier='root',tag=b_data,data=b_data)
+                bonus_tree.create_node('partition', 'partition', parent='root')
+                new_tree=self.copy_tree(doc_tree.subtree(c_nid),'')
+                for children in new_tree.children(''+'_'+c_nid):
+                    bonus_tree.paste('partition', new_tree.subtree(children.identifier))
             return bonus_tree
 
-
-
-
-
-
+if __name__ == '__main__':
+    new_tree = Tree()
+    new_tree.create_node('a','a',data=[0,1])
+    for node in new_tree.expand_tree(nid='a', mode=Tree.DEPTH):
+        print(new_tree[node].data)
 
 
 
