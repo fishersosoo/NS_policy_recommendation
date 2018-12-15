@@ -1,6 +1,6 @@
 # 结构树api说明
 
-最后更新：2018年12月13日
+最后更新：2018年12月15日
 
 具体调用可见 ns_ai_system\condition_identification\bonus_identify\main.py
 
