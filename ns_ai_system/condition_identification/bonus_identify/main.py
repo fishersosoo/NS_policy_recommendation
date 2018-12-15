@@ -1,5 +1,6 @@
 # coding=UTF-8
 from util import get_doctime
+from util import get_handletime
 from DocTree import DocTree
 from treelib import Node,Tree
 import docx
@@ -31,7 +32,7 @@ if __name__ == '__main__':
         tree.construct('doc/'+f_name,1)
         t=tree.get_bonus_tree()
         t.show()
-        print(get_doctime(tree))
+        print(get_handletime(tree))
 
 
     # tree = DocTree()
