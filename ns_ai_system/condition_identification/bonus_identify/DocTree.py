@@ -30,7 +30,7 @@ class DocTree:
                     html_list = self.str_tolist(str)
             except:
                 print('无法解析')
-            self.parse_totree( html_list)
+            self.parse_totree(html_list)
         # 读取字符串
         def str_tolist(self,str):
             html_list=[]
@@ -46,7 +46,7 @@ class DocTree:
         # 读取文件成list
         def file_tolist(self,file):
             html_list = []
-            with open(file, 'r', encoding='gbk') as f:
+            with open(file, 'r', encoding='utf8') as f:
                 for line in f.readlines():
                     line=line.strip()
                     if line=='':
@@ -139,6 +139,10 @@ class DocTree:
             if b_nid!='':
                 for node in doc_tree.expand_tree(nid=b_nid, mode=Tree.DEPTH):
                     if node==b_nid:
+                        p_nodedata=doc_tree[node].data
+                        # 把‘四.奖励标准’过滤掉
+                        del p_nodedata[0]
+                        b_data += ','.join(p_nodedata)
                         continue
                     b_data+=','.join(doc_tree[node].data)
             # 奖励内容粘贴在root下
