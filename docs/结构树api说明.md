@@ -19,7 +19,8 @@
 #####返回：treeobject 优惠树
 #####接口：DocTree.get_bonus_tree()
 
-## 通用方法（util.py）
+## 通用方法（DocTreeOp.py）
+传入的Object对象都需要先构建结构树
 ###1：获取文档时间
 #####参数：object 传入的是Doc_Tree原始对象,不是任何通过get_tree返回的对象
 #####返回：int 政策依据中对应的政策年份
@@ -29,3 +30,8 @@
 #####参数：object 传入的是Doc_Tree原始对象,不是任何通过get_tree返回的对象
 #####返回：(start,end) 申请时间中的开始时间和结束时间
 #####接口：get_handletime()
+
+###3:获取条件内容
+#####参数：object 传入的是Doc_Tree原始对象,不是任何通过get_tree返回的对象
+#####返回：str 条件字符串
+#####接口：get_condition_content()

@@ -63,5 +63,19 @@ def get_handletime(DocTree):
     else:
         print('请先构造篇章树')
         return None
-
+def get_condition_content(DocTree):
+    doc_tree = DocTree.get_tree()
+    c_nid=''
+    content=''
+    if DocTree.level_key:
+        for nid in DocTree.level_key[1]:
+            if '条件' in doc_tree.get_node(nid).data[0]:
+                c_nid = nid
+                break
+        for children in doc_tree.children(c_nid):
+            content+=','.join(children.data)
+    else:
+        print('请先构造篇章树')
+        return None
+    return content
 

@@ -1,5 +1,5 @@
 import re
-from pyhanlp import *
+
 
 from treelib import Node,Tree
 import queue
