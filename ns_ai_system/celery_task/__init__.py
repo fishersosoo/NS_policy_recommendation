@@ -1,5 +1,6 @@
 # coding=utf-8
 from celery import Celery
+from celery.utils.log import get_task_logger
 
 celery = Celery('ns_ai_system',
                 broker='redis://127.0.0.1:8000/0',
@@ -18,5 +19,7 @@ celery.conf.update(
         "taskmeta_collection": "stock_taskmeta_collection",
     },
 )
+
+log = get_task_logger(__name__)
 
 from celery_task.policy import *

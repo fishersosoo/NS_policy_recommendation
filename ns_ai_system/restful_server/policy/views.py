@@ -50,15 +50,14 @@ def upload_guide():
     guide_id = request.args.get("guide_id")
     mongo.save_file(filename=guide_file.filename,
                     fileobj=guide_file, base="guide_file")
-    item_id = request.args.get("item_id", default=None)
-    Guide.create(guide_id=guide_id, file_name=guide_file.filename, item_id=item_id)
+    Guide.create(guide_id=guide_id, file_name=guide_file.filename)
     policy_id = request.args.get("policy_id", default=None)
     if policy_id is not None:
         Guide.link_to_policy(guide_id, policy_id)
     result = understand_guide_task.delay(guide_id)
     return jsonify({
         "task_id": result.id,
-        "status": "success"
+        "status": "SUCCESS"
     })
 
 
@@ -77,6 +76,13 @@ def recommend():
         result = recommend_task.AsyncResult(task_id)
         state = result.state
         response_dict['status'] = state
+        if state == "SUCCESS":
+            results = result.get()
+            records = [one for one in
+                       mongo.db.recommend_record.find({"company_id": results["company_id"], "latest": True})]
+            response_dict["result"] = records
+        else:
+            response_dict["result"] = []
     return jsonify(response_dict)
 
 

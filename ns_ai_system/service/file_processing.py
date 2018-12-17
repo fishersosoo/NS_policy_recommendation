@@ -20,4 +20,6 @@ def get_text_from_doc_bytes(input_bytes):
         text = txt_temp_file.read()
     os.remove(doc_temp_file.name)
     os.remove(txt_temp_file_path)
+    if text == "" or text is None:
+        raise Exception("fail to read doc")
     return text

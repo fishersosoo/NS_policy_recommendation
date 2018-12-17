@@ -7,6 +7,20 @@ from data_management.models.predicate import Predicate
 
 class Requirement(BaseInterface):
     @classmethod
+    def get_triple(cls, id_):
+        """
+        返回三元组节点
+        :rtype: list[Node]
+        :param id_: 节点uuid
+        :return: s节点, p节点, o节点
+        """
+        _, _, node = cls.find_by_id(id_)
+        predictate_node = RelationshipMatcher(graph_).match((node,), "HAS_PREDICATE").first().end_node()
+        object_node = RelationshipMatcher(graph_).match((node,), "HAS_OBJECT").first().end_node()
+        subject_node = RelationshipMatcher(graph_).match((node,), "HAS_SUBJECT").first().end_node()
+        return subject_node, predictate_node, object_node
+
+    @classmethod
     def create(cls, **kwargs):
         node = Node(cls.__name__, id=UUID(), **kwargs)
         graph_.create(node)

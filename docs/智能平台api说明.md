@@ -38,7 +38,6 @@ form-data
 | file      | 指南文件         |
 | guide_id  | 指南文件id       |
 | policy_id | 指南依据的政策id |
-| item_id   | 指南对应的事项id |
 
 指南文件格式需求：
 
