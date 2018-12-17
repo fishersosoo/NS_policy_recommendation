@@ -13,6 +13,7 @@ class DocTree:
         def __init__(self):
             self.level_key = {0: ['root']}
             self.key_level = {}
+            self.level_one=[]
             self.tree = Tree()
             self.title=''
 # 构造结构树
@@ -21,6 +22,7 @@ class DocTree:
         def construct(self,str,type):
             self.level_key = {0: ['root']}
             self.key_level = {}
+            self.level_one=[]
             self.tree = Tree()
             self.title=''
             try:
@@ -28,39 +30,51 @@ class DocTree:
                     html_list=self.file_tolist(str)
                 if type==2:
                     html_list = self.str_tolist(str)
+                self.parse_totree(html_list)
             except:
                 print('无法解析')
-            self.parse_totree(html_list)
+
         # 读取字符串
         def str_tolist(self,str):
             html_list=[]
+            count=0
             for line in str.split('\n'):
                 line = line.strip()
-                if line == '':
-                    if len(html_list) > 10:
+                if len(line) < 2:
+                    count += 1
+                    if count > 3:
                         break
                     else:
                         continue
+                else:
+                    count = 0
                 html_list.append(line)
             return html_list
         # 读取文件成list
         def file_tolist(self,file):
             html_list = []
+            count=0
             with open(file, 'r', encoding='utf8') as f:
                 for line in f.readlines():
                     line=line.strip()
-                    if line=='':
-                        if len(html_list)>20:
+                    # print(len(line))
+                    # 会有奇怪的字符存在使得换行的地方他长度不是0，而是一
+                    if len(line)<2:
+                        count+=1
+                        if count>3:
                             break
                         else:
                             continue
+                    else:
+                        count=0
                     html_list.append(line)
             return html_list
 
         # 解析html结构成树
+        level_words = [r'第.+章', r'第.+条', r'\d+\.', r'[一二三四五六七八九十壱弐参四伍〇]+、', r'\(?\d+\)', r'\(?[一二三四五六七八九十]+\)',
+                       r'（?[一二三四五六七八九十]+）', r'（?\d+）', r'[①②③④⑤⑥⑦⑧⑨⑩]', r'第.+节', '\d+、']
         def parse_totree(self,html_list):
             title_flag=True
-            level_words = [r'第.+章', r'第.+条', r'\d+\.', r'[一二三四五六七八九十]+、', r'\(?\d+\)', r'\(?[一二三四五六七八九十]+\)',r'（?[一二三四五六七八九十]+）',r'（?\d+）',r'[①②③④⑤⑥⑦⑧⑨⑩]',r'第.+节']
             self.tree = Tree()
             tree = self.tree
             tree.create_node('root', 'root', data='partition')
@@ -71,9 +85,19 @@ class DocTree:
             id_key=None
             for i in range(0, len(html_list)):
                 word = html_list[i]
-
                 # 判断是否满足正则表达式，可否作为节点
-                flag, key = self.is_node(level_words, word)
+                flag, key = self.is_node(self.level_words, word)
+
+                # 这里说明一下：之前是认为层级是固定的，即如果一级是一。二级是1.那么二。3）这种就会报错，因为3）不会分为二级
+                # 这里改过来了之后，前提条件是[一二三四五六七八九十]+、这个是每个文档都不会改变的，然后每一个层级都根据当前一级标题重新构造
+                if key==r'[一二三四五六七八九十壱弐参四伍〇]+、':
+                    h_level=1
+                    self.level_key = {0: ['root']}
+                    self.key_level = {}
+                    self.level_one.append(key + str(j))
+
+
+
                 if flag:
                     # 根据j来构建独一无二的id
                     id_key = key + str(j)
@@ -94,6 +118,7 @@ class DocTree:
                     # 如果当前不是一个节点，则把内容归属上一次最近的节点
                     if id_key:
                         tree.get_node(id_key).data.append(word)
+                        tree.get_node(id_key).tag+=word
                     else:
                         # 记录文章标题，即第一出现的不是节点
                         if title_flag:
@@ -105,7 +130,7 @@ class DocTree:
 
         # 判断是否一个节点，即是否存在一些前缀词1.一.
         def is_node(self,level_words, word):
-            word = word[0:10]
+            word = word[0:5]
             Flag = False
             key = ''
             for level_word in level_words:
@@ -129,26 +154,44 @@ class DocTree:
             c_nid=''
             b_nid=''
             b_data=''
-            for nid in self.level_key[1]:
+            # 寻找条件
+            for nid in self.level_one:
                 if '条件'in doc_tree.get_node(nid).data[0]:
                     c_nid=nid
+                    break
+            # 寻找优惠
+            for nid in self.level_one:
                 for key in self.keywords:
                     if key in doc_tree.get_node(nid).data[0]:
                         b_nid=nid
                         break
-            if b_nid!='':
+            if b_nid!='' and c_nid!='':
                 for node in doc_tree.expand_tree(nid=b_nid, mode=Tree.DEPTH):
                     if node==b_nid:
-                        p_nodedata=doc_tree[node].data
-                        # 把‘四.奖励标准’过滤掉
+                        p_nodedata=doc_tree[node].data.copy()
                         del p_nodedata[0]
+                        # 把‘四.奖励标准’过滤掉
                         b_data += ','.join(p_nodedata)
                         continue
                     b_data+=','.join(doc_tree[node].data)
-            # 奖励内容粘贴在root下
-            # 条件内容copy然后分别粘贴再不同的奖励下面
+            #  创建优惠树
                 bonus_tree.create_node(identifier='root',tag=b_data,data=b_data)
                 bonus_tree.create_node('partition', 'partition', parent='root')
+
+
+                # 父节点可能会有信息，因为有可能他没有序号就是一段话
+                p_data=doc_tree.get_node(c_nid).data.copy()
+
+                    # 把‘二.申请条件’和‘满足以下条件’删除
+                if len(p_data)>=2:
+                    if len(p_data[0])<8 :
+                        del p_data[0]
+                    if '：' in p_data[0]:
+                        del p_data[0]
+                    p_data=','.join(p_data)
+                    if p_data:
+                        bonus_tree.create_node(identifier=c_nid, tag=p_data, data=p_data,parent='partition')
+                # 可以继续改进，这里用树的复制其实是浪费了资源
                 new_tree=self.copy_tree(doc_tree.subtree(c_nid),'')
                 for children in new_tree.children(''+'_'+c_nid):
                     bonus_tree.paste('partition', new_tree.subtree(children.identifier))
@@ -180,12 +223,12 @@ class DocTree:
                         id_queue.put(n)
             return new_tree
 if __name__ == '__main__':
-    new_tree = Tree()
-    new_tree.create_node('a','a',data=[0,1])
-    for node in new_tree.expand_tree(nid='a', mode=Tree.DEPTH):
-        print(new_tree[node].data)
+    # new_tree = Tree()
+    # new_tree.create_node('a','a',data=[0,1])
+    # for node in new_tree.expand_tree(nid='a', mode=Tree.DEPTH):
+    #     print(new_tree[node].data)
 
-
+    print(len('﻿'))
 
 
 

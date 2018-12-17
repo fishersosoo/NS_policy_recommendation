@@ -4,8 +4,8 @@ def get_doctime(DocTree):
     doc_tree=DocTree.get_tree()
     c_nid=''
     min_year=[]
-    if DocTree.level_key:
-        for nid in DocTree.level_key[1]:
+    if DocTree.level_one:
+        for nid in DocTree.level_one:
             if '依据' in doc_tree.get_node(nid).data[0]:
                 c_nid = nid
                 break
@@ -44,31 +44,37 @@ def get_handletime(DocTree):
     doc_tree=DocTree.get_tree()
     c_nid=''
     time_word="{0}年{1}月{2}日".format(datetime.datetime.now().year,datetime.datetime.now().month,datetime.datetime.now().day)
-    if DocTree.level_key:
-        for nid in DocTree.level_key[1]:
+    if DocTree.level_one:
+        for nid in DocTree.level_one:
             if '时间' in doc_tree.get_node(nid).data[0]:
                 c_nid = nid
                 break
-
         p_node=doc_tree.get_node(c_nid)
         if len(p_node.data)>1:
             del p_node.data[0]
             time_word=','.join(p_node.data)
         year = re.findall('\d+年', time_word)
-        year=max(year)
+        if year:
+            year=max(year)
+        else:
+            year=str(datetime.datetime.now().year)
         year_month_day=[year+i for i in re.findall('\d+月\d+日', time_word)]
-        min_time=min(year_month_day)
-        max_time=max(year_month_day)
-        return min_time,max_time
+        if year_month_day:
+            min_time=min(year_month_day)
+            max_time=max(year_month_day)
+            return min_time,max_time
+        else:
+            print('找不到时间')
     else:
         print('请先构造篇章树')
-        return None
+    return None
 def get_condition_content(DocTree):
     doc_tree = DocTree.get_tree()
     c_nid=''
     content=''
-    if DocTree.level_key:
-        for nid in DocTree.level_key[1]:
+    if DocTree.level_one:
+        for nid in DocTree.level_one:
+            t=doc_tree.get_node(nid).data
             if '条件' in doc_tree.get_node(nid).data[0]:
                 c_nid = nid
                 break
