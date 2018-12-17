@@ -31,7 +31,4 @@
 #####返回：(start,end) 申请时间中的开始时间和结束时间
 #####接口：get_handletime()
 
-###3:获取条件内容
-#####参数：object 传入的是Doc_Tree原始对象,不是任何通过get_tree返回的对象
-#####返回：str 条件字符串
-#####接口：get_condition_content()
+
