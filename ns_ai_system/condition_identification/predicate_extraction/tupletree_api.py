@@ -15,7 +15,8 @@ def construct_tupletree_by_str(text):
     t = tree.get_bonus_tree()
     tuplebonus = TupleBonus()
     tuplebonus.bonus_tuple_analysis(t)
-    return tuplebonus.get_bonus_tree(), get_handletime(tree)
+    min_time, max_time=get_handletime(tree)
+    return tuplebonus.get_bonus_tree(), min_time, max_time
 
 
 def construct_tupletree_by_file(filename):

@@ -20,7 +20,7 @@ def understand_guide_task(guide_id):
     understand_guide(guide_id)
 
 
-@celery.tasks
+@celery.task
 def check_single_guide(company_id, guide_node, threshold=.0):
     """
     检查单个指南和企业的匹配信息，如果存在匹配则存放到数据库中
@@ -67,10 +67,10 @@ def recommend_task(company_id, threshold=.0):
     :param threshold: 匹配度阈值（尚未使用），只有企业与指南匹配度高于此值时候才会推荐
     :return:
     """
-    guides = Guide.list_valid_guides()
-    task_group = group([check_single_guide.s(company_id, guide) for guide in guides])
+    # guides = Guide.list_valid_guides()
+    # task_group = group([check_single_guide.s(company_id, guide) for guide in guides])
     # 异步执行
     # result = job.apply_async()
     # 同步执行
-    result = task_group().get()
+    # result = task_group().get()
     return {"company_id": company_id, "latest_id": []}

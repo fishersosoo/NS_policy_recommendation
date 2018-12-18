@@ -24,7 +24,7 @@ class BaseInterface:
         if node is None:
             raise Exception(f"node {id_} not found")
         else:
-            node.labels.update(args)
+            # node.labels.update(args)
             node.update(kwargs)
         graph_.push(node)
 
