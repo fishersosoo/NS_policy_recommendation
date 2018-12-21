@@ -16,7 +16,7 @@ def load_recommend_record_from_csv(csv_path):
             matched_count = 0
             requirement_count = 0
             for k, v in row.items():
-                if "社会信用号"in k :
+                if "社会信用号" in k:
                     record["company_id"] = v
                 elif k != "企业名称":
                     requirement = k
@@ -27,6 +27,10 @@ def load_recommend_record_from_csv(csv_path):
                         reasons.append(reason)
             matching = matched_count / requirement_count
             record["reason"] = "\n".join(reasons)
+            if guide_id == "13":
+                matching += 0.25
+            else:
+                matching += 0.1
             record["matching"] = matching
             if matching > 0:
                 mongodb["recommend_record"].insert_one(record)
