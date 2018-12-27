@@ -85,12 +85,6 @@ class TupleBonus:
         p["tag"] = ""
         o["tag"] = ""
 
-        if "税务征管关系及统计关系在广州市南沙区范围内" in sentence:
-            s["tag"] = "税务征管关系及统计关系"
-            s["field"] = "税务征管关系及统计关系"
-            p["tag"] = "在内"
-            o["tag"] = "广州市南沙区范围"
-            o["location"] = "广州市南沙区"
 
         if "具有独立法人资格" in sentence:
             s["tag"] = ""
@@ -166,7 +160,19 @@ class TupleBonus:
             p["tag"] = ""
             o["tag"] = ""
 
-        if p["tag"] != "":
+
+        if "税务征管关系及统计关系在广州市南沙区范围内" in sentence:
+            s["tag"] = "税务征管关系"
+            s["field"] = "税务征管关系"
+            s1 = {}
+            s1["tag"] = "统计关系"
+            s1["field"] = "统计关系"
+            p["tag"] = "在内"
+            o["tag"] = "广州市南沙区范围"
+            o["location"] = "广州市南沙区"
+            spo_tuple.append(three_tuple_entity(S=s1, P=p, O=o))
+            spo_tuple.append(three_tuple_entity(S=s, P=p, O=o))
+        elif p["tag"] != "":
             spo_tuple.append(three_tuple_entity(S=s, P=p, O=o))
         return spo_tuple
 
