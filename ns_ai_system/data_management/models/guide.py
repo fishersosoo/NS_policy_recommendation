@@ -36,13 +36,16 @@ class Guide(BaseInterface):
         :rtype: list[Node]
         :return: 指南节点
         """
-        now = datetime.datetime.now()
+        # now = datetime.datetime.now()
+        # nodes = list(
+        #     NodeMatcher(graph_).match(cls.__name__).where(effective_time_begin__gte=now, effective_time_end__lte=now))
         nodes = list(
-            NodeMatcher(graph_).match(cls.__name__).where(effective_time_begin__gte=now, effective_time_end__lte=now))
+            NodeMatcher(graph_).match(cls.__name__))
         return nodes
 
     @classmethod
     def create(cls, guide_id, file_name, **kwargs):
+        print(guide_id)
         node = Node(cls.__name__, id=UUID(), guide_id=guide_id, file_name=file_name, **kwargs)
         graph_.create(node)
         return node["id"]

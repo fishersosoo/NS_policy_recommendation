@@ -1,0 +1,6 @@
+name,field,alias
+地址,DOM,"['工商注册地', '税务征管关系','统计关系']"
+企业类型,ENTTYPE,['独立法人资格']
+行业领域,INDUSTRY,[]
+经营业务范围,OPSCOPE,[]
+企业资质,FQZ_ZZMC,['企业资质']

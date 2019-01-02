@@ -14,10 +14,22 @@ class Requirement(BaseInterface):
         :param id_: 节点uuid
         :return: s节点, p节点, o节点
         """
-        _, _, node = cls.find_by_id(id_)
-        predictate_node = RelationshipMatcher(graph_).match((node,), "HAS_PREDICATE").first().end_node()
-        object_node = RelationshipMatcher(graph_).match((node,), "HAS_OBJECT").first().end_node()
-        subject_node = RelationshipMatcher(graph_).match((node,), "HAS_SUBJECT").first().end_node()
+        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        r_matcher = RelationshipMatcher(graph_)
+        r = r_matcher.match((node, None), "HAS_SUBJECT").first()
+        print(r)
+        subject_node = r.end_node
+
+        r_matcher = RelationshipMatcher(graph_)
+        r = r_matcher.match((node, None), "HAS_PREDICATE").first()
+        print(r)
+        predictate_node = r.end_node
+
+        r_matcher = RelationshipMatcher(graph_)
+        r = r_matcher.match((node, None), "HAS_OBJECT").first()
+        print(r)
+        object_node = r.end_node
+
         return subject_node, predictate_node, object_node
 
     @classmethod

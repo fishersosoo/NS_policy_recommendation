@@ -4,7 +4,7 @@ import os
 from collections import namedtuple
 
 from condition_identification.dict_management.properties_utiil import Properties
-from data_management.models.words import Word
+from data_management.models.word import Word
 
 entity = namedtuple('entity', ['name', 'category'])
 

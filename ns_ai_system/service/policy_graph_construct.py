@@ -18,11 +18,12 @@ def understand_guide(guide_id):
     :param guide_id:指南节点的外部id
     :return:
     """
+    print(guide_id)
     _, _, guide_node = Guide.find_by_guide_id(guide_id)
     text = get_text_from_doc_bytes(Guide.get_file(guide_node["file_name"]).read())
     tree, effective_time_begin, effective_time_end = construct_tupletree_by_str(text)
-    Guide.set_effective_time(guide_node["id"], datetime.datetime.strptime(effective_time_begin, "%Y年%m月%d日"),
-                             datetime.datetime.strptime(effective_time_end, "%Y年%m月%d日"))
+    # Guide.set_effective_time(guide_node["id"], datetime.datetime.strptime(effective_time_begin, "%Y年%m月%d日"),
+    #                          datetime.datetime.strptime(effective_time_end, "%Y年%m月%d日"))
     root = tree.root
     # celery_task.log.info(tree.get_all_nodes())
     for boon_node in tree.children(root):

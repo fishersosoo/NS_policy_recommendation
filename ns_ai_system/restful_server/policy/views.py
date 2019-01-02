@@ -47,7 +47,8 @@ def upload_policy():
 @policy_service.route("upload_guide/", methods=["POST"])
 def upload_guide():
     guide_file = request.files['file']
-    guide_id = request.args.get("guide_id")
+    guide_id = request.form.get("guide_id")
+    assert guide_id is not None
     mongo.save_file(filename=guide_file.filename,
                     fileobj=guide_file, base="guide_file")
     Guide.create(guide_id=guide_id, file_name=guide_file.filename)

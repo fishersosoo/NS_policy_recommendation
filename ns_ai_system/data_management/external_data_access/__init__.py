@@ -7,7 +7,7 @@ from __future__ import print_function
 import json
 import os
 import sys
-from multiprocessing import Process
+from multiprocessing import Process, current_process
 from time import sleep
 
 from flask import Flask
@@ -107,7 +107,6 @@ class DataServiceJavaProxy:
     _DataServiceInstance = None
 
     def __init__(self, uid, host):
-        print("init")
         if DataServiceJavaProxy._DataServiceInstance is None:
             DataServiceJavaProxy._DataServiceInstance = DataServiceJavaProxy._DataServiceClass(uid, host)
 
@@ -119,7 +118,7 @@ class DataServiceJavaProxy:
         :param params: 查询参数
         :return: 返回数据
         """
-        print("sendRequest")
+        # print("sendRequest")
         return json.loads(DataServiceJavaProxy._DataServiceInstance.sendRequest(service_name, json.dumps(params)))
 
 
@@ -153,13 +152,13 @@ def _start_rpc_server_for_data_access(port=50000):
     print("data access jvm started")
     # TODO:log
     print("starting data access server")
-    data_access_app.run(host="0.0.0.0", port=port)
+    data_access_app.run(host="127.0.0.1",debug=False, port=port)
 
 
 class DataService:
     server = None
 
-    def __init__(self, url="http://localhost:50000/api"):
+    def __init__(self, url="http://127.0.0.1:50000/api"):
         DataService.server = ServiceProxy(service_url=url)
         # print(DataService.server.api.index())
         # sleep(3)
@@ -173,6 +172,7 @@ class DataService:
         :return: 返回数据
         """
         value = DataService.server.api.sendRequest(service_name, params)
+        # print(value)
         return value["result"]
 
 
@@ -199,6 +199,14 @@ def wait_for_server_ready(time_out=10, interval=0.2):
     print("data access server started")
 
 
-p = Process(target=_start_rpc_server_for_data_access)
-p.start()
-wait_for_server_ready()
+sysstr = sys.platform
+if sysstr == "win32":
+    if current_process().name == "MainProcess":
+        # freeze_support()
+        p = Process(target=_start_rpc_server_for_data_access)
+        p.start()
+        wait_for_server_ready()
+else:
+    p = Process(target=_start_rpc_server_for_data_access)
+    p.start()
+    wait_for_server_ready()

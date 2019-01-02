@@ -40,20 +40,28 @@ CONDITION对应的值是元组类型three_tuple_entity(S,P,O),其中S、P、O对
 
 注：每个对应的字典值中都有tag关键字，其他不一定会有
 
-tag：在树上的节点显示内容
+对于S和O节点会有如下属性：
 
-date-range：日期范围
+tag：在树上的节点显示内容，表示实体内容
 
-date-year：年份
+type：实体类型（如果没识别出来实体就没有类型）
 
-qualification：词典中定义的资格类型
+实体会分成以下类型：
 
-norm：词典中定义的指标类型
+- field，表示实体能和某个数据字段对应上
+- location，表示地址值
+- date，表示日期值
+- literal，数值
+- qualification，资质名称
+- industry，行业
+- scope，经营范围
+- defined，在政策依据中自定义的实体（后续解析实现）
+- event，事件，表示某个指标在发生改变（例如迁入南沙区）
+- unknown，未知
 
-category：词典中定义的种类类型
+对于S节点会有额外的for属性，表示这个三元组描述的对象是什么（如无此属性，则默认为company）
 
-location：地方名
-
-money：指代钱的金额数值
-
-field：有可能用于搜索条件的关键词，但是类型不确定
+- person
+- company
+- project
+- promise，描述承诺，例如spo节点对应的原文是“未来5年内不迁出南沙区”，时候描述的是承诺。

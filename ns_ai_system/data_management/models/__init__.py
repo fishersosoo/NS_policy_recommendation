@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from uuid import uuid1
+from warnings import warn
 
 from py2neo import Graph, NodeMatcher, RelationshipMatcher
 
@@ -46,6 +47,7 @@ class BaseInterface:
     def find_by_id(cls, id_):
         node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
         if node is None:
+            warn(f"{(cls.__name__)},{ id_} not found")
             return [], dict(), None
         return node.labels, dict(**node), node
 
