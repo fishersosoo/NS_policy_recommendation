@@ -17,17 +17,14 @@ class Requirement(BaseInterface):
         node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
         r_matcher = RelationshipMatcher(graph_)
         r = r_matcher.match((node, None), "HAS_SUBJECT").first()
-        print(r)
         subject_node = r.end_node
 
         r_matcher = RelationshipMatcher(graph_)
         r = r_matcher.match((node, None), "HAS_PREDICATE").first()
-        print(r)
         predictate_node = r.end_node
 
         r_matcher = RelationshipMatcher(graph_)
         r = r_matcher.match((node, None), "HAS_OBJECT").first()
-        print(r)
         object_node = r.end_node
 
         return subject_node, predictate_node, object_node

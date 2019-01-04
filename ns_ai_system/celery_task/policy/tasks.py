@@ -33,6 +33,9 @@ def check_single_guide(company_id, guide_id, threshold=.0):
     requirements = Guide.find_leaf_requirement(guide_node["id"])
     count = 0
     reasons = []
+    base_info = query_data(company_id)
+    if base_info is None:
+        raise Exception(f"Query data fail for company: {company_id}")
     for leaf in requirements:
         requirement = leaf["leaf"]
         match, reason = check_single_requirement(company_id, requirement)
@@ -66,7 +69,7 @@ def check_single_guide(company_id, guide_id, threshold=.0):
                 )
 
 
-def check_single_requirement(company_id, requirement_node):
+def check_single_requirement(company_id, requirement_node,base_info):
     """
     检查企业是否满足单一条件
     :param company_id: 企业id
@@ -85,7 +88,7 @@ def check_single_requirement(company_id, requirement_node):
     if field_info is None:
         # 只处理对企业的要求
         return None, None
-    base_info = query_data(company_id)
+
     return field_matcher.is_match(field_info=field_info, query_data=base_info,
                                   spo=[subject, predicate, object])
 
@@ -96,7 +99,6 @@ def infer_field_info_from_object_type(object):
     :param object:
     :return:
     """
-    log.info(object)
     if object.get("type", None) == "location":
         return {'name': "地址", 'field': "DOM"}
     if object.get("type", None) == "qualification":
@@ -143,7 +145,11 @@ def field_lookup(subject, predicate, object):
 def query_data(company_id):
     # get data
     value = dataService.sendRequest("getEntByKeyword", {"keyword": company_id, "type": 1})
-    company_name = value["RESULTDATA"][0]["ENTNAME"]
+    try:
+        company_name = value["RESULTDATA"][0]["ENTNAME"]
+    except Exception as e:
+        log.error(value)
+        return None
     # get base info
     base_info = dataService.sendRequest("getRegisterInfo", {"entName": company_name})["RESULTDATA"][0]
     # get qualify
@@ -166,6 +172,7 @@ def recommend_task(company_id, threshold=.0):
     :param threshold: 匹配度阈值（尚未使用），只有企业与指南匹配度高于此值时候才会推荐
     :return:
     """
+    log.info(f"recommend_task for company: {company_id}")
     guides = Guide.list_valid_guides()
     results = []
     for guide in guides:
