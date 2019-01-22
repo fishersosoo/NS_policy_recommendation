@@ -38,7 +38,7 @@ def check_single_guide(company_id, guide_id, threshold=.0):
         raise Exception(f"Query data fail for company: {company_id}")
     for leaf in requirements:
         requirement = leaf["leaf"]
-        match, reason = check_single_requirement(company_id, requirement)
+        match, reason = check_single_requirement(company_id, requirement,base_info)
         if match is None:
             # 忽略条件
             continue

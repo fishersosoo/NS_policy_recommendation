@@ -1,0 +1,3 @@
+use ai_system
+use celery
+db.cloneDatabase("ns.fishersosoo.xyz:80");

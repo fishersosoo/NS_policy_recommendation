@@ -1,6 +1,6 @@
 # 智能平台api说明
 
-最后更新：2018年12月5日
+最后更新：2019年1月4日
 
 ## /policy/upload_policy/
 
@@ -98,10 +98,149 @@ doc:要求以UTF-8编码doc
         {
             "policy_id": "推荐的政策id",
             "reason": "推荐原因",
+             "matching" : 0.90, 
             "time": "推荐时间，fmt:YYYY-MM-DD"
         },
         {}
     ]
 }
+```
+
+## /policy/check_recommend/
+
+### POST
+
+计算多个企业和单个政策的匹配情况。此接口针对政策推送功能。当一个新政策发布之后，平台在上传政策文档之后，调用此接口批量获取新政策与目标企业的匹配情况。匹配情况异步计算，需要提供回调函数url以接受异步任务执行情况。
+
+输入：
+
+json格式
+
+```json
+{
+    "companies": ["企业id1","企业id2",...,"企业idn"],
+    "guide_id": "指南id",
+    "callback": "回调函数url"
+}
+```
+
+输出：
+
+```json
+{
+    "task_id": "异步任务id",
+    "message":
+    {
+        "status":"SUCCESS",
+        "traceback":"错误消息"
+    }
+}
+```
+
+如果指南id不存在或理解尚未完成则返回如下消息
+
+```json
+{
+    "task_id": "",
+    "message":
+    {
+        "status":"NOT_FOUND",
+        "traceback":"指南id"
+    }
+}
+```
+
+
+
+由于计算资源限制，对每个企业计算匹配度的任务会放在任务队列中进行调度，队列长度限制为100。也就是每次最多通过此接口传入100个企业id，等任务完成回调后再次传入下一批企业id。
+
+如果传入企业id数量大于队列剩余长度，则会尽可能放入将企业id放入队列中，剩下未能放入的企业id将会返回到`traceback`字段中。例子如下
+
+```json
+{
+    "task_id": "任务id", # 如果所有企业都不能放进去则任务id为空
+    "message":
+    {
+        "status":"FULL",
+        "traceback":["未能放入的企业id1","未能放入的企业id2","未能放入的企业id3"]
+    }
+}
+```
+
+### callback定义
+
+`callback`应为完整的url，如`https://test.com/callback`
+
+callback接口接受POST请求，请求数据为json格式
+
+输入：
+
+```json
+{
+    "task_id":"任务id"
+    "guide_id":"指南id",
+    "result":{
+    	"企业id1":{"matching":0.7, "status":"状态，如果计算失败则为FAIL否则为SUCCESS"},
+        "企业id2":{"matching":0.7, "status":"状态，如果计算失败则为FAIL否则为SUCCESS"},
+        "...":{...}
+    }
+}
+```
+
+### callback测试
+
+在系统接到`/policy/check_recommend/`的请求后，会对callback的url进行测试，测试时候会发送如下消息
+
+```json
+{
+    "guide_id":"指南id",
+    "task_id":"test",
+    "result":{
+    	"test":{"matching":一个1到0之间的随机数, "status":"TEST"}
+    }
+}
+```
+
+callback应该返回该随机数，以确保callback接口能够正确读取结果。
+
+测试不通过则不会将企业id加入队列中，并返回如下消息
+
+```json
+{
+    "task_id": "", 
+    "message":
+    {
+        "status":"CALLBACK_FAIL"
+    }
+}
+```
+
+
+
+## /policy/single_recommend/
+
+### GET
+
+获取某个企业和某个政策的最近一次匹配情况。本接口只进行数据的查询，不会重新计算匹配情况。（在调用`/policy/check_recommend/`之后，得到callback响应之后，可以根据匹配度是否满足情况再通过本接口获取具体推荐原因）
+
+输入：
+
+| key        | value  |
+| ---------- | ------ |
+| guide_id   | 指南id |
+| company_id | 企业id |
+|            |        |
+
+输出：
+
+json格式
+
+```json
+        {
+            "guide_id": "推荐事项的id",
+            "reason": "推荐原因，可用于展示",
+            "matching" : 0.90, 
+            "time": "推荐时间，fmt:YYYY-MM-DD HH:mm:ss"
+        }
 ```
 

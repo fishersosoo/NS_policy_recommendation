@@ -146,13 +146,17 @@ def sendRequest(service_name, params):
 
 
 def _start_rpc_server_for_data_access(port=50000):
-    # TODO:log
-    print("starting data access jvm")
-    _start_jvm_for_data_access()
-    print("data access jvm started")
-    # TODO:log
-    print("starting data access server")
-    data_access_app.run(host="127.0.0.1",debug=False, port=port)
+    try:
+        # TODO:log
+        print("starting data access jvm")
+        _start_jvm_for_data_access()
+        print("data access jvm started")
+        # TODO:log
+        print("starting data access server")
+        data_access_app.run(host="127.0.0.1",debug=False, port=port)
+    except Exception:
+        return
+
 
 
 class DataService:
