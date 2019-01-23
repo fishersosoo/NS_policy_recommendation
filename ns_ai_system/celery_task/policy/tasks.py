@@ -1,7 +1,10 @@
 # coding=utf-8
 import datetime
 
-from celery_task import celery, log
+import requests
+from celery import group
+
+from celery_task import celery_app, log
 from data_management.config import dataService, py_client
 from data_management.models.guide import Guide
 from data_management.models.requirement import Requirement
@@ -10,7 +13,7 @@ from service.field_match import field_matcher
 from service.policy_graph_construct import understand_guide
 
 
-@celery.task
+@celery_app.task
 def understand_guide_task(guide_id):
     """
 
@@ -20,7 +23,7 @@ def understand_guide_task(guide_id):
     understand_guide(guide_id)
 
 
-@celery.task
+@celery_app.task
 def check_single_guide(company_id, guide_id, threshold=.0):
     """
     检查单个指南和企业的匹配信息，如果存在匹配则存放到数据库中
@@ -38,7 +41,7 @@ def check_single_guide(company_id, guide_id, threshold=.0):
         raise Exception(f"Query data fail for company: {company_id}")
     for leaf in requirements:
         requirement = leaf["leaf"]
-        match, reason = check_single_requirement(company_id, requirement,base_info)
+        match, reason = check_single_requirement(company_id, requirement, base_info)
         if match is None:
             # 忽略条件
             continue
@@ -46,30 +49,30 @@ def check_single_guide(company_id, guide_id, threshold=.0):
             count += 1
         if match:
             reasons.append(f'{len(reasons)+1}. {reason}')
+    record = format_record(company_id, count, guide_node, reasons)
+    py_client.ai_system["recommend_record"].insert_one(record)
+    py_client.ai_system["recommend_record"].update({"company_id": company_id,
+                                                    "guide_id": guide_id},
+                                                   {"$set": {"latest": False}}, upsert=False, multi=True)
+    return record
+
+
+def format_record(company_id, count, guide_node, reasons):
     count = 1 if count == 0 else count
     matching = len(reasons) / count
     reasons = "\n".join(reasons)
     reasons = f"企业满足以下条件：【括号中内容为企业的真实情况】\n{reasons}"
-    py_client.ai_system["recommend_record"].update({"company_id": company_id,
-                                                    "guide_id": guide_id},
-                                                   {"$set": {"latest": False}}, upsert=False, multi=True)
-    py_client.ai_system["recommend_record"].insert_one(dict(company_id=company_id,
-                                                            guide_id=guide_node["guide_id"],
-                                                            reason=reasons,
-                                                            matching=matching,
-                                                            time=datetime.datetime.now(),
-                                                            latest=True
-                                                            ))
-    return dict(company_id=company_id,
-                guide_id=guide_node["guide_id"],
-                reason=reasons,
-                matching=matching,
-                time=datetime.datetime.now(),
-                latest=True
-                )
+    record = dict(company_id=company_id,
+                  guide_id=guide_node["guide_id"],
+                  reason=reasons,
+                  matching=matching,
+                  time=datetime.datetime.now(),
+                  latest=True
+                  )
+    return record
 
 
-def check_single_requirement(company_id, requirement_node,base_info):
+def check_single_requirement(company_id, requirement_node, base_info):
     """
     检查企业是否满足单一条件
     :param company_id: 企业id
@@ -164,7 +167,7 @@ def query_data(company_id):
     return base_info
 
 
-@celery.task
+@celery_app.task
 def recommend_task(company_id, threshold=.0):
     """
     更新指定企业的推荐记录
@@ -186,5 +189,40 @@ def recommend_task(company_id, threshold=.0):
     return {"company_id": company_id, "results": results}
 
 
-if __name__ == '__main__':
-    recommend_task("91440101717852200L")
+def check_single_guide_batch_companies_callback(companies, guide_id, group_result, url, task_id):
+    """
+    调用callback 接口告知任务已经完成
+    :param task_id:
+    :param companies:
+    :param guide_id:
+    :param group_result:
+    :param url:
+    :return:
+    """
+    return_result = {company: {"matching": .0, "status": "FAIL"} for company in companies}
+    for result in group_result.results:
+        if result.failed():
+            pass
+        else:
+            return_result[result.result["company_id"]] = {"matching": result.result["company_id"], "status": "SUCCESS"}
+    try:
+        requests.post(url, json={
+            "guide_id": guide_id,
+            "task_id": task_id,
+            "result": return_result
+        })
+    except:
+        pass
+
+
+@celery_app.task(bind=True)
+def check_single_guide_batch_companies(self, companies, guide_id, url):
+    """
+    批量检查多个企业和单个指南的匹配情况，完成后调用callback函数
+    :param companies:
+    :param callback:
+    :return:
+    """
+    task_group = group([check_single_guide.s(company, guide_id) for company in companies])
+    group_result = task_group().get()
+    check_single_guide_batch_companies_callback(companies, guide_id, group_result, url, self.request.id)
