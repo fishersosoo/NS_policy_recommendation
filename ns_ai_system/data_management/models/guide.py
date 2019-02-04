@@ -27,7 +27,7 @@ class Guide(BaseInterface):
         WITH leaf WHERE NOT leaf IN startNodes
         RETURN leaf
         """
-        return list(graph_.run(ql, parameters=dict(id_=id_)))
+        return list(graph_().run(ql, parameters=dict(id_=id_)))
 
     @classmethod
     def list_valid_guides(cls):
@@ -40,14 +40,14 @@ class Guide(BaseInterface):
         # nodes = list(
         #     NodeMatcher(graph_).match(cls.__name__).where(effective_time_begin__gte=now, effective_time_end__lte=now))
         nodes = list(
-            NodeMatcher(graph_).match(cls.__name__))
+            NodeMatcher(graph_()).match(cls.__name__))
         return nodes
 
     @classmethod
     def create(cls, guide_id, file_name, **kwargs):
         print(guide_id)
         node = Node(cls.__name__, id=UUID(), guide_id=guide_id, file_name=file_name, **kwargs)
-        graph_.create(node)
+        graph_().create(node)
         return node["id"]
 
     @classmethod
@@ -56,7 +56,7 @@ class Guide(BaseInterface):
 
     @classmethod
     def find_by_guide_id(cls, guide_id):
-        node = NodeMatcher(graph_).match(cls.__name__, guide_id=guide_id).first()
+        node = NodeMatcher(graph_()).match(cls.__name__, guide_id=guide_id).first()
         return node.labels, dict(**node), node
 
     @classmethod
@@ -65,7 +65,7 @@ class Guide(BaseInterface):
         _, _, policy_node = Policy.find_by_policy_id(policy_id)
         relationship = Relationship(guide_node, "BASE_ON", policy_node)
         sub_graph = Subgraph([guide_node, policy_node], [relationship])
-        graph_.create(sub_graph)
+        graph_().create(sub_graph)
 
     @classmethod
     def get_file(cls, filename):
@@ -77,9 +77,9 @@ class Guide(BaseInterface):
         if boons is None:
             boons = []
         _, _, guide = Guide.find_by_id(id_)
-        boon_list = list(NodeMatcher(graph_).match("Boon").where(f"_.id in {boons}"))
+        boon_list = list(NodeMatcher(graph_()).match("Boon").where(f"_.id in {boons}"))
         relationships = []
         for boon in boon_list:
             relationships.append(Relationship(guide, "HAS_BOON", boon))
         sub_graph = Subgraph(boon_list + [guide], relationships)
-        graph_.create(sub_graph)
+        graph_().create(sub_graph)

@@ -6,6 +6,7 @@ celery_app = Celery('ns_ai_system',
                     broker='redis://127.0.0.1:8000/0',
                     backend='mongodb://ns.fishersosoo.xyz:80/celery')
 celery_app.conf.update(
+    CELERYD_CONCURRENCY=10,
     CELERY_TASK_SERIALIZER='json',
     CELERY_ACCEPT_CONTENT=['json'],  # Ignore other content
     CELERY_RESULT_SERIALIZER='json',

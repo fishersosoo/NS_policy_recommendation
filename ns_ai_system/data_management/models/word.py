@@ -24,7 +24,7 @@ class Word(BaseInterface):
             node = Node(cls.__name__, type_, id=UUID(), name=name, field=field, **kwargs)
         else:  # Alia
             node = Node(cls.__name__, type_, id=UUID(), name=name, **kwargs)
-        graph_.create(node)
+        graph_().create(node)
         return node["id"], node
 
     @classmethod
@@ -36,10 +36,10 @@ class Word(BaseInterface):
         :return:
         """
         _, _, node = cls.find_by_id(id_)
-        if NodeMatcher(graph_).match("Alia", cls.__name__, name=alia).first() is None:
+        if NodeMatcher(graph_()).match("Alia", cls.__name__, name=alia).first() is None:
             _, alia_node = cls.create("Alia", alia)
             relationship = Relationship(node, "HAS_ALIA", alia_node)
-            graph_.create(relationship)
+            graph_().create(relationship)
 
     @classmethod
     def list_all(cls, *args):
@@ -47,7 +47,7 @@ class Word(BaseInterface):
         返回所有指定类型的词典项
         :return:
         """
-        return [match for match in NodeMatcher(graph_).match(cls.__name__, *args)]
+        return [match for match in NodeMatcher(graph_()).match(cls.__name__, *args)]
 
     @classmethod
     def _get_matching_score(cls, entity_name, field_name):
@@ -65,7 +65,7 @@ class Word(BaseInterface):
         :return: {"name": field_node["name"], "field": field_node["field"]}，如果找不到返回None
         """
         scores = []
-        for node in NodeMatcher(graph_).match(cls.__name__):
+        for node in NodeMatcher(graph_()).match(cls.__name__):
             # 遍历计算匹配度
             scores.append([node, cls._get_matching_score(entity_name, node["name"])])
         scores.sort(key=lambda x: x[1], reverse=True)
@@ -76,7 +76,7 @@ class Word(BaseInterface):
         else:
             if "Alia" in top_node.labels:
                 # TODO:这里可以对关系进行调用，这个别名的连接用了多少次
-                relationship = RelationshipMatcher(graph_).match(nodes=[None, top_node], r_type="HAS_ALIA").first()
+                relationship = RelationshipMatcher(graph_()).match(nodes=[None, top_node], r_type="HAS_ALIA").first()
                 field_node = relationship.start_node
             else:
                 field_node = top_node

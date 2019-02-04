@@ -4,7 +4,7 @@ from flask import request, jsonify
 from flask_restful import Api, Resource, reqparse
 
 from celery_task.policy.base import get_pending_task
-from celery_task.policy.tasks import understand_guide_task, recommend_task, check_single_guide_batch_companies
+from celery_task.policy.tasks import understand_guide_task, recommend_task, create_chain_for_check_recommend
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from restful_server.policy import policy_service
@@ -106,18 +106,19 @@ def recommend():
     return jsonify(response_dict)
 
 
-@policy_service.record("check_recommend/", methods=["POST"])
+@policy_service.route("check_recommend/", methods=["POST"])
 def check_single_guide_for_companies():
     """
     多个企业和单个政策的匹配情况
     :return:
     """
-    MAX_PENDING = 120
+    MAX_PENDING = 10
     params = request.json
     companies = params.get("companies", [])
     # 检查参数是否正确
     guide_id = params.get("guide_id", None)
     _, _, guide_node = Guide.find_by_guide_id(guide_id)
+    print(guide_node)
     if guide_node is None:
         return jsonify({
             "task_id": "",
@@ -149,10 +150,10 @@ def check_single_guide_for_companies():
         })
     elif max_input >= len(companies):
         # 队列能放进去
-        task_result = check_single_guide_batch_companies.delay(companies, guide_id,
-                                                               params.get("callback", None))
+        task_id = create_chain_for_check_recommend(companies, guide_id,
+                                                   params.get("callback", None))
         return jsonify({
-            "task_id": task_result.id,
+            "task_id": task_id,
             "message":
                 {
                     "status": "SUCCESS",
@@ -161,16 +162,24 @@ def check_single_guide_for_companies():
         })
     else:
         # 队列有空位
-        task_result = check_single_guide_batch_companies.delay(companies[:max_input], guide_id,
-                                                               params.get("callback", None))
+        task_id = create_chain_for_check_recommend(companies[:max_input], guide_id,
+                                                   params.get("callback", None))
         return jsonify({
-            "task_id": task_result.id,
+            "task_id": task_id,
             "message":
                 {
                     "status": "FULL",
                     "traceback": companies[max_input:]
                 }
         })
+
+
+@policy_service.route("single_recommend/", methods=["GET"])
+def single_recommend():
+    company_id = request.args.get("company_id", None)
+    guide_id = request.args.get("guide_id", None)
+    print(guide_id,company_id)
+    return jsonify(mongo.db.recommend_record.find_one({"guide_id": guide_id, "company_id": company_id, "latest": True}))
 
 
 policy_api.add_resource(PolicyUnderstandAPI, "understand/")

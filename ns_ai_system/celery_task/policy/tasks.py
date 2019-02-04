@@ -1,11 +1,13 @@
 # coding=utf-8
 import datetime
-
+import traceback
+import copy
 import requests
-from celery import group
+from celery import group, chain, chord
 
 from celery_task import celery_app, log
 from data_management.config import dataService, py_client
+from data_management.models import UUID
 from data_management.models.guide import Guide
 from data_management.models.requirement import Requirement
 from data_management.models.word import Word
@@ -31,30 +33,36 @@ def check_single_guide(company_id, guide_id, threshold=.0):
     :param guide_id:指南的平台id
     :return:
     """
-    _, _, guide_node = Guide.find_by_guide_id(guide_id)
-    assert guide_node is not None
-    requirements = Guide.find_leaf_requirement(guide_node["id"])
-    count = 0
-    reasons = []
-    base_info = query_data(company_id)
-    if base_info is None:
-        raise Exception(f"Query data fail for company: {company_id}")
-    for leaf in requirements:
-        requirement = leaf["leaf"]
-        match, reason = check_single_requirement(company_id, requirement, base_info)
-        if match is None:
-            # 忽略条件
-            continue
-        else:
-            count += 1
-        if match:
-            reasons.append(f'{len(reasons)+1}. {reason}')
-    record = format_record(company_id, count, guide_node, reasons)
-    py_client.ai_system["recommend_record"].insert_one(record)
-    py_client.ai_system["recommend_record"].update({"company_id": company_id,
-                                                    "guide_id": guide_id},
-                                                   {"$set": {"latest": False}}, upsert=False, multi=True)
-    return record
+    try:
+        _, _, guide_node = Guide.find_by_guide_id(guide_id)
+        assert guide_node is not None
+        requirements = Guide.find_leaf_requirement(guide_node["id"])
+        count = 0
+        reasons = []
+        base_info = query_data(company_id)
+        if base_info is None:
+            raise Exception(f"Query data fail for company: {company_id}")
+        for leaf in requirements:
+            requirement = leaf["leaf"]
+            match, reason = check_single_requirement(company_id, requirement, base_info)
+            if match is None:
+                # 忽略条件
+                continue
+            else:
+                count += 1
+            if match:
+                reasons.append(f'{len(reasons)+1}. {reason}')
+        record = format_record(company_id, count, guide_node, reasons)
+        # log.info(copy.deepcopy(record))
+        py_client.ai_system["recommend_record"].update({"company_id": company_id,
+                                                        "guide_id": guide_id},
+                                                       {"$set": {"latest": False}}, upsert=False, multi=True)
+        py_client.ai_system["recommend_record"].insert_one(copy.deepcopy(record))
+
+        return record
+    except Exception as e:
+        log.error(traceback.format_exc())
+        return None
 
 
 def format_record(company_id, count, guide_node, reasons):
@@ -160,10 +168,13 @@ def query_data(company_id):
         dataService.sendRequest("getQualifyCertifyInfo", {"entName": company_name, 'pageNo': 1, "pageSize": 1})[
             "PAGEINFO"][
             "TOTAL_COUNT"]
-    qualifies = \
-        dataService.sendRequest("getQualifyCertifyInfo",
-                                {"entName": company_name, 'pageNo': 1, "pageSize": qualify_certify_count})["RESULTDATA"]
-    base_info["FQZ_ZZMC"] = [one["FQZ_ZZMC"] for one in qualifies]
+    if qualify_certify_count==0:
+        base_info["FQZ_ZZMC"]=[]
+    else:
+        qualifies = \
+            dataService.sendRequest("getQualifyCertifyInfo",
+                                    {"entName": company_name, 'pageNo': 1, "pageSize": qualify_certify_count})["RESULTDATA"]
+        base_info["FQZ_ZZMC"] = [one["FQZ_ZZMC"] for one in qualifies]
     return base_info
 
 
@@ -189,7 +200,8 @@ def recommend_task(company_id, threshold=.0):
     return {"company_id": company_id, "results": results}
 
 
-def check_single_guide_batch_companies_callback(companies, guide_id, group_result, url, task_id):
+@celery_app.task()
+def check_single_guide_batch_companies_callback(group_result, companies, guide_id, url, task_id):
     """
     调用callback 接口告知任务已经完成
     :param task_id:
@@ -200,11 +212,10 @@ def check_single_guide_batch_companies_callback(companies, guide_id, group_resul
     :return:
     """
     return_result = {company: {"matching": .0, "status": "FAIL"} for company in companies}
-    for result in group_result.results:
-        if result.failed():
-            pass
-        else:
-            return_result[result.result["company_id"]] = {"matching": result.result["company_id"], "status": "SUCCESS"}
+    for result in group_result:
+        if result is None:
+            continue
+        return_result[result["company_id"]] = {"matching": result["matching"], "status": "SUCCESS"}
     try:
         requests.post(url, json={
             "guide_id": guide_id,
@@ -215,14 +226,21 @@ def check_single_guide_batch_companies_callback(companies, guide_id, group_resul
         pass
 
 
-@celery_app.task(bind=True)
-def check_single_guide_batch_companies(self, companies, guide_id, url):
-    """
-    批量检查多个企业和单个指南的匹配情况，完成后调用callback函数
-    :param companies:
-    :param callback:
-    :return:
-    """
-    task_group = group([check_single_guide.s(company, guide_id) for company in companies])
-    group_result = task_group().get()
-    check_single_guide_batch_companies_callback(companies, guide_id, group_result, url, self.request.id)
+def create_chain_for_check_recommend(companies, guide_id, url):
+    task_id = UUID()
+    task_group = chord([check_single_guide.s(company, guide_id) for company in companies])
+    task_chain = task_group(check_single_guide_batch_companies_callback.signature(kwargs={'companies': companies,"guide_id":guide_id,"url":url,"task_id":task_id}))
+    return task_id
+
+
+# @celery_app.task(bind=True)
+# def check_single_guide_batch_companies(self, companies, guide_id, url):
+#     """
+#     批量检查多个企业和单个指南的匹配情况，完成后调用callback函数
+#     :param companies:
+#     :param callback:
+#     :return:
+#     """
+#     task_group = group([check_single_guide.s(company, guide_id) for company in companies])
+#     group_result = task_group().get()
+#     check_single_guide_batch_companies_callback(companies, guide_id, group_result, url, self.request.id)

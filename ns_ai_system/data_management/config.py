@@ -12,7 +12,7 @@ neo4j_config = dict(host="ns.fishersosoo.xyz",
                     password="1995")
 import pymongo
 
-py_client = pymongo.MongoClient(host="ns.fishersosoo.xyz", port=80,connect=False)
+py_client = pymongo.MongoClient(host="ns.fishersosoo.xyz", port=80, connect=False)
 mongodb = py_client.ai_system
 import socket
 

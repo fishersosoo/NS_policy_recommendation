@@ -6,7 +6,12 @@ from py2neo import Graph, NodeMatcher, RelationshipMatcher
 
 from data_management.config import neo4j_config
 
-graph_ = Graph(**neo4j_config)
+
+def get_graph(neo4j_config=neo4j_config):
+    return Graph(**neo4j_config)
+
+graph_=get_graph
+
 
 UUID = lambda: str(uuid1())
 
@@ -21,27 +26,27 @@ class BaseInterface:
 
     @classmethod
     def update_by_id(cls, id_, *args, **kwargs):
-        node = NodeMatcher(graph_).match(id=id_).first()
+        node = NodeMatcher(graph_()).match(id=id_).first()
         if node is None:
             raise Exception(f"node {id_} not found")
         else:
             # node.labels.update(args)
             node.update(kwargs)
-        graph_.push(node)
+        graph_().push(node)
 
     @classmethod
     def remove_by_id(cls, id_):
-        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        node = NodeMatcher(graph_()).match(cls.__name__, id=id_).first()
         if node is None:
             raise Exception(f"{cls.__name__} not found")
-        graph_.delete(node)
+        graph_().delete(node)
 
     @classmethod
     def clear(cls):
         for node in NodeMatcher(graph_).match(cls.__name__):
             for relationship in RelationshipMatcher(graph_).match({node}):
-                graph_.separate(relationship)
-            graph_.delete(node)
+                graph_().separate(relationship)
+            graph_().delete(node)
 
     @classmethod
     def find_by_id(cls, id_):

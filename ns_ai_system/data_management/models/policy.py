@@ -12,7 +12,7 @@ class Policy(BaseInterface):
     def create(cls, policy_id, file_name, **kwargs):
         # kwargs["id"]=
         node = Node("Policy", id=UUID(), policy_id=policy_id, file_name=file_name, **kwargs)
-        graph_.create(node)
+        graph_().create(node)
         return node["id"]
 
     @classmethod
@@ -22,11 +22,11 @@ class Policy(BaseInterface):
             raise Exception("policy not found")
         else:
             node.update(kwargs)
-        graph_.push(node)
+        graph_().push(node)
 
     @classmethod
     def find_by_policy_id(cls, policy_id):
-        node = NodeMatcher(graph_).match(cls.__name__, policy_id=policy_id).first()
+        node = NodeMatcher(graph_()).match(cls.__name__, policy_id=policy_id).first()
         return node.labels, dict(**node), node
 
     @classmethod
@@ -35,12 +35,12 @@ class Policy(BaseInterface):
             boons = []
         _, _, policy = Policy.find_by_id(id_)
         # sub_graph = Subgraph(policy)
-        boon_list = list(NodeMatcher(graph_).match("Boon").where(f"_.id in {boons}"))
+        boon_list = list(NodeMatcher(graph_()).match("Boon").where(f"_.id in {boons}"))
         relationships = []
         for boon in boon_list:
             relationships.append(Relationship(policy, "HAS_BOON", boon))
         sub_graph = Subgraph(boon_list + [policy], relationships)
-        graph_.create(sub_graph)
+        graph_().create(sub_graph)
 
     @classmethod
     def get_file(cls, filename):

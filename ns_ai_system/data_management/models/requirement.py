@@ -14,21 +14,23 @@ class Requirement(BaseInterface):
         :param id_: 节点uuid
         :return: s节点, p节点, o节点
         """
-        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
-        r_matcher = RelationshipMatcher(graph_)
+        node = NodeMatcher(graph_()).match(cls.__name__, id=id_).first()
+        r_matcher = RelationshipMatcher(graph_())
         r = r_matcher.match((node, None), "HAS_SUBJECT").first()
-        # r.__repr__()
-        print(r)
+        r.__repr__()
+        # print(r)
         subject_node = r.end_node
 
-        r_matcher = RelationshipMatcher(graph_)
+        r_matcher = RelationshipMatcher(graph_())
         r = r_matcher.match((node, None), "HAS_PREDICATE").first()
-        print(r)
+        r.__repr__()
+        # print(r)
         predictate_node = r.end_node
 
-        r_matcher = RelationshipMatcher(graph_)
+        r_matcher = RelationshipMatcher(graph_())
         r = r_matcher.match((node, None), "HAS_OBJECT").first()
-        print(r)
+        r.__repr__()
+        # print(r)
         object_node = r.end_node
 
         return subject_node, predictate_node, object_node
@@ -36,30 +38,30 @@ class Requirement(BaseInterface):
     @classmethod
     def create(cls, **kwargs):
         node = Node(cls.__name__, id=UUID(), **kwargs)
-        graph_.create(node)
+        graph_().create(node)
         return node["id"]
 
     @classmethod
     def update_by_id(cls, id_, *args, **kwargs):
-        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        node = NodeMatcher(graph_()).match(cls.__name__, id=id_).first()
         if node is None:
             raise Exception(f"{cls.__name__} not found")
         else:
             node.labels.update(args)
             node.update(kwargs)
-        graph_.push(node)
+        graph_().push(node)
 
     @classmethod
     def set_predicate(cls, id_, predicate_id):
         _, _, node = cls.find_by_id(id_)
         _, _, predicate_node = Predicate.find_by_id(predicate_id)
-        relationship = RelationshipMatcher(graph_).match((node,), "HAS_PREDICATE").first()
+        relationship = RelationshipMatcher(graph_()).match((node,), "HAS_PREDICATE").first()
         if relationship is not None:
             old_node = relationship.end_node()
-            graph_.separate(relationship)
-            graph_.delete(old_node)
+            graph_().separate(relationship)
+            graph_().delete(old_node)
         relationship = Relationship(node, "HAS_PREDICATE", predicate_node)
-        graph_.create(relationship)
+        graph_().create(relationship)
 
     @classmethod
     def set_object(cls, id_, object_id):
@@ -67,11 +69,11 @@ class Requirement(BaseInterface):
         _, _, object_node = BaseInterface.find_by_id_in_graph(object_id)
         if "Subject" not in object_node.labels:
             object_node.add_label("Subject")
-        relationship = RelationshipMatcher(graph_).match((node,), "HAS_OBJECT").first()
+        relationship = RelationshipMatcher(graph_()).match((node,), "HAS_OBJECT").first()
         if relationship is not None:
-            graph_.separate(relationship)
+            graph_().separate(relationship)
         relationship = Relationship(node, "HAS_OBJECT", object_node)
-        graph_.create(relationship)
+        graph_().create(relationship)
 
     @classmethod
     def set_subject(cls, id_, subject_id):
@@ -79,12 +81,12 @@ class Requirement(BaseInterface):
         _, _, subject_node = BaseInterface.find_by_id_in_graph(subject_id)
         if "Subject" not in subject_node.labels:
             subject_node.add_label("Subject")
-            # graph_.push(subject_node)
-        relationship = RelationshipMatcher(graph_).match((node,), "HAS_SUBJECT").first()
+            # graph_().push(subject_node)
+        relationship = RelationshipMatcher(graph_()).match((node,), "HAS_SUBJECT").first()
         if relationship is not None:
-            graph_.separate(relationship)
+            graph_().separate(relationship)
         relationship = Relationship(node, "HAS_SUBJECT", subject_node)
-        graph_.create(relationship)
+        graph_().create(relationship)
 
 
 if __name__ == "__main__":

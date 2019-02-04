@@ -9,24 +9,24 @@ class Boon(BaseInterface):
     @classmethod
     def create(cls, **kwargs):
         node = Node(cls.__name__, id=UUID(), **kwargs)
-        graph_.create(node)
+        graph_().create(node)
         return node["id"]
 
     @classmethod
     def update_by_id(cls, id_, **kwargs):
-        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        node = NodeMatcher(graph_()).match(cls.__name__, id=id_).first()
         if node is None:
             raise Exception(f"{cls.__name__} not found")
         else:
             node.update(kwargs)
-        graph_.push(node)
+        graph_().push(node)
 
     @classmethod
     def add_requirement(cls, id_, requirement_id):
         _, _, boon_node = Boon.find_by_id(id_)
         _, _, requirement_node = Requirement.find_by_id(requirement_id)
         relationship = Relationship(boon_node, "HAS_REQUIREMENT", requirement_node)
-        graph_.create(relationship)
+        graph_().create(relationship)
 
 
 if __name__ == "__main__":

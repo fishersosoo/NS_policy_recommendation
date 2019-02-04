@@ -12,7 +12,7 @@ class Subject(BaseInterface):
         if subject_type not in SubjectType:
             raise Exception(f"subject_type must in {SubjectType}")
         node = Node(cls.__name__, subject_type, id=UUID(), **kwargs)
-        graph_.create(node)
+        graph_().create(node)
         return node["id"]
 
     @classmethod
@@ -20,10 +20,10 @@ class Subject(BaseInterface):
         for arg in args:
             if arg not in SubjectType and arg != cls.__name__:
                 raise Exception(f"label must in {SubjectType,cls.__name__}")
-        node = NodeMatcher(graph_).match(cls.__name__, id=id_).first()
+        node = NodeMatcher(graph_()).match(cls.__name__, id=id_).first()
         if node is None:
             raise Exception(f"{cls.__name__} not found")
         else:
             node.labels.update(args)
             node.update(kwargs)
-        graph_.push(node)
+        graph_().push(node)
