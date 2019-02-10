@@ -2,9 +2,12 @@
 from celery import Celery
 from celery.utils.log import get_task_logger
 
+from read_config import ConfigLoader
+
+config = ConfigLoader()
+
 celery_app = Celery('ns_ai_system',
-                    broker='redis://127.0.0.1:8000/0',
-                    backend='mongodb://ns.fishersosoo.xyz:80/celery')
+                    broker=config.get('celery', 'broker'))
 celery_app.conf.update(
     CELERYD_CONCURRENCY=10,
     CELERY_TASK_SERIALIZER='json',
@@ -12,11 +15,11 @@ celery_app.conf.update(
     CELERY_RESULT_SERIALIZER='json',
     CELERY_TIMEZONE='Asia/Shanghai',
     CELERY_ENABLE_UTC=True,
-    CELERY_RESULT_BACKEND='mongodb://ns.fishersosoo.xyz:80/celery',
+    CELERY_RESULT_BACKEND=f'mongodb://{config.get("mongoDB","host")}:{config.get("mongoDB","port")}/celery',
     CELERY_RESULT_BACKEND_SETTINGS={
-        "host": "ns.fishersosoo.xyz",
-        "port": 80,
-        "database": "celery",
+        "host": config.get("mongoDB", "host"),
+        "port": int(config.get("mongoDB", "port")),
+        "database": config.get("celery", "backend"),
         "taskmeta_collection": "stock_taskmeta_collection",
     },
 )

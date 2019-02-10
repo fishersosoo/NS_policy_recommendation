@@ -191,7 +191,8 @@ def recommend_task(company_id, threshold=.0):
     results = []
     for guide in guides:
         result = check_single_guide(company_id, guide["guide_id"])
-        results.append(result)
+        if result is not None:
+            results.append(result)
     # task_group = group([check_single_guide.s(company_id, guide) for guide in guides])
     # 异步执行
     # result = job.apply_async()

@@ -10,10 +10,11 @@
 
 - 添加restful接口，/policy/check_recommend/和/policy/single_recommend/
 - 添加celery task，批量检查多个企业和单个指南匹配情况
+- 添加json-rpc服务器，对外提供获取政策或指南文本的功能，封装JAVA实现的数据访问接口
 
-### Deprecated
+### Changed
 
-- 政策文件上传和访问的接口将会从restful server系统中移除，后续会建立新的独立文件系统
+- 所有配置项都在config.ini中进行配置
 
 
 
