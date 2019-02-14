@@ -25,8 +25,9 @@ def check_callback(url, guide_id):
         })
         if ret.ok and float(ret.content) == rand_num:
             is_ok = True
+            stack="content not match"
     except Exception as e:
-        stack = traceback.extract_stack()
+        stack ="can not resolve url"
         pass
     finally:
         return is_ok, stack

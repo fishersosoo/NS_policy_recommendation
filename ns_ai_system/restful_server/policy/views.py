@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask import request, jsonify
+from flask import request, jsonify,abort
 from flask_restful import Api, Resource, reqparse
 
 from celery_task.policy.base import get_pending_task
@@ -113,7 +113,10 @@ def check_single_guide_for_companies():
     :return:
     """
     MAX_PENDING = 10
+    print( request.headers)
     params = request.json
+    if params is None:
+        abort(400)
     companies = params.get("companies", [])
     # 检查参数是否正确
     guide_id = params.get("guide_id", None)
