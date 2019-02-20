@@ -1,14 +1,35 @@
 # coding=utf-8
+from bson import ObjectId
+
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from data_server.jvm_proxy import _attach_jvm_to_thread, DataServiceJavaProxy
-from data_server.server import jsonrpc
+from data_server.server import jsonrpc, mongo
 from service.file_processing import get_text_from_doc_bytes
 
 
 @jsonrpc.method("api.index")
 def index():
     return "index"
+
+
+@jsonrpc.method("file.register")
+def register(url, use, id=None):
+    """
+    注册回调函数，之后文件发生的变化将会通过该回调函数进行通知
+    :param use: 用于备注用途
+    :param url: 回调函数地址（完整地址）
+    :param id: （可选）如id不为None则会修改对应id的回调函数地址，建立新的回调
+    :return: 返回id用于修改回调函数地址
+    """
+    func = {"url": url, "use": use}
+    if id is None:
+        mongo.db.register.insert_one(func)
+        return str(func["_id"])
+    else:
+        result = mongo.db.register.update({"_id": ObjectId(id)},
+                                          {"$set": func}, upsert=False, multi=True)
+        return str(result['nModified']==1)
 
 
 @jsonrpc.method("file.get_policy_text")

@@ -57,6 +57,8 @@ class Guide(BaseInterface):
     @classmethod
     def find_by_guide_id(cls, guide_id):
         node = NodeMatcher(graph_()).match(cls.__name__, guide_id=guide_id).first()
+        if node is None:
+            return [],dict(),None
         return node.labels, dict(**node), node
 
     @classmethod

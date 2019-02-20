@@ -37,6 +37,10 @@
 
 可以访问http://{host}/data/browse/ 浏览api
 
+python访问demo脚本：
+
+https://github.com/fishersosoo/NS_policy_recommendation/tree/feature/tests/data_server_demo.py
+
 ## rpc方法列表
 
 ### file.get_guide_text(guide_id: str) -> str
@@ -70,4 +74,25 @@
 返回：
 
 对应政策文件中的的字符串
+
+### file.register(url: str, use: str, id: str) -> str
+
+
+注册回调函数，之后文件发生的变化将会通过该回调函数进行通知
+
+方法名称:file.register
+
+输入：
+
+| 参数 | 类型 | 备注                                         |
+| ---- | ---- | -------------------------------------------- |
+| url  | str  | 回调函数地址                                 |
+| use  | str  | 说明用途                                     |
+| id   | str  | 不填则为添加回调函数，否则为修改对应回调函数 |
+
+返回：
+
+添加回调函数时候，会返回id，后续用这个id来进行修改
+
+修改回调函数时候，如果成功修改则返回True，否则返回Flase
 
