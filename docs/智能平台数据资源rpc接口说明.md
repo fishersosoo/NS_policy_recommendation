@@ -96,3 +96,15 @@ https://github.com/fishersosoo/NS_policy_recommendation/tree/feature/tests/data_
 
 修改回调函数时候，如果成功修改则返回True，否则返回Flase
 
+#### 回调信息
+
+回调接口只需要正常接收http post请求即可
+
+信息为json格式，字段如下
+
+| 字段  |                     |      |
+| ----- | ------------------- | ---- |
+| event | delete、add、update |      |
+| type  | policy、guide       |      |
+| id    |                     |      |
+
