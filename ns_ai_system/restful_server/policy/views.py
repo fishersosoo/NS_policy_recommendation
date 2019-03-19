@@ -1,15 +1,19 @@
 # coding=utf-8
+import os
+import tempfile
 
-from flask import request, jsonify,abort
+from flask import request, jsonify, abort
 from flask_restful import Api, Resource, reqparse
 
 from celery_task.policy.base import get_pending_task
 from celery_task.policy.tasks import understand_guide_task, recommend_task, create_chain_for_check_recommend
+from condition_identification.api.text_parsing import paragraph_extract
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from restful_server.policy import policy_service
 from restful_server.policy.base import check_callback
 from restful_server.server import mongo
+from service.file_processing import get_text_from_doc_bytes
 
 policy_api = Api(policy_service)
 
@@ -60,7 +64,22 @@ def upload_guide():
     :return:
     """
     guide_file = request.files['file']
+    if os.path.splitext(guide_file.filename)[1] != ".doc":
+        return jsonify({"status": "ERROR", "message": "请上传doc文件"})
     guide_id = request.form.get("guide_id")
+
+    doc_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".doc")
+    guide_file.save(doc_temp_file)
+    doc_temp_file.close()
+    info=None
+    try:
+        text = get_text_from_doc_bytes(doc_temp_file)
+        info = paragraph_extract(text)
+        if info is None:
+            raise Exception("指南内容格式不正确，无法进行理解")
+    except Exception as e:
+        return jsonify({"status": "ERROR", "message": e})
+
     assert guide_id is not None
     mongo.save_file(filename=guide_file.filename,
                     fileobj=guide_file, base="guide_file")
@@ -68,7 +87,7 @@ def upload_guide():
     policy_id = request.args.get("policy_id", default=None)
     if policy_id is not None:
         Guide.link_to_policy(guide_id, policy_id)
-    result = understand_guide_task.delay(guide_id)
+    result = understand_guide_task.delay(guide_id,info)
     return jsonify({
         "task_id": result.id,
         "status": "SUCCESS"
@@ -113,7 +132,7 @@ def check_single_guide_for_companies():
     :return:
     """
     MAX_PENDING = 10
-    print( request.headers)
+    print(request.headers)
     params = request.json
     if params is None:
         abort(400)
@@ -181,7 +200,7 @@ def check_single_guide_for_companies():
 def single_recommend():
     company_id = request.args.get("company_id", None)
     guide_id = request.args.get("guide_id", None)
-    print(guide_id,company_id)
+    print(guide_id, company_id)
     return jsonify(mongo.db.recommend_record.find_one({"guide_id": guide_id, "company_id": company_id, "latest": True}))
 
 

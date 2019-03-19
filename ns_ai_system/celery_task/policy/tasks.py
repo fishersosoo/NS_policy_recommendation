@@ -16,13 +16,13 @@ from service.policy_graph_construct import understand_guide
 
 
 @celery_app.task
-def understand_guide_task(guide_id):
+def understand_guide_task(guide_id,paragraph_extract_output):
     """
 
     :param guide_id: 指南的外部id
     :return:
     """
-    understand_guide(guide_id)
+    understand_guide(guide_id,paragraph_extract_output)
 
 
 @celery_app.task

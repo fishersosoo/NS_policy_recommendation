@@ -1,7 +1,7 @@
 # coding=utf-8
 import sys
 
-from condition_identification.document_parsing.html_parser import HtmlParser
+from condition_identification.api.text_parsing import HtmlParser
 
 sys.path.append("..")
 

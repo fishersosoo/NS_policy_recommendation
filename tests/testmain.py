@@ -3,7 +3,7 @@ import sys
 import re
 
 from condition_identification.dict_management.dict_manage import EntityDict
-from condition_identification.document_parsing.html_parser import HtmlParser
+from condition_identification.api.text_parsing import HtmlParser
 from condition_identification.entity_link.entity_recognizer import EntityRecognizer
 from condition_identification.predicate_extraction.tuple_extracter import TupleExtracter
 from condition_identification.syntax_analysis.sentence_analysis import HanlpSynataxAnalysis
