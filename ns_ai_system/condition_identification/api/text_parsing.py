@@ -48,7 +48,7 @@ class Triple:
 
         :return:
         """
-        raise NotImplementedError("Not Implemented")
+        return str((self.f,self.r,self.v))
 
 
 def triple_extract(tree):
@@ -74,11 +74,16 @@ def triple_extract(tree):
         triples=[]
         triples_dict=getField_Value(sentence)
         for key in triples_dict:
+            relation=get_relation(sentence,key)
+            if not relation:
+                print(sentence,key)
+                continue
             triple=Triple()
+            triple.r =relation
             triple.v=key
             triple.f=triples_dict[key]
-            triple.r=get_relation(text,key)
             triples.append(triple)
+            print(triple)
         tree[node].data=triples
     tree.show()
     return tree
@@ -88,13 +93,15 @@ def triple_extract(tree):
 
 
 if __name__ == '__main__':
-    file_path = r'F:\\txt\\txt\\2.txt'
-    text = ""
-    try:
-        with open(file_path,'r',encoding='utf8') as f:
-            text = f.read()
-    except:
-        pass
-    paragraph_extrac_output = paragraph_extract(text)
-    triples = triple_extract(paragraph_extrac_output)
+    for i in range(0,138):
+        print(i)
+        file_path = r'F:\\txt\\txt\\'+str(i)+'.txt'
+        text = ""
+        try:
+            with open(file_path,'r',encoding='utf8') as f:
+                text = f.read()
+        except:
+            pass
+        paragraph_extrac_output = paragraph_extract(text)
+        triples = triple_extract(paragraph_extrac_output)
 

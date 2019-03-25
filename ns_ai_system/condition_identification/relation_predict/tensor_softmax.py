@@ -89,7 +89,6 @@ def predict_relation(value):
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     module_path = os.path.dirname(__file__)
-    print(module_path)
     saver = tf.train.import_meta_graph(module_path+'/model/model.ckpt.meta')
     saver.restore(sess, tf.train.latest_checkpoint(module_path+'/model'))
     graph = tf.get_default_graph()

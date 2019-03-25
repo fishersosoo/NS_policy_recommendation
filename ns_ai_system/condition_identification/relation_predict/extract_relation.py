@@ -43,9 +43,9 @@ def extract_context(text,value):
     v=HanLP.segment(value)
     for i in c:
         s=HanLP.segment(i)
-        print(s)
         if all_in(s,v):
             return i
+    return None
     # return value
 ####判断一个list里的元素是不是全部在另一个列表,
 def all_in(sentence,value):
@@ -65,8 +65,11 @@ def get_relation(text,value):
     '''
     bc = BertClient()
     text=extract_context(text,value)
-    v=bc.encode([text])
-    return predict_relation(v)
+    if text:
+        v=bc.encode([text])
+        return predict_relation(v)
+    else:
+        return None
 
 
 if __name__ == '__main__':
