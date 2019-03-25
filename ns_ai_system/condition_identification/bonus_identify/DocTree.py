@@ -1,6 +1,6 @@
 import re
 
-
+from bonus_identify.util import *
 from treelib import Node,Tree
 import queue
 from collections import defaultdict
@@ -11,109 +11,102 @@ from collections import defaultdict
 class DocTree:
 
         def __init__(self):
+            self.clean()
+        def clean(self):
             self.level_key = {0: ['root']}
-            self.key_level = {}
+            self.keys = ['root']
+            self.idkeys = ['root']
             self.level_one=[]
             self.tree = Tree()
             self.title=''
+            self.html_list=[]
 # 构造结构树
 
         # 通过文档名字构建树
         def construct(self,str,type):
-            self.level_key = {0: ['root']}
-            self.key_level = {}
-            self.level_one=[]
-            self.tree = Tree()
-            self.title=''
+            self.clean()
             try:
-                if type==1:
-                    html_list=self.file_tolist(str)
-                if type==2:
-                    html_list = self.str_tolist(str)
-                self.parse_totree(html_list)
-            except:
-                print('无法解析')
+                if type == 1:
+                    self.html_list = file_tolist(str)
+                if type == 2:
+                    self.html_list = str_tolist(str)
+                self.parse_totree(self.html_list)
+            except Exception as  e:
+                self.tree=None
+                print('error')
 
-        # 读取字符串
-        def str_tolist(self,str):
-            html_list=[]
-            count=0
-            for line in str.split('\n'):
-                line = line.strip()
-                if len(line) < 2:
-                    count += 1
-                    if count > 3:
-                        break
-                    else:
-                        continue
-                else:
-                    count = 0
-                html_list.append(line)
-            return html_list
-        # 读取文件成list
-        def file_tolist(self,file):
-            html_list = []
-            count=0
-            with open(file, 'r', encoding='utf8') as f:
-                for line in f.readlines():
-                    line=line.strip()
-                    # print(len(line))
-                    # 会有奇怪的字符存在使得换行的地方他长度不是0，而是一
-                    if len(line)<2:
-                        count+=1
-                        if count>3:
-                            break
-                        else:
-                            continue
-                    else:
-                        count=0
-                    html_list.append(line)
-            return html_list
+
+
 
         # 解析html结构成树
         level_words = [r'第.+章', r'第.+条', r'\d+\.', r'[一二三四五六七八九十壱弐参四伍〇]+、', r'\(?\d+\)', r'\(?[一二三四五六七八九十]+\)',
                        r'（?[一二三四五六七八九十]+）', r'（?\d+）', r'[①②③④⑤⑥⑦⑧⑨⑩]', r'第.+节', '\d+、']
         def parse_totree(self,html_list):
+            # 初始化
             title_flag=True
-            self.tree = Tree()
-            tree = self.tree
-            tree.create_node('root', 'root', data='partition')
             j = 0
-            head=0
+            head = 0
+            id_key = None
+            now_level=0
 
-            h_level = 1
-            id_key=None
+            tree=self.tree
+            tree.create_node('root', 'root', data=['partition'])
             for i in range(0, len(html_list)):
                 word = html_list[i]
+                if word=='':
+                    continue
                 # 判断是否满足正则表达式，可否作为节点
-                flag, key = self.is_node(self.level_words, word)
-
+                flag, key = self.get_candicate_node(self.level_words, word)
+                # 处理申请条件后单独存在的一句话
+                if i==1 and flag==False:
+                    flag=True
+                    key='：'
                 # 这里说明一下：之前是认为层级是固定的，即如果一级是一。二级是1.那么二。3）这种就会报错，因为3）不会分为二级
                 # 这里改过来了之后，前提条件是[一二三四五六七八九十]+、这个是每个文档都不会改变的，然后每一个层级都根据当前一级标题重新构造
-                if key==r'[一二三四五六七八九十壱弐参四伍〇]+、':
-                    h_level=1
-                    self.level_key = {0: ['root']}
-                    self.key_level = {}
-                    self.level_one.append(key + str(j))
-
-
+                # if key==r'[一二三四五六七八九十壱弐参四伍〇]+、':
+                #     h_level=1
+                #     self.level_key = {0: ['root']}
+                #     self.key_level = {}
+                #     self.level_one.append(key + str(j))
 
                 if flag:
                     # 根据j来构建独一无二的id
                     id_key = key + str(j)
-                    # 确定属于第几层
-                    if key not in self.key_level:
-                        self.key_level[key] = h_level
-                        h_level += 1
-                    c_level = self.key_level[key]
-                    # 把第几层的id存起来
-                    if c_level not in self.level_key:
-                        self.level_key[c_level] = [id_key]
-                    else:
-                        self.level_key[c_level].append(id_key)
-                    # 归属父节点即当前上一层最后一个id，即最近的上一层ID
-                    tree.create_node(word, id_key, self.level_key[c_level - 1][-1], data=[word])
+
+                    if key =='：':
+                        now_level=1
+                        del self.keys[now_level+1:]
+                        del self.idkeys[now_level+1:]
+                    if key !=self.keys[now_level] :
+                        if now_level-1>0 and  key ==self.keys[now_level-1] and self.keys[now_level]!='：':
+                            now_level-=1
+                        else:
+                            now_level+=1
+
+                    if now_level==len(self.keys):
+                        self.keys.append(key)
+                        self.idkeys.append(id_key)
+
+                    self.idkeys[now_level]=id_key
+
+
+                    tree.create_node(word, id_key, self.idkeys[now_level-1], data=[word])
                     j += 1
+
+
+                    # # 确定属于第几层
+                    # if key not in self.key_level:
+                    #     self.key_level[key] = h_level
+                    #     h_level += 1
+                    # c_level = self.key_level[key]
+                    # # 把第几层的id存起来
+                    # if c_level not in self.level_key:
+                    #     self.level_key[c_level] = [id_key]
+                    # else:
+                    #     self.level_key[c_level].append(id_key)
+                    # # 归属父节点即当前上一层最后一个id，即最近的上一层ID
+                    # tree.create_node(word, id_key, self.level_key[c_level - 1][-1], data=[word])
+                    # j += 1
                 else:
                     # 如果当前不是一个节点，则把内容归属上一次最近的节点
                     if id_key:
@@ -129,73 +122,29 @@ class DocTree:
 
 
         # 判断是否一个节点，即是否存在一些前缀词1.一.
-        def is_node(self,level_words, word):
-            word = word[0:5]
+        def get_candicate_node(self,level_words, word):
             Flag = False
             key = ''
+            lword = word[0:5]
             for level_word in level_words:
-                re_result = re.search(level_word, word)
+                re_result = re.search(level_word, lword)
                 if re_result:
                     Flag = True
                     key = level_word
                     break
+
+            if not Flag:
+                if word[-1] == '：':
+                    Flag = True
+                    key = "："
+
             return Flag, key
 
 
 
 
 
-# 识别优惠树
-        keywords = ['奖', '奖励', '资助', '补贴', '补助', '支持', '资金'] # 奖励识别的关键字
-        # 只识别条件了
-        def get_bonus_tree(self):
-            bonus_tree=Tree()
-            doc_tree=self.get_tree()
-            c_nid=''
-            b_nid=''
-            b_data=''
-            # 寻找条件
-            for nid in self.level_one:
-                if '条件'in doc_tree.get_node(nid).data[0]:
-                    c_nid=nid
-                    break
-            # 寻找优惠
-            for nid in self.level_one:
-                for key in self.keywords:
-                    if key in doc_tree.get_node(nid).data[0]:
-                        b_nid=nid
-                        break
-            if b_nid!='' and c_nid!='':
-                for node in doc_tree.expand_tree(nid=b_nid, mode=Tree.DEPTH):
-                    if node==b_nid:
-                        p_nodedata=doc_tree[node].data.copy()
-                        del p_nodedata[0]
-                        # 把‘四.奖励标准’过滤掉
-                        b_data += ','.join(p_nodedata)
-                        continue
-                    b_data+=','.join(doc_tree[node].data)
-            #  创建优惠树
-                bonus_tree.create_node(identifier='root',tag=b_data,data=b_data)
-                bonus_tree.create_node('partition', 'partition', parent='root')
 
-
-                # 父节点可能会有信息，因为有可能他没有序号就是一段话
-                p_data=doc_tree.get_node(c_nid).data.copy()
-
-                    # 把‘二.申请条件’和‘满足以下条件’删除
-                if len(p_data)>=2:
-                    if len(p_data[0])<8 :
-                        del p_data[0]
-                    if '：' in p_data[0]:
-                        del p_data[0]
-                    p_data=','.join(p_data)
-                    if p_data:
-                        bonus_tree.create_node(identifier=c_nid, tag=p_data, data=p_data,parent='partition')
-                # 可以继续改进，这里用树的复制其实是浪费了资源
-                new_tree=self.copy_tree(doc_tree.subtree(c_nid),'')
-                for children in new_tree.children(''+'_'+c_nid):
-                    bonus_tree.paste('partition', new_tree.subtree(children.identifier))
-            return bonus_tree
 
 
 # 通用方法
@@ -411,4 +360,55 @@ if __name__ == '__main__':
         #         node_name = parent_name
         #     return bonus_tree
 
+# # 识别优惠树
+#         keywords = ['奖', '奖励', '资助', '补贴', '补助', '支持', '资金'] # 奖励识别的关键字
+#         # 只识别条件了
+#         def get_bonus_tree(self):
+#             bonus_tree=Tree()
+#             doc_tree=self.get_tree()
+#             c_nid=''
+#             b_nid=''
+#             b_data=''
+#             # 寻找条件
+#             for nid in self.level_one:
+#                 if '条件'in doc_tree.get_node(nid).data[0]:
+#                     c_nid=nid
+#                     break
+#             # 寻找优惠
+#             for nid in self.level_one:
+#                 for key in self.keywords:
+#                     if key in doc_tree.get_node(nid).data[0]:
+#                         b_nid=nid
+#                         break
+#             if b_nid!='' and c_nid!='':
+#                 for node in doc_tree.expand_tree(nid=b_nid, mode=Tree.DEPTH):
+#                     if node==b_nid:
+#                         p_nodedata=doc_tree[node].data.copy()
+#                         del p_nodedata[0]
+#                         # 把‘四.奖励标准’过滤掉
+#                         b_data += ','.join(p_nodedata)
+#                         continue
+#                     b_data+=','.join(doc_tree[node].data)
+#             #  创建优惠树
+#                 bonus_tree.create_node(identifier='root',tag=b_data,data=b_data)
+#                 bonus_tree.create_node('partition', 'partition', parent='root')
+#
+#
+#                 # 父节点可能会有信息，因为有可能他没有序号就是一段话
+#                 p_data=doc_tree.get_node(c_nid).data.copy()
+#
+#                     # 把‘二.申请条件’和‘满足以下条件’删除
+#                 if len(p_data)>=2:
+#                     if len(p_data[0])<8 :
+#                         del p_data[0]
+#                     if '：' in p_data[0]:
+#                         del p_data[0]
+#                     p_data=','.join(p_data)
+#                     if p_data:
+#                         bonus_tree.create_node(identifier=c_nid, tag=p_data, data=p_data,parent='partition')
+#                 # 可以继续改进，这里用树的复制其实是浪费了资源
+#                 new_tree=self.copy_tree(doc_tree.subtree(c_nid),'')
+#                 for children in new_tree.children(''+'_'+c_nid):
+#                     bonus_tree.paste('partition', new_tree.subtree(children.identifier))
+#             return bonus_tree
 
