@@ -1,0 +1,1 @@
+python .\start-bert-as-service.py -model_dir .\checkpoint\ -num_worker=4
