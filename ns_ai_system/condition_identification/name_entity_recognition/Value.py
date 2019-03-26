@@ -61,16 +61,30 @@ class Value(object):
 
 
 
-# TODO 还有中文的数字一二三四没有拆
 # TODO 这里应该放再抽关键字之前，因为有可能关键字没抽到
     def idf_nums(self,word):
-        p = r"\d*.*"
-        pattern = re.compile(p)
-        match = pattern.findall(word)[0]
-        if match!='' and '元'in word:
+        b = HanLP.parseDependency(word)
+        a = b.getWordArray()
+        mflag=False
+        qflag=False
+        for word in a:
+            if word.POSTAG=='m':
+                mflag=True
+            if word.POSTAG=='q':
+                qflag=True
+        if mflag and qflag:
             return True
         else:
             return False
+
+        # p = r"\d*.*"
+        # p1=r"[一二三四五六七八九十]+.*"
+        # pattern = re.compile(p)
+        # match = pattern.findall(word)[0]
+        # if match!='':
+        #     return True
+        # else:
+        #     return False
 # 数据库字段的地址就用地的相似度去找，
     def idf_address(self,sentence):
         segment = HanLP.newSegment().enablePlaceRecognize(False)
@@ -80,4 +94,8 @@ class Value(object):
             return True
         else:
             return False
+
+if __name__=='__main__':
+    # print(idf_nums('30岁'))
+    pass
 

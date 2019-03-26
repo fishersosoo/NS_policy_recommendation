@@ -78,10 +78,10 @@ def database_cluster(lines,outputname):
             for i in range(len(result_csv)):
                 wf.write(result_csv[i])
                 wf.write('\n')
-
+# TODO 还少一个接口可以修改arg.py
 if __name__=='__main__':
-    words=[]
-    with open('F:\\txt\\txt\\2.txt','r',encoding='utf8')as rf:
-        for line in rf:
-            words.append(line.strip())
+    words=['1']*1000
+    # with open('F:\\txt\\txt\\2.txt','r',encoding='utf8')as rf:
+    #     for line in rf:
+    #         words.append(line.strip())
     database_extract(words,'21.txt',10)
