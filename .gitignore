@@ -4,6 +4,7 @@ condition_identification/word_segmentation/__pycache__
 condition_identification/bonus_identify/__pycache__
 condition_identification/bonus_identify/.idea
 venv/
+*.pyc
 docs/build/
 docs/make.bat
 docs/Makefile

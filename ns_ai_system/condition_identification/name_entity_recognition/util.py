@@ -1,6 +1,6 @@
+# coding=utf-8
 import numpy as np
 from pyhanlp import *
-import numpy as np
 
 
 

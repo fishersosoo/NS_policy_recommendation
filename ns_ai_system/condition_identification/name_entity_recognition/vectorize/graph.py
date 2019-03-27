@@ -2,8 +2,8 @@ import tempfile
 import json
 import logging
 from termcolor import colored
-from name_entity_recognition.vectorize import modeling
-from name_entity_recognition.vectorize import args
+from condition_identification.name_entity_recognition.vectorize import modeling
+from condition_identification.name_entity_recognition.vectorize import args
 import tensorflow as tf
 import os
 

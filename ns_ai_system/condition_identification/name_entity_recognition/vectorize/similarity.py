@@ -5,10 +5,10 @@ from threading import Thread
 import pandas as pd
 import tensorflow as tf
 import collections
-import args
-import tokenization
-import modeling
-import optimization
+import condition_identification.args
+import condition_identification.tokenization
+import condition_identification.modeling
+import condition_identification.optimization
 
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '1'

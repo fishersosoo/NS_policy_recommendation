@@ -1,1 +1,1 @@
-from name_entity_recognition import *
+from condition_identification.name_entity_recognition import *

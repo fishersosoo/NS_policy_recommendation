@@ -1,6 +1,7 @@
+# coding=utf-8
+
 from pyhanlp import *
-import pyhanlp
-from name_entity_recognition.util import  cos_sim
+from condition_identification.name_entity_recognition.util import  cos_sim
 import re
 import pandas as pd
 def filter_punctuation(LEMMA,HEADLEMMA):
@@ -80,7 +81,7 @@ def extract_keyword(sentence, len_threshold):
                 resultword.append(word.LEMMA)
 
         # 最后一个词在最后面的时候
-        complete_word = ('').join(wait_word)
+        complete_word = ''.join(wait_word)
         if complete_word != '':
             resultword.append(complete_word)
     return resultword
