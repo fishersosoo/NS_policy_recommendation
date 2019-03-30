@@ -1,6 +1,6 @@
 # coding=utf-8
-from name_entity_recognition.extract import *
-from name_entity_recognition.util import cos_sim
+from condition_identification.name_entity_recognition.extract import *
+from condition_identification.name_entity_recognition.util import cos_sim
 import os
 
 

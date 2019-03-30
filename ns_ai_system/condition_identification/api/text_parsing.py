@@ -1,6 +1,8 @@
-from bonus_identify.DocTree import *
-from name_entity_recognition.reg import getField_Value
-from relation_predict.extract_relation import get_relation
+from condition_identification.bonus_identify.DocTree import *
+from condition_identification.name_entity_recognition.reg import get_field_value
+from condition_identification.relation_predict.extract_relation import get_relation
+
+
 # coding=utf-8
 class ParagraphExtractOutput:
     """
@@ -26,21 +28,21 @@ def paragraph_extract(text):
     return t
 
 
-
 class Triple:
     """
     用于保存多个条件三元组，存储内容包括了多个(s, r, o)三元组、每个三元组对应的原文、三元组之间的and和or关系
 
     """
+
     def __init__(self):
         '''
         f:field
         r:relation
         v:value
         '''
-        self.f=[]
-        self.r=''
-        self.v=''
+        self.f = []
+        self.r = ''
+        self.v = ''
 
     def __repr__(self):
         """
@@ -48,7 +50,7 @@ class Triple:
 
         :return:
         """
-        return str((self.f,self.r,self.v))
+        return str((self.f, self.r, self.v))
 
 
 def triple_extract(tree):
@@ -58,12 +60,12 @@ def triple_extract(tree):
     :param paragraph_extract_output: paragraph_extract()的返回
     :return: 返回关系树
     """
-    for node in  tree.expand_tree(mode=Tree.DEPTH):
-        sentence="。".join(tree[node].data)
+    for node in tree.expand_tree(mode=Tree.DEPTH):
+        sentence = "。".join(tree[node].data)
         # 解决and/or
         if not tree[node].is_leaf():
-            if "之一"in sentence or '其二'in sentence:
-                tree[node].tag='or'
+            if "之一" in sentence or '其二' in sentence:
+                tree[node].tag = 'or'
             else:
                 tree[node].tag = 'and'
         else:
@@ -71,34 +73,33 @@ def triple_extract(tree):
             pass
 
         # 解决三元组
-        triples=[]
-        triples_dict=getField_Value(sentence)
+        triples = []
+        triples_dict = get_field_value(sentence)
         for key in triples_dict:
-            relation=get_relation(sentence,key)
+            relation = get_relation(sentence, key)
             if not relation:
-                print(sentence,key)
+                print(sentence, key)
                 continue
-            triple=Triple()
-            triple.r =relation
-            triple.v=key
-            triple.f=triples_dict[key]
+            triple = Triple()
+            triple.r = relation
+            triple.v = key
+            triple.f = triples_dict[key]
             triples.append(triple)
             print(triple)
-        tree[node].data=triples
+        tree[node].data = triples
     tree.show()
     return tree
 
 
 if __name__ == '__main__':
-    for i in range(0,138):
+    for i in range(0, 138):
         print(i)
-        file_path = r'F:\\txt\\txt\\'+str(i)+'.txt'
+        file_path = r'F:\\txt\\txt\\' + str(i) + '.txt'
         text = ""
         try:
-            with open(file_path,'r',encoding='utf8') as f:
+            with open(file_path, 'r', encoding='utf8') as f:
                 text = f.read()
         except:
             pass
         paragraph_extrac_output = paragraph_extract(text)
         triples = triple_extract(paragraph_extrac_output)
-
