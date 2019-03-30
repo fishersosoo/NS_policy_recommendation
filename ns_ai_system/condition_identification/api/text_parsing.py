@@ -89,9 +89,6 @@ def triple_extract(tree):
     return tree
 
 
-
-
-
 if __name__ == '__main__':
     for i in range(0,138):
         print(i)

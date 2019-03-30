@@ -19,14 +19,15 @@ def database_extract(lines, output_name, max_length=-1, len_threshold=1):
         None
     """
     # 存放文本的文件目录
-    count = 0
     file_path = os.path.dirname(__file__)
     file_path += '/../name_entity_recognition/evalue/'
     file_path += output_name
 
     f = open(file_path, 'w', encoding='utf8')
     f.close()
+
     result_word = []
+    count = 0
     for line in lines:
         count += 1
         if max_length != -1 and count > max_length:     # max_length不是-1，抽取前max_length行
