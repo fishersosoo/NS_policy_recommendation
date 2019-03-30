@@ -19,11 +19,11 @@ class Field(object):
         Args:
             field_file: 指代候选的字段所在的文件
         """
-        self.field=self.__get_field(field_file)
+        self.field=self._get_field(field_file)
         self.field_dict = {}
 
     @staticmethod
-    def __get_field(field_file):
+    def _get_field(field_file):
         """获取field
 
         从field_file文件读取field,返回field的集合
@@ -39,16 +39,19 @@ class Field(object):
         with open(field_file, 'r', encoding='utf8') as f:
             for line in f:
                 line = line.strip()
-                if line!='':
+                if line != '':
                     field.add(line)
         return field
 
     def _compare_similarity(self, line, bc):
-        """
+        """找到相似度最高的field
+
        从候选field中找出与line相似度最高的field
+
         Args:
             line:str
             bc:获取词向量的工具
+
         Returns:
             最高的相似度值与对应的field
         """
@@ -77,6 +80,7 @@ class Field(object):
         Args:
             regs:list,
             bc:获取词向量的工具
+
         Returns：
              字典
 
