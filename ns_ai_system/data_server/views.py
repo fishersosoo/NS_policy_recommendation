@@ -5,6 +5,7 @@ from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from data_server.jvm_proxy import _attach_jvm_to_thread, DataServiceJavaProxy
 from data_server.server import jsonrpc, mongo
+from model.bert_vec.data_processing import convert_to_ids
 from service.file_processing import get_text_from_doc_bytes
 
 
@@ -29,7 +30,7 @@ def register(url, use, id=None):
     else:
         result = mongo.db.register.update({"_id": ObjectId(id)},
                                           {"$set": func}, upsert=False, multi=True)
-        return str(result['nModified']==1)
+        return str(result['nModified'] == 1)
 
 
 @jsonrpc.method("file.get_policy_text")
@@ -66,3 +67,22 @@ def sendRequest(service_name, params):
     """
     _attach_jvm_to_thread()
     return DataServiceJavaProxy.sendRequest(service_name, params)
+
+
+@jsonrpc.method("model.bert_word2vec")
+def bert_word2vec(strs):
+    """
+    使用bert模型进行char level的 word2vec
+
+    :param strs: [str]. 多个str
+    :return:
+    list, shape:[len(strs), 32, 768]
+
+    """
+    ids = convert_to_ids(strs, max_seq, tokenizer)
+    url = "http://127.0.0.1:8501/v1/models/bert_embedding:predict"
+    data = {
+        "instances": [{"input_ids": one_ids} for one_ids in ids]
+    }
+    res = requests.post(url, json=data)
+    return json.loads(res.text)["predictions"]
