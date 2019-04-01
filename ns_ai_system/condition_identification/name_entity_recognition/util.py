@@ -11,7 +11,7 @@ def cos_sim(vector_a, vector_b):
         vector_a: 向量 a ,list 或者 numpy数组
         vector_b: 向量 b，list 或者 numpy数组
     Returns:
-          两个向量之间的相似度，float
+          sim: float,两个向量之间的相似度
 
     """
     # 计算两个向量的相似度

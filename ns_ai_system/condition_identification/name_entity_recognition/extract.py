@@ -1,6 +1,5 @@
 # coding=utf-8
 from pyhanlp import *
-import pyhanlp
 import re
 
 
@@ -84,10 +83,10 @@ def insert(word, wait_word_id, wait_word):
         wait_word_id.append(word.ID)                     # 直接放到最后面
         wait_word.append(word.LEMMA)
     else:
-        for i in range(len(wait_word_id)):
-            if word.ID < wait_word_id[i]:
-                wait_word_id.insert(i, word.ID)
-                wait_word.insert(i, word.LEMMA)
+        for index in range(len(wait_word_id)):
+            if word.ID < wait_word_id[index]:
+                wait_word_id.insert(index, word.ID)
+                wait_word.insert(index, word.LEMMA)
                 break
 
     return wait_word_id, wait_word
@@ -129,7 +128,7 @@ def extract_keyword(sentence, len_threshold):
                 wait_word_id, wait_word = insert(word.HEAD, wait_word_id, wait_word)
                 id_last = word.HEAD.ID    # 与定中关系有关的id最大的词的下标
             elif word.ID >= id_last:      # word.ID 大于等于有定中关系的词的最大的下标就把之前的词连起来
-                complete_word = ('').join(wait_word)
+                complete_word = ''.join(wait_word)
                 if complete_word != '':
                     result_word.append(complete_word)
                     history_word.extend(wait_word)
@@ -143,13 +142,21 @@ def extract_keyword(sentence, len_threshold):
             result_word.append(complete_word)
     return result_word
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     # with open('evalue/企业基本信息_地址.txt', 'w', encoding='utf8')as wf:
     #     result_csv=result_csv['filed'].values
     #     for i in range(len(result_csv)):
     #         wf.write(result_csv[i])
     #         wf.write('\n')
-    print(extract_keyword('1、工商注册地、税务征管关系及统计关系在广州市南沙区范围内；', 2))
+    text=['广州市南沙区黄阁镇境界大街22-1号地下室','广州市南沙区南沙街裕兴东街103号101铺','4号1023房',
+          '广州市南沙区品汇街68号102房','广州市南沙区进港大道12号702房','广州市南沙区南沙街江南路22号101商铺',
+          '广州市南沙区环市北路1号逸涛雅苑会所302室','广州市南沙区成汇街1号成荟广场商务办公B栋西梯1208房',
+          '广州市南沙区南沙街环市大道中452号一楼','广州市南沙区进港大道12号1211房','广州市南沙区成汇街3号1108房',
+          '广州市南沙区海滨路171号南沙金融大厦16楼1601室之22','广州市南沙区海滨路171号南沙金融大厦16楼1601之43',
+          '广州市南沙区成汇街1号1607房','广州市南沙区大岗镇高沙路蓝怡街2号','核居委广场路','358号101房']
+    for i in text:
+        print(extract_keyword(i, 2))
 
 
 

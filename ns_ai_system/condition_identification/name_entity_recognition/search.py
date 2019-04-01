@@ -3,16 +3,16 @@ def search_by_relative_pos(value_dict, field_dict, keyword):
     """确定field 和 value
 
     先找到keyword的下标，然后通过下标先向前遍历再向后遍历，
-    找是否有某个keyword的值同时再value_dic和field_dic
+    找是否有某个keyword的值同时在value_dict和field_dict
     如果没有的话就用value_dic值来表示field
 
     Args:
-        value_dict: dic
-        field_dict: dic
+        value_dict: dict
+        field_dict: dict
         keyword: list
 
     Returns:
-        dic
+        result: dic
     """
     result = {}
     has_field = False

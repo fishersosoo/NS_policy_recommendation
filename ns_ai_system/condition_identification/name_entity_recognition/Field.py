@@ -1,5 +1,6 @@
 # coding=utf-8
 from condition_identification.name_entity_recognition.util import cos_sim
+from data_management.api import list_field_info
 
 
 class Field(object):
@@ -10,50 +11,41 @@ class Field(object):
 
     Attributes:
         field: list,field 组成的list
-        field_dic: dic， 跟他最接近的几个field
-
+        field_dict: dict， 与某个词相似度最高的field
 
     """
-    def __init__(self, field_file):
-        """
-        Args:
-            field_file: 指代候选的字段所在的文件
-        """
-        self.field=self._get_field(field_file)
+    def __init__(self):
+        self.field = self._get_field()
         self.field_dict = {}
 
     @staticmethod
-    def _get_field(field_file):
+    def _get_field():
         """获取field
 
-        从field_file文件读取field,返回field的集合
-
-        Args:
-            field_file:要读取的文件
+        从数据库获取field,返回field的集合
 
         Returns:
-            field的集合
+            field: set,field集合
 
         """
-        field = set()
-        with open(field_file, 'r', encoding='utf8') as f:
-            for line in f:
-                line = line.strip()
-                if line != '':
-                    field.add(line)
+        # 获取field 信息
+
+        field = set(list_field_info())
         return field
 
     def _compare_similarity(self, line, bc):
         """找到相似度最高的field
 
-       从候选field中找出与line相似度最高的field
+        从候选field中找出与line相似度最高的field
 
         Args:
             line:str
             bc:获取词向量的工具
 
         Returns:
-            最高的相似度值与对应的field
+            max_value: float
+            max_word: str
+
         """
         max_value = 0
         max_word = ''
@@ -94,5 +86,3 @@ class Field(object):
     def get_field_dict(self):
         """ 获取field_dict"""
         return self.field_dict
-
-

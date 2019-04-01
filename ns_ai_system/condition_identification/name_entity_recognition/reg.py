@@ -2,9 +2,9 @@
 from bert_serving.client import BertClient
 from condition_identification.name_entity_recognition.args import *
 from condition_identification.name_entity_recognition.extract import *
-from condition_identification.name_entity_recognition.Field import Field
+from condition_identification.name_entity_recognition.field import Field
 from condition_identification.name_entity_recognition.search import *
-from condition_identification.name_entity_recognition.Value import Value
+from condition_identification.name_entity_recognition.value import Value
 from condition_identification.name_entity_recognition.vectorize.extract_feature import BertVector
 
 
@@ -25,14 +25,15 @@ def get_field_value(sentence):
     else:
         bc = BertClient()
     keyword = extract_keyword(sentence, 2)
-    field = Field(FILE_PATH + '/field.txt')
+    field = Field()
     field_dict = field.construct_field_dict(keyword, bc)
-    value = Value(FILE_PATH + '/evalue')
+    value = Value()
     value_dict = value.construct_value_dict(keyword, bc)
     result = search_by_relative_pos(value_dict, field_dict, keyword)
     return result
 
 
 if __name__ == '__main__':
-    word = '大于5千万元'
-    print(get_field_value(word))
+    word = '申报单位为创业投资基金的管理机构，管理机构及其运营的创业投资基金均注册在南沙，管理机构和所运营的创业投资基金须在中国证券投资基金业协会备案登记'
+    text='集聚境外创业企业不少于20家'
+    print(get_field_value(text))
