@@ -1,11 +1,11 @@
 # coding=utf-8
 from condition_identification.name_entity_recognition.extract import *
 from condition_identification.name_entity_recognition.util import cos_sim
-from bert_serving.client import BertClient
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-bc = BertClient()
+from condition_identification.name_entity_recognition.vectorize.bert_word2vec import bert_word2vec
+bc = bert_word2vec
 
 
 def database_extract(lines, max_length=-1, len_threshold=1):
@@ -51,7 +51,7 @@ def database_cluster(lines):
     # 获得列数据的词向量 以及 对列数据去重
     for line in tqdm(lines):
         line = line.strip()
-        vec_dict[line] = bc.encode([line])
+        vec_dict[line] = bc([line])
         vs.add(line)
     vs = list(vs)
     # 如果数据太少就没有清除的必要

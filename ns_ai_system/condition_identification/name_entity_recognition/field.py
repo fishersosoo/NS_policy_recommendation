@@ -58,7 +58,7 @@ class Field(object):
                     flag = True
                     break
             if flag:
-                value = cos_sim(bc.encode([line]), bc.encode([word]))  # 获取他们的相似度
+                value = cos_sim(bc([line]), bc([word]))  # 获取他们的相似度
                 if max_value < value:
                     max_value = value
                     max_word = word

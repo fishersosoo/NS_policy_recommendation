@@ -67,7 +67,7 @@ class Value(object):
                     flag = True
                     break
             if flag:
-                value = cos_sim(bc.encode([line]), bc.encode([word]))
+                value = cos_sim(bc([line]), bc([word]))
                 if max_value < value:
                     max_value = value
                     max_word = word

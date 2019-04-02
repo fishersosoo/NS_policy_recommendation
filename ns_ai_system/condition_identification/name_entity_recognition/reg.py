@@ -1,12 +1,11 @@
 # coding=utf-8
-from bert_serving.client import BertClient
+
 from condition_identification.name_entity_recognition.args import *
 from condition_identification.name_entity_recognition.extract import *
 from condition_identification.name_entity_recognition.field import Field
 from condition_identification.name_entity_recognition.search import *
 from condition_identification.name_entity_recognition.value import Value
-from condition_identification.name_entity_recognition.vectorize.extract_feature import BertVector
-
+from condition_identification.name_entity_recognition.vectorize.bert_word2vec import bert_word2vec
 
 def get_field_value(sentence):
     """获取语句的field
@@ -21,9 +20,9 @@ def get_field_value(sentence):
 
     """
     if MODE == 'bert-util':    # 确定词向量的工具
-        bc = BertVector()
+        bc = bert_word2vec
     else:
-        bc = BertClient()
+        bc = bert_word2vec
     keyword = extract_keyword(sentence, 2)
     field = Field()
     field_dict = field.construct_field_dict(keyword, bc)
