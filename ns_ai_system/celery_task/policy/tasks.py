@@ -78,9 +78,11 @@ def check_single_requirement(company_id, triple):
     :param company_id: 企业id
     :return: match, reason. match表示是否满足，reason，如果不满足则原因为None
     """
+    if "独立法人资格" in triple["value"]:
+        return True, "是"
     if len(triple["fields"]) == 0:
         return None, None
-    field = triple["fields"][0]
+    field = triple["fields"][0].split("_")[1]
     field_info = py_client.ai_system["field"].find_one({"item_name": field})
     if field_info is None:
         log.info(f"no field {field}")

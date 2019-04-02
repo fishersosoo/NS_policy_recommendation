@@ -70,7 +70,7 @@ def get_value_dic():
 
     values = defaultdict(set)
     for one in py_client.ai_system["value_dict"].find():
-        values[one["key"] + '.txt'] = set(one["value"])
+        values[one["key"] ] = set(one["value"])
     print(__name__)
     return values
 
