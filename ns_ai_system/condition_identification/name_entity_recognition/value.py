@@ -1,11 +1,9 @@
 # coding=utf-8
-import re
 from collections import defaultdict
 from pyhanlp import *
 from condition_identification.name_entity_recognition.args import *
 from condition_identification.name_entity_recognition.util import cos_sim
 from data_management.api import get_value_dic
-from condition_identification.api.database_parse import database_extract
 
 
 class Value(object):
@@ -39,7 +37,7 @@ class Value(object):
         values = defaultdict(set)
         value_dic = get_value_dic()
         for key in value_dic:
-            values_set = set(database_extract(value_dic[key]))
+            values_set = set(value_dic[key])
             values[key] = values_set
         return values
 
