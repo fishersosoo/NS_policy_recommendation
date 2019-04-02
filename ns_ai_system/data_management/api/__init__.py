@@ -4,7 +4,7 @@ from condition_identification.name_entity_recognition.args import *
 import os
 from collections import defaultdict
 
-FILE_PATH = "../../condition_identification/name_entity_recognition"
+from data_management.config import py_client
 
 
 def list_field_info():
@@ -16,15 +16,44 @@ def list_field_info():
         field : list
         example: ["企业基本信息","企业股东及出资信息","企业主要管理人员信息"]
     """
-    # return list(py_client.ai_system["field"].find())
-    field = set()
-    field_file = os.path.join(FILE_PATH, 'field.txt')
-    with open(field_file, 'r', encoding='utf8') as f:
-        for line in f:
-            line = line.strip()
-            if line != '':
-                field.add(line)
-    return field
+    return {one["item_name"].strip() for one in py_client.ai_system["field"].find({"type": "item"})}
+
+
+def save_value_dict_from_files():
+    """
+    从目录中读取value_dict数据并保存到数据库中
+
+    :return:
+    """
+    values = get_value_dic_from_files()
+    py_client.ai_system["value_dict"].delete_many({})
+    for k, v in values.items():
+        py_client.ai_system["value_dict"].insert_one({"key": k.split(".")[0], "value": list(v)})
+
+
+def get_value_dic_from_files(file_path="../../condition_identification/name_entity_recognition"):
+    """获取value_dic
+
+    从数据库获取value_dic,这里获取的是经过set_value_cluster的值
+
+    Returns:
+        value_dic: dict    key值是数据库字段名，value 是数据值,是一个list数组的形式
+        example:  {"企业基本信息_地址":["广州市南沙区金隆路26号1402房"],"企业基本信息_经营业务范围":["航空项目"]}
+
+
+    """
+    values = defaultdict(set)
+    value_file_dir = os.path.join(file_path, 'evalue')
+    for file in os.listdir(value_file_dir):
+        value_set = set()
+        # 从文件中读取value值
+        with open(os.path.join(value_file_dir, file), encoding='utf-8') as f:
+            for line in f.readlines():
+                line = line.strip()
+                if line != '':
+                    value_set.add(line)
+            values[file] = value_set
+    return values
 
 
 def get_value_dic():
@@ -38,17 +67,11 @@ def get_value_dic():
 
 
     """
+
     values = defaultdict(set)
-    value_file_dir = os.path.join(FILE_PATH, 'evalue')
-    for file in os.listdir(value_file_dir):
-        value_set = set()
-        # 从文件中读取value值
-        with open(os.path.join(value_file_dir, file), encoding='utf-8') as f:
-            for line in f.readlines():
-                line = line.strip()
-                if line != '':
-                    value_set.add(line)
-            values[file] = value_set
+    for one in py_client.ai_system["value_dict"].find():
+        values[one["key"] + '.txt'] = set(one["value"])
+    print(__name__)
     return values
 
 
@@ -61,7 +84,7 @@ def get_num_fields():
 
 
     """
-    return ["纳税总额", "收入总额"]
+    return [one["item_name"] for one in py_client.ai_system["field"].find({"type": "item", "item_type": "literal"})]
 
 
 def get_address_fields():

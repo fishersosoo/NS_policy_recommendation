@@ -41,6 +41,7 @@ def relation_pre(sentence, word):
 
     Returns:
         str:返回的具体关系值，判断不出的一律返回"是"
+        大于、小于、位于、是、否
     """
     # 约束 数字和地址
     is_num = Value.idf_nums(word)

@@ -19,10 +19,7 @@ def get_field_value(sentence):
         字典
 
     """
-    if MODE == 'bert-util':    # 确定词向量的工具
-        bc = bert_word2vec
-    else:
-        bc = bert_word2vec
+    bc = bert_word2vec
     keyword = extract_keyword(sentence, 2)
     field = Field()
     field_dict = field.construct_field_dict(keyword, bc)

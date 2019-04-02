@@ -1,5 +1,6 @@
 # coding=utf-8
 from condition_identification.name_entity_recognition.util import cos_sim
+from condition_identification.name_entity_recognition.vectorize.bert_word2vec import bert_word2vec
 from data_management.api import list_field_info
 
 
@@ -14,8 +15,13 @@ class Field(object):
         field_dict: dict， 与某个词相似度最高的field
 
     """
+
     def __init__(self):
         self.field = self._get_field()
+        self.field_vectors = bert_word2vec(self.field)
+        self.field_vec_dict = dict()
+        for field, vector in zip(self.field, self.field_vec_dict):
+            self.field_vec_dict[field] = vector
         self.field_dict = {}
 
     @staticmethod
@@ -33,7 +39,7 @@ class Field(object):
         field = set(list_field_info())
         return field
 
-    def _compare_similarity(self, line, bc):
+    def _compare_similarity(self, line, vector, bc):
         """找到相似度最高的field
 
         从候选field中找出与line相似度最高的field
@@ -51,14 +57,17 @@ class Field(object):
         max_word = ''
         # 找出与line相似度最高的field 以及他们的相似度
         for word in self.field:
-            word = word.strip()
             flag = False
             for w in word:  # 至少要有一个字相同
                 if w in line:
                     flag = True
                     break
             if flag:
-                value = cos_sim(bc([line]), bc([word]))  # 获取他们的相似度
+                if word not in self.field_vec_dict:
+                    word_vec = bc([word])
+                else:
+                    word_vec = self.field_vec_dict[word]
+                value = cos_sim(vector, word_vec)  # 获取他们的相似度
                 if max_value < value:
                     max_value = value
                     max_word = word
@@ -77,8 +86,12 @@ class Field(object):
              字典
 
         """
-        for line in regs:
-            max_value, max_word = self._compare_similarity(line, bc)
+        print(__name__)
+        if len(regs) == 0:
+            return self.field_dict
+        regs_vector = bc(regs)
+        for line, vector in zip(regs, regs_vector):
+            max_value, max_word = self._compare_similarity(line, vector, bc)
             if max_word != '' and max_value > 0.945:  # 有与它最相近的field 并且他们的 相似度满足要求
                 self.field_dict[line] = max_word
         return self.field_dict

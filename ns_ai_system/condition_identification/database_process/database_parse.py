@@ -49,9 +49,13 @@ def database_cluster(lines):
     vec_dict = {}
     result = lines
     # 获得列数据的词向量 以及 对列数据去重
+    strs=[]
     for line in tqdm(lines):
         line = line.strip()
-        vec_dict[line] = bc([line])
+        strs.append(line)
+    vecs=bc([strs])
+    for line,vec in zip(strs,vecs):
+        vec_dict[line] =vec
         vs.add(line)
     vs = list(vs)
     # 如果数据太少就没有清除的必要

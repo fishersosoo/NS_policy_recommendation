@@ -4,25 +4,24 @@ import traceback
 import copy
 import requests
 from celery import group, chain, chord
+from flask_jsonrpc.proxy import ServiceProxy
 
-from celery_task import celery_app, log
+from celery_task import celery_app, log, config
 from data_management.config import dataService, py_client
 from data_management.models import UUID
 from data_management.models.guide import Guide
-from data_management.models.requirement import Requirement
 from data_management.models.word import Word
-from service.field_match import field_matcher
 from service.policy_graph_construct import understand_guide
 
 
 @celery_app.task
-def understand_guide_task(guide_id,paragraph_extract_output):
+def understand_guide_task(guide_id):
     """
 
     :param guide_id: 指南的外部id
     :return:
     """
-    understand_guide(guide_id,paragraph_extract_output)
+    understand_guide(guide_id)
 
 
 @celery_app.task
@@ -34,26 +33,19 @@ def check_single_guide(company_id, guide_id, threshold=.0):
     :return:
     """
     try:
-        _, _, guide_node = Guide.find_by_guide_id(guide_id)
-        assert guide_node is not None
-        requirements = Guide.find_leaf_requirement(guide_node["id"])
-        count = 0
+        ret = py_client.ai_system["parsing_result"].find_one({"guide_id": str(guide_id)})
+        assert ret is not None
+        triples = ret["triples"]
         reasons = []
-        base_info = query_data(company_id)
-        if base_info is None:
-            raise Exception(f"Query data fail for company: {company_id}")
-        for leaf in requirements:
-            requirement = leaf["leaf"]
-            match, reason = check_single_requirement(company_id, requirement, base_info)
+        fail_to_check = 0
+        for triple in triples:
+            match, reason = check_single_requirement(company_id, triple)
             if match is None:
-                # 忽略条件
-                continue
-            else:
-                count += 1
+                fail_to_check += 1
             if match:
                 reasons.append(f'{len(reasons)+1}. {reason}')
-        record = format_record(company_id, count, guide_node, reasons)
-        # log.info(copy.deepcopy(record))
+        record = format_record(company_id, len(triples) - fail_to_check, guide_id, reasons)
+
         py_client.ai_system["recommend_record"].update({"company_id": company_id,
                                                         "guide_id": guide_id},
                                                        {"$set": {"latest": False}}, upsert=False, multi=True)
@@ -65,13 +57,13 @@ def check_single_guide(company_id, guide_id, threshold=.0):
         return None
 
 
-def format_record(company_id, count, guide_node, reasons):
+def format_record(company_id, count, guide_id, reasons):
     count = 1 if count == 0 else count
     matching = len(reasons) / count
     reasons = "\n".join(reasons)
     reasons = f"企业满足以下条件：【括号中内容为企业的真实情况】\n{reasons}"
     record = dict(company_id=company_id,
-                  guide_id=guide_node["guide_id"],
+                  guide_id=guide_id,
                   reason=reasons,
                   matching=matching,
                   time=datetime.datetime.now(),
@@ -80,28 +72,69 @@ def format_record(company_id, count, guide_node, reasons):
     return record
 
 
-def check_single_requirement(company_id, requirement_node, base_info):
+def check_single_requirement(company_id, triple):
     """
     检查企业是否满足单一条件
     :param company_id: 企业id
-    :param requirement_node: 条件节点
     :return: match, reason. match表示是否满足，reason，如果不满足则原因为None
     """
-    subject_node, predicate_node, object_node = Requirement.get_triple(requirement_node["id"])
-    subject = dict(subject_node)
-    predicate = dict(predicate_node)
-    object = dict(object_node)
-    requirement_for = subject.get("for", "company")
-    if requirement_for != "company":
-        # 只处理对企业的要求
+    if len(triple["fields"]) == 0:
         return None, None
-    field_info = field_lookup(subject, predicate, object)
+    field = triple["fields"][0]
+    field_info = py_client.ai_system["field"].find_one({"item_name": field})
     if field_info is None:
-        # 只处理对企业的要求
+        log.info(f"no field {field}")
         return None, None
+    # query_data
+    ip = config.get('data_server', 'host')
+    url = f"http://{ip}:3306/data"
+    server = ServiceProxy(service_url=url)
+    data = server.data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")["result"]
+    if triple["relation"] in ["大于", "小于"]:
+        return compare_literal(data, triple)
+    else:
+        if triple["relation"] == "位于":
+            if triple["value"] in data[0]:
+                return True, data[0]
+            else:
+                return False, data[0]
+        if triple["relation"] == "否":
+            if triple["value"] not in data[0]:
+                return True, data[0]
+            else:
+                return False, data[0]
+        if triple["relation"] == "是":
+            if triple["value"] in data[0]:
+                return True, data[0]
+            else:
+                return False, data[0]
 
-    return field_matcher.is_match(field_info=field_info, query_data=base_info,
-                                  spo=[subject, predicate, object])
+
+def compare_literal(data, triple):
+    query_values = []
+    for one_data in data:
+        try:
+            query_values.append(float(one_data))
+        except:
+            pass
+    if len(query_values) == 0:
+        log.info(f"can not convert value of {field} to float")
+        return None, None
+    try:
+        value = float(triple["value"])
+    except:
+        log.info(f"can not convert value \"{value}\" to float")
+        return None, None
+    if triple["relation"] == "大于":
+        for query_value in query_values:
+            if query_value > value:
+                return True, query_value
+        return False, query_values[0]
+    else:
+        for query_value in query_values:
+            if query_value < value:
+                return True, query_value
+        return False, query_values[0]
 
 
 def infer_field_info_from_object_type(object):
@@ -168,12 +201,13 @@ def query_data(company_id):
         dataService.sendRequest("getQualifyCertifyInfo", {"entName": company_name, 'pageNo': 1, "pageSize": 1})[
             "PAGEINFO"][
             "TOTAL_COUNT"]
-    if qualify_certify_count==0:
-        base_info["FQZ_ZZMC"]=[]
+    if qualify_certify_count == 0:
+        base_info["FQZ_ZZMC"] = []
     else:
         qualifies = \
             dataService.sendRequest("getQualifyCertifyInfo",
-                                    {"entName": company_name, 'pageNo': 1, "pageSize": qualify_certify_count})["RESULTDATA"]
+                                    {"entName": company_name, 'pageNo': 1, "pageSize": qualify_certify_count})[
+                "RESULTDATA"]
         base_info["FQZ_ZZMC"] = [one["FQZ_ZZMC"] for one in qualifies]
     return base_info
 
@@ -230,9 +264,9 @@ def check_single_guide_batch_companies_callback(group_result, companies, guide_i
 def create_chain_for_check_recommend(companies, guide_id, url):
     task_id = UUID()
     task_group = chord([check_single_guide.s(company, guide_id) for company in companies])
-    task_chain = task_group(check_single_guide_batch_companies_callback.signature(kwargs={'companies': companies,"guide_id":guide_id,"url":url,"task_id":task_id}))
+    task_chain = task_group(check_single_guide_batch_companies_callback.signature(
+        kwargs={'companies': companies, "guide_id": guide_id, "url": url, "task_id": task_id}))
     return task_id
-
 
 # @celery_app.task(bind=True)
 # def check_single_guide_batch_companies(self, companies, guide_id, url):

@@ -1,8 +1,8 @@
 # coding=utf-8
 import datetime
 
-from condition_identification.api.text_parsing import triple_extract
-from condition_identification.predicate_extraction.tupletree_api import construct_tupletree_by_str
+from condition_identification.api.text_parsing import triple_extract, paragraph_extract
+from data_management.config import py_client
 from data_management.models.boon import Boon
 from data_management.models.guide import Guide
 from data_management.models.object_ import Object
@@ -12,7 +12,7 @@ from data_management.models.subject import Subject
 from service.file_processing import get_text_from_doc_bytes
 
 
-def understand_guide(guide_id,paragraph_extract_output):
+def understand_guide(guide_id):
     """
     理解指定政策指南
 
@@ -22,16 +22,8 @@ def understand_guide(guide_id,paragraph_extract_output):
     print(guide_id)
     _, _, guide_node = Guide.find_by_guide_id(guide_id)
     text = get_text_from_doc_bytes(Guide.get_file(guide_node["file_name"]).read())
-    triples=triple_extract(paragraph_extract_output)
-    # TODO: 保存三元组信息
-    tree, effective_time_begin, effective_time_end = construct_tupletree_by_str(text)
-    # Guide.set_effective_time(guide_node["id"], datetime.datetime.strptime(effective_time_begin, "%Y年%m月%d日"),
-    #                          datetime.datetime.strptime(effective_time_end, "%Y年%m月%d日"))
-    root = tree.root
-    # celery_task.log.info(tree.get_all_nodes())
-    for boon_node in tree.children(root):
-        boon_id = DFS_build_graph(boon_node, tree)
-        Guide.add_boons(guide_node["id"], [boon_id])
+    triples = triple_extract(paragraph_extract(text))
+    py_client.ai_system["parsing_result"].insert_one({"guide_id": guide_id, "triples": triples})
 
 
 def check_entity_type(entity):

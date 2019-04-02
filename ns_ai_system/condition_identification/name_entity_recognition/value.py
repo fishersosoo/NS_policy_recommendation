@@ -86,6 +86,7 @@ class Value(object):
              value_dict :dict
 
         """
+        print(__name__)
         for line in regs:
             # 先判断是否是 地址或者数字
             if self.idf_nums(line):

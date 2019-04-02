@@ -64,14 +64,14 @@ def upload_guide():
     :return:
     """
     guide_file = request.files['file']
-    if os.path.splitext(guide_file.filename)[1] != ".doc":
+    if os.path.splitext(guide_file.filename)[1] not in [".doc", ".txt"]:
         return jsonify({"status": "ERROR", "message": "请上传doc文件"})
     guide_id = request.form.get("guide_id")
 
     doc_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".doc")
     guide_file.save(doc_temp_file)
     doc_temp_file.close()
-    info=None
+    info = None
     try:
         text = get_text_from_doc_bytes(doc_temp_file)
         info = paragraph_extract(text)
@@ -87,7 +87,7 @@ def upload_guide():
     policy_id = request.args.get("policy_id", default=None)
     if policy_id is not None:
         Guide.link_to_policy(guide_id, policy_id)
-    result = understand_guide_task.delay(guide_id,info)
+    result = understand_guide_task.delay(guide_id)
     return jsonify({
         "task_id": result.id,
         "status": "SUCCESS"

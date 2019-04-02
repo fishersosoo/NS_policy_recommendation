@@ -29,7 +29,7 @@ class Triple:
 
     Attributes:
         filed: [] value可能对应的filed
-        relation:str 关系
+        relation:str 关系“大于、小于、位于、是、否”
         value: str 值
         sentence: str 对应原文
 
@@ -39,7 +39,15 @@ class Triple:
         self.filed = []
         self.relation = ''
         self.value = ''
-        self.sentence=''
+        self.sentence = ''
+
+    def to_dict(self):
+        """
+        转化为dict
+
+        :return:
+        """
+        return {"fields": self.filed, "relation": self.relation, "value": self.value, "sentence": self.sentence}
 
     def __repr__(self):
         """打印三元组
@@ -60,6 +68,7 @@ def triple_extract(tree):
     Returns:
         tree: Tree 对输入的tree的node内容进行改写结果
     """
+    triples = []
     for node in tree.expand_tree(mode=Tree.DEPTH):
         sentence = "。".join(tree[node].data)
         # 解决and/or
@@ -74,30 +83,25 @@ def triple_extract(tree):
             pass
 
         # 解决三元组
-        triples = []
         triples_dict = get_field_value(sentence)
         for key in triples_dict:
             relation = get_relation(sentence, key)
             triple = Triple()
             triple.relation = relation
             triple.value = key
-            triple.sentence=sentence
+            triple.sentence = sentence
             triple.filed = triples_dict[key]
-            triples.append(triple)
+            triples.append(triple.to_dict())
         tree[node].data = triples
     tree.show()
-    return tree
+    return triples
 
 
 if __name__ == '__main__':
-    for i in range(6, 20):
-        print(i)
-        file_path = r'F:\\txt\\txt\\' + str(i) + '.txt'
-        text = ""
-        try:
-            with open(file_path, 'r', encoding='utf8') as f:
-                text = f.read()
-        except:
-            pass
-        paragraph_extrac_output = paragraph_extract(text)
-        triples = triple_extract(paragraph_extrac_output)
+    with open(r"/home/web/NS_policy_recommendation/ns_ai_system/res/doc/guide_doc/29.txt",encoding="GBK") as f:
+        text = f.read()
+    print(text)
+    paragraph_extrac_output = paragraph_extract(text)
+
+    triples = triple_extract(paragraph_extrac_output)
+    print(triples)

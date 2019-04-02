@@ -11,9 +11,9 @@ if __name__ == '__main__':
 
     client = Client(url)
     value = client.service.getParamInfo("F30FD00E373FD16544C308A6BD5CFDE2", "91440101717852200L",
-                                        "DR23.FZL_ZFLH,DR23.FZL_MC")._value_1
+                                        "DR1.REGCAP")._value_1
     value = json.loads(value)
     if value["Status"] == "Success":
         result = value["Result"]
-        mongodb["field_value"].insert_many(result)
+        print(result)
     # print()

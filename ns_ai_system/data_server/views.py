@@ -1,13 +1,13 @@
 # coding=utf-8
 import json
+import time
 
 import requests
 from bson import ObjectId
 
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
-from data_server.jvm_proxy import _attach_jvm_to_thread, DataServiceJavaProxy
-from data_server.server import jsonrpc, mongo, max_seq, tokenizer
+from data_server.server import jsonrpc, mongo, max_seq, tokenizer, client, uid
 from model.bert_vec.data_processing import convert_to_ids
 from service.file_processing import get_text_from_doc_bytes
 
@@ -61,15 +61,20 @@ def get_guide_text(guide_id):
 
 
 @jsonrpc.method('data.sendRequest')
-def sendRequest(service_name, params):
+def sendRequest(comp_id, params):
     """
-    从调用龙信接口获取数据
+    调用通用接口获取数据
     :param service_name: 接口名称
     :param params: 查询参数
     :return:
     """
-    _attach_jvm_to_thread()
-    return DataServiceJavaProxy.sendRequest(service_name, params)
+    value = client.service.getParamInfo(uid, comp_id, params)._value_1
+    value = json.loads(value)
+    if value["Status"] == "Success":
+        result = value["Result"]
+        return result.keys()
+    else:
+        return None
 
 
 @jsonrpc.method("model.bert_word2vec")
@@ -82,10 +87,16 @@ def bert_word2vec(strs):
     list, shape:[len(strs), 32, 768]
 
     """
+    start_time = time.time()
+    print("converting")
     ids = convert_to_ids(strs, max_seq, tokenizer)
     url = "http://127.0.0.1:8501/v1/models/bert_embedding:predict"
     data = {
         "instances": [{"input_ids": one_ids} for one_ids in ids]
     }
+    print("convert done")
     res = requests.post(url, json=data)
+    print("predict done")
+    end_time = time.time()
+    print(end_time - start_time)
     return json.loads(res.text)["predictions"]

@@ -17,5 +17,5 @@ class DataService:
         :return: 返回数据
         """
         value = DataService.server.data.sendRequest(service_name, params)
-        print(value)
+        # print(value)
         return value["result"]
