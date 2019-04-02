@@ -4,65 +4,66 @@ from condition_identification.relation_predict.extract_relation import get_relat
 
 
 # coding=utf-8
-class ParagraphExtractOutput:
-    """
-    用于保存paragraph_extract函数的结果
-
-    """
-
-    def __init__(self):
-        raise NotImplementedError("Not Implemented")
-
-
 def paragraph_extract(text):
-    """
-    根据指南的标题结构，抽取不同部分信息
+    """抽取指南
 
-    :type text: str
-    :param text: 指南文本
-    :return 返回ParagraphExtractOutput， 如果指南格式不符合要求则返回None
+    根据指南的标题结构，抽取政策条件，并构造结构树
+
+    Args：
+        text: str 政策文本
+
+    Returns：
+        tree: Tree 构造后的政策树
+
+
     """
-    tree = DocTree()
-    tree.construct(text, 2)
-    t = tree.get_tree()
-    return t
+    doc_tree = DocTree()
+    doc_tree.construct(text, 2)
+    tree = doc_tree.get_tree()
+    return tree
 
 
 class Triple:
-    """
-    用于保存多个条件三元组，存储内容包括了多个(s, r, o)三元组、每个三元组对应的原文、三元组之间的and和or关系
+    """保存三元组
+    用于保存三元组，存储内容包括(s, r, o)三元组、每个三元组对应的原文
+
+    Attributes:
+        filed: [] value可能对应的filed
+        relation:str 关系
+        value: str 值
+        sentence: str 对应原文
 
     """
 
     def __init__(self):
-        '''
-        f:field
-        r:relation
-        v:value
-        '''
-        self.f = []
-        self.r = ''
-        self.v = ''
+        self.filed = []
+        self.relation = ''
+        self.value = ''
+        self.sentence=''
 
     def __repr__(self):
+        """打印三元组
         """
-        打印结果
-
-        :return:
-        """
-        return str((self.f, self.r, self.v))
+        return str((self.filed, self.relation, self.value))
 
 
 def triple_extract(tree):
-    """
-    提取条件三元组
-    :type paragraph_extract_output: ParagraphExtractOutput
-    :param paragraph_extract_output: paragraph_extract()的返回
-    :return: 返回关系树
+    """提取条件树
+
+    根据传入的指南树进行filed,value,relation的拆分
+    并且组装成and/or关系
+    其主要关系图查看uml.jpg
+
+    Args:
+        tree: Tree 指南拆解后的树
+
+    Returns:
+        tree: Tree 对输入的tree的node内容进行改写结果
     """
     for node in tree.expand_tree(mode=Tree.DEPTH):
         sentence = "。".join(tree[node].data)
         # 解决and/or
+        # 非and/or节点的tag值为原先值，即政策文本
         if not tree[node].is_leaf():
             if "之一" in sentence or '其二' in sentence:
                 tree[node].tag = 'or'
@@ -77,15 +78,12 @@ def triple_extract(tree):
         triples_dict = get_field_value(sentence)
         for key in triples_dict:
             relation = get_relation(sentence, key)
-            if not relation:
-                print(sentence, key)
-                continue
             triple = Triple()
-            triple.r = relation
-            triple.v = key
-            triple.f = triples_dict[key]
+            triple.relation = relation
+            triple.value = key
+            triple.sentence=sentence
+            triple.filed = triples_dict[key]
             triples.append(triple)
-            print(triple)
         tree[node].data = triples
     tree.show()
     return tree
