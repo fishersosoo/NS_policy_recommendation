@@ -40,7 +40,8 @@ def str_to_list(text):
             # 政策条件内容的结束标记
             if word[next_word_index] + '、' in line:
                 cond_flag = False
-            text_lines.append(line)
+            else:
+                text_lines.append(line)
 
     return text_lines
 
