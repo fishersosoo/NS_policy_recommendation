@@ -1,86 +1,88 @@
-import numpy as np
-from bert_serving.client import BertClient
-import re
-from relation_predict.tensor_softmax import predict_relation
-from pyhanlp import *
-####获得最长公共子序列的长度
-def get_lcs(string1, string2):
-    '''
-    输入：待比较的两个字符串
-
-    '''
-    if not string1 or not string2:
-        return 0
-    string1_list = list(string1)
-    string2_list = list(string2)
-    lcs_list = []
-    for i in range(len(string1_list)):
-        flag = 0
-        lcs = ''
-        for j in range(i, len(string1_list)):
-            for k in range(flag, len(string2_list)):
-                if string1_list[j] == string2_list[k]:
-                    lcs += string1_list[j]
-                    flag = k + 1
-        lcs_list.append((len(lcs), lcs))
-    final_list=sorted(lcs_list, reverse=True)
-    return final_list[0][0]
-
-#####窗口大小 或者以 标点符号 分隔开 或  分割 和?
-
-def extract_context(text,value):
-    '''
-
-    :param text: sentence
-    :param value: value []
-    :param n: 窗口大小 这个暂时没有用到
-    :return: str
-    '''
-    c = re.split(r"[，；。？！]", text)
-    for i in c:
-        if value in i:
-            return i
-    v=HanLP.segment(value)
-    for i in c:
-        s=HanLP.segment(i)
-        if all_in(s,v):
-            return i
-    return None
-    # return value
-####判断一个list里的元素是不是全部在另一个列表,
-def all_in(sentence,value):
-    for v in value:
-        if v not in sentence:
-            return False
-    return True
+# coding=utf-8
+# rule
+dayu = ['大于', '以上', '超过', '多于', '高于', '至多', '以后']
+budayu = ['不' + x for x in dayu]
+xiaoyu = ['小于', '以下', '少于', '低于', '至少', '未满', '以前']
+buxiaoyu = ['不' + x for x in xiaoyu]
+weiyu = ['位于', '区内', '范围内']
+fou = ['无', '不']
 
 
-def get_relation(text,value):
-    '''
+def get_relation(sentence, word):
+    """抽取条件
 
-    :param text:
-    :param value:
-    :param bc: BertClient
-    :return:
-    '''
-    bc = BertClient()
-    text=extract_context(text,value)
-    if text:
-        v=bc.encode([text])
-        return predict_relation(v)
-    else:
-        return None
+    根据关键字来判断条件
+
+    Args:
+        sentence: str 原句子
+        word: str 实体词
+
+    Returns:
+        relation: str 关系
+    """
+    pre_sentence = preprocess(sentence, word)
+    relation = relation_pre(pre_sentence)
+    return relation
 
 
-if __name__ == '__main__':
+def relation_pre(sentence):
+    """ 关系抽取
 
-    # print(get_consine_similarity('申报单位注册地、税务征管关系及统计关系在广州市南沙区范围内',"在广州市南沙区",bc))
-    text="对于在我区新设的非总部型企业，上一年度在我区纳税总额500万元以上，且上一年度营业收入同比增长10%以上的；对于在我区已设立的非总部型企业，上一年度在我区纳税总额500万元以上，且上一年度营业收入同比增长10%以上的。"
-    print(extract_context(text,'新设非总部型企业'))
-    # print(extract_context(text,['500万元以上','10%以上','500万元','10%以上']))
-    # print(get_lcs(text,'500元以上'))
-    # print(extract_context(text,'500万元以上'))
-    # print(get_relation(text,'500万元以上',bc))
+    具体根据关键字抽取的逻辑
 
-    # s=HanLP.segment('今天下雨吗')
+    Args:
+        sentence: 预处理后的句子
 
+    Returns:
+        str:返回的具体关系值，判断不出的一律返回"是"
+    """
+    for d in dayu:
+        if d in sentence:
+            for bd in budayu:
+                if bd in sentence:
+                    return '小于'
+            return '大于'
+    for d in xiaoyu:
+        if d in sentence:
+            for bd in buxiaoyu:
+                if bd in sentence:
+                    return '大于'
+            return '小于'
+    for d in weiyu:
+        if d in sentence:
+            return '位于'
+    for d in fou:
+        if d in sentence:
+            return '否'
+    return '是'
+
+
+def preprocess(sentence, word):
+    """预处理
+
+    根据，。；对句子进行一个分割，找出实体所在的那个句子段，这样可以避免多个关系在同一个长句子中
+
+    Args:
+        sentence: str 原句子
+        word: str 实体
+
+    Returns:
+        max_s: str 最有可能实体所在的句子
+    """
+    candicate_sentence = []  # 候选的句子段
+    for l1 in sentence.split('。'):
+        for l2 in l1.split('；'):
+            for l3 in l2.split('，'):
+                candicate_sentence.append(l3)
+    sim_max = 0
+    sim_max_s = ''
+    # 判断的逻辑为与实体字相同最多的句子为所在句子。相同多的情况下取最后一个
+    for s1 in candicate_sentence:
+        count = 0
+        for w in word:
+            if w in s1:
+                count += 1
+        if count > sim_max:
+            sim_max = count
+            sim_max_s = s1
+    return sim_max_s
