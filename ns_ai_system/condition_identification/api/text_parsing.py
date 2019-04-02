@@ -18,7 +18,7 @@ def paragraph_extract(text):
 
     """
     doc_tree = DocTree()
-    doc_tree.construct(text, 2)
+    doc_tree.construct(text)
     tree = doc_tree.get_tree()
     return tree
 
@@ -90,7 +90,7 @@ def triple_extract(tree):
 
 
 if __name__ == '__main__':
-    for i in range(0, 138):
+    for i in range(6, 20):
         print(i)
         file_path = r'F:\\txt\\txt\\' + str(i) + '.txt'
         text = ""
