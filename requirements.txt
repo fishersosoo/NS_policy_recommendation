@@ -63,3 +63,5 @@ Werkzeug==0.14.1
 wrapt==1.10.11
 bert-serving-server==1.8.4
 bert-serving-client==1.8.4
+pandas==0.23.4
+tqdm==4.26.0
