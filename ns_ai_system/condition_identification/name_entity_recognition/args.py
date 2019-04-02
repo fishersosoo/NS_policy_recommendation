@@ -1,7 +1,7 @@
 # coding=utf-8
 import os
-
-NUMS = ['纳税总额','注册资本','营业总收入']
-ADDRESS = ['地址']
+from data_management.api import get_num_fields
+from data_management.api import get_address_fields
+NUMS = get_num_fields()
+ADDRESS = get_address_fields()
 MODE = 'bert'
-FILE_PATH = os.path.dirname(__file__)

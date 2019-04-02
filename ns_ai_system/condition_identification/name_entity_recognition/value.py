@@ -122,14 +122,14 @@ class Value(object):
 
         """
         # 通过词法分析 根据词性判断
-        b = HanLP.parseDependency(word)
-        word_array = b.getWordArray()
+
         mflag = False
         qflag = False
-        for word in word_array:
-            if word.POSTAG == 'm':
+        for term in HanLP.segment(word):
+            nature=str(term.nature)
+            if  nature== 'm':
                 mflag = True
-            if word.POSTAG == 'q':
+            if nature == 'q' or nature == 'l':
                 qflag = True
         if mflag and qflag:
             return True
@@ -162,5 +162,5 @@ class Value(object):
 
 if __name__ == '__main__':
     # print(idf_nums('30岁'))
-    pass
+    print(Value.idf_address("南沙区"))
 
