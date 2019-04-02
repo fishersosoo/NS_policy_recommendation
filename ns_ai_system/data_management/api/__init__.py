@@ -1,7 +1,6 @@
 # coding=utf-8
 # from data_management.config import py_client
 from condition_identification.name_entity_recognition.args import *
-from condition_identification.database_process.database_parse import database_extract
 import os
 from collections import defaultdict
 
@@ -26,23 +25,6 @@ def list_field_info():
             if line != '':
                 field.add(line)
     return field
-
-
-def set_value_cluster(datas):
-    """存储聚类后的数据
-
-    对数据库内的句子和词同样作一次关键词抽取,然后剔除无关的词，需要把结果重新存回数据库
-
-    Args:
-        datas:list 某一列的值
-
-    Returns:
-        None
-    """
-    wait_for_store=database_extract(datas)
-
-
-
 
 
 def get_value_dic():
@@ -91,8 +73,6 @@ def get_address_fields():
 
     """
     return ["地址"]
-
-
 
 
 if __name__ == '__main__':
