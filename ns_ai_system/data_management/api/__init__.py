@@ -48,7 +48,7 @@ def set_value_cluster(datas):
 def get_value_dic():
     """获取value_dic
 
-    从数据库获取value_dic
+    从数据库获取value_dic,这里获取的是经过set_value_cluster的值
 
     Returns:
         value_dic: dict    key值是数据库字段名，value 是数据值,是一个list数组的形式
