@@ -1,10 +1,13 @@
 # coding=utf-8
+import json
+
+import requests
 from bson import ObjectId
 
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from data_server.jvm_proxy import _attach_jvm_to_thread, DataServiceJavaProxy
-from data_server.server import jsonrpc, mongo
+from data_server.server import jsonrpc, mongo, max_seq, tokenizer
 from model.bert_vec.data_processing import convert_to_ids
 from service.file_processing import get_text_from_doc_bytes
 

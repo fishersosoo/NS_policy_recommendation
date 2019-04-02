@@ -1,6 +1,8 @@
 # coding=utf-8
 from flask_jsonrpc.proxy import ServiceProxy
 
+from data_management.config import config
+
 
 def bert_word2vec(strs):
     """
@@ -11,7 +13,11 @@ def bert_word2vec(strs):
     list, shape:[len(strs), 32, 768]
 
     """
-    # coding=utf-8
-    url = "http://120.77.182.188:3306/data"
+    ip = config.get('data_server', 'host')
+    url = f"http://{ip}:3306/data"
     server = ServiceProxy(service_url=url)
-    return server.model.bert_word2vec(strs)
+    return server.model.bert_word2vec(strs)["result"]
+
+
+if __name__ == '__main__':
+    print(bert_word2vec(["测试一下", "测试"]))
