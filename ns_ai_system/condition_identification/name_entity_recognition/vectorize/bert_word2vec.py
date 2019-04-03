@@ -1,4 +1,6 @@
 # coding=utf-8
+import time
+
 import numpy as np
 from flask_jsonrpc.proxy import ServiceProxy
 
@@ -14,13 +16,17 @@ def bert_word2vec(strs):
     list, shape:[len(strs), 32, 768]
 
     """
+    # s=time.time()
     strs=list(strs)
     ip = config.get('data_server', 'host')
     url = f"http://{ip}:3306/data"
     server = ServiceProxy(service_url=url)
-    print(server.model.bert_word2vec(strs))
-    return np.mean(server.model.bert_word2vec(strs)["result"],axis=1)
+    ret=server.model.bert_word2vec(strs)["result"]
+    # print(time.time()-s)
+    ret= np.mean(ret,axis=1)
+    # print(time.time()-s)
+    return ret
 
 
 if __name__ == '__main__':
-    print((bert_word2vec(["测试一下", "测试"])))
+    print((bert_word2vec(["测试一下"]*90)))
