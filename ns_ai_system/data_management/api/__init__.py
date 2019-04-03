@@ -63,14 +63,14 @@ def get_value_dic():
 
     Returns:
         value_dic: dict    key值是数据库字段名，value 是数据值,是一个list数组的形式
-        example:  {"企业基本信息_地址":["广州市南沙区金隆路26号1402房"],"企业基本信息_经营业务范围":["航空项目"]}
+        example:  {"地址":["广州市南沙区金隆路26号1402房"],"经营业务范围":["航空项目"]}
 
 
     """
 
     values = defaultdict(set)
     for one in py_client.ai_system["value_dict"].find():
-        values[one["key"] ] = set(one["value"])
+        values[one["key"].split('_')[1] ] = set(one["value"])
     print(__name__)
     return values
 
