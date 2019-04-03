@@ -5,16 +5,37 @@ from condition_identification.name_entity_recognition.args import *
 from condition_identification.name_entity_recognition.util import cos_sim
 from data_management.api import get_value_dic
 
+def search_max_word(value,value_encodes,line_encode,line):
+    max_value = 0
+    max_word = ''
+    for word, value_encode in zip(value, value_encodes):
+        word = word.strip()
+        flag = False
+        for term in HanLP.segment(word):  # 必须要有相同的词才可以
+            if term.word in line:
+                flag = True
+                break
+        if flag:
+            value = cos_sim(line_encode, value_encode)
+            if max_value < value:
+                max_value = value
+                max_word = word
+            if max_word != '' and max_value > 0.945:
+                break
+    return max_value,max_word
+
 
 class Value(object):
     """value类
 
     对于一个value值，找到他的value,数字，地址或者是与数据库某一列值（field)相似度很高
     Attributes：
-        values:  dict , 数据库field 与其值组成的字典
-        value_dict:   dict ,  对某个数据值，利用相似性判读建立起的它的值 与 field 的对应
-                   example：{ "广州市南沙区黄阁镇境界大街22-1号地下室":["地址"],
-                             "5千万元":['纳税总额','注册资本','营业总收入']}
+        values:  dict , {str:set}数据库field 与其值组成的字典
+        value_dict:   dict , 对某个数据值，利用相似性判读建立起的它的值 与 field 的对应
+
+
+    Example：{ "广州市南沙区黄阁镇境界大街22-1号地下室":["地址"],
+            5千万元":['纳税总额','注册资本','营业总收入']}
     """
     def __init__(self):
         """用数据库里的值初始化values
@@ -57,23 +78,19 @@ class Value(object):
           max_word：str    相似度最高的那个词
 
         """
-        max_value = 0
-        max_word = ''
+
         line_encode=bc([line])
-        value_encodes=bc(list(value))
-        for word, value_encode in zip(value, value_encodes):
-            word = word.strip()
-            flag = False
-            for term in HanLP.segment(word):   # 必须要有相同的词才可以
-                if term.word in line:
-                    flag = True
-                    break
-            if flag:
-                value = cos_sim(line_encode, value_encode)
-                if max_value < value:
-                    max_value = value
-                    max_word = word
-        return max_value, max_word
+        # 先取前30个作一下比较
+        part_value_encodes=bc(list(value)[0:30])
+        max_value, max_word=search_max_word(value,part_value_encodes,line_encode,line)
+        if max_word != '' and max_value > 0.945:
+            return True
+        else:
+            rest_value_encodes = bc(list(value)[30:])
+            max_value, max_word = search_max_word(value, rest_value_encodes, line_encode, line)
+            if max_word != '' and max_value > 0.945:
+                return True
+        return False
 
     def construct_value_dict(self, regs, bc):
         """建立value_dict
@@ -98,10 +115,13 @@ class Value(object):
             else:        # 非数字和地址 就用相似度来判断
                 candidate_value = []
                 for field in self.values:    # 用每一个field 下的value值与其做相似性判断
+                    if field in NUMS or field in ADDRESS:
+                        continue
                     values = self.values[field]
-                    max_value, max_word = self.compare_similarity(line, values, bc)
-                    if max_word != '' and max_value > 0.945:      # 非空并且满足相似度要求
+                    is_similar=self.compare_similarity(line, values, bc)
+                    if is_similar:      # 满足相似度要求
                         candidate_value.append(field)
+
                 if candidate_value:
                     self.value_dict[line] = candidate_value
         return self.value_dict
