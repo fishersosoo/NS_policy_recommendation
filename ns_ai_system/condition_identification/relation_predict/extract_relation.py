@@ -27,7 +27,7 @@ def get_relation(sentence, word):
     """
     pre_sentence = preprocess(sentence, word)
     relation = relation_pre(pre_sentence, word)
-    return relation
+    return relation,pre_sentence
 
 
 def relation_pre(sentence, word):
@@ -41,7 +41,6 @@ def relation_pre(sentence, word):
 
     Returns:
         str:返回的具体关系值，判断不出的一律返回"是"
-        大于、小于、位于、是、否
     """
     # 约束 数字和地址
     is_num = Value.idf_nums(word)
@@ -60,19 +59,20 @@ def relation_pre(sentence, word):
                     if bd in sentence:
                         return '大于'
                 return '小于'
-    if not Value.idf_nums(sentence):
-        for d in dayu:
-            if d in sentence:
-                for bd in budayu:
-                    if bd in sentence:
-                        return '小于'
-                return '大于'
-        for d in xiaoyu:
-            if d in sentence:
-                for bd in buxiaoyu:
-                    if bd in sentence:
-                        return '大于'
-                return '小于'
+
+    # if not Value.idf_nums(sentence):
+    #     for d in dayu:
+    #         if d in sentence:
+    #             for bd in budayu:
+    #                 if bd in sentence:
+    #                     return '小于'
+    #             return '大于'
+    #     for d in xiaoyu:
+    #         if d in sentence:
+    #             for bd in buxiaoyu:
+    #                 if bd in sentence:
+    #                     return '大于'
+    #             return '小于'
 
     # 地址约束
     if is_location:
