@@ -17,11 +17,23 @@ class Field(object):
     """
 
     def __init__(self):
+        import time
+        s=time.clock()
         self.field = self._get_field()
+        et=time.clock()
+        print("-----")
+        print(et-s)
+        print(len(self.field))
         self.field_vectors = bert_word2vec(self.field)
+        et=time.clock()
+        print("-----")
+        print(et-s)
         self.field_vec_dict = dict()
         for field, vector in zip(self.field, self.field_vec_dict):
             self.field_vec_dict[field] = vector
+        et=time.clock()
+        print("-----")
+        print(et-s)
         self.field_dict = {}
 
     @staticmethod

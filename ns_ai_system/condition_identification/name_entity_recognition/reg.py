@@ -21,6 +21,7 @@ def get_field_value(sentence):
     """
     bc = bert_word2vec
     keyword = extract_keyword(sentence, 2)
+    keyword = extract_address(keyword)
     field = Field()
     field_dict = field.construct_field_dict(keyword, bc)
     value = Value()
