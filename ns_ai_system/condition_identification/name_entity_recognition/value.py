@@ -59,7 +59,9 @@ class Value(object):
         """
         max_value = 0
         max_word = ''
-        for word in value:
+        line_encode=bc([line])
+        value_encodes=bc(list(value))
+        for word, value_encode in zip(value, value_encodes):
             word = word.strip()
             flag = False
             for term in HanLP.segment(word):   # 必须要有相同的词才可以
@@ -67,7 +69,7 @@ class Value(object):
                     flag = True
                     break
             if flag:
-                value = cos_sim(bc([line]), bc([word]))
+                value = cos_sim(line_encode, value_encode)
                 if max_value < value:
                     max_value = value
                     max_word = word

@@ -145,6 +145,18 @@ def extract_keyword(sentence, len_threshold):
             result_word.append(complete_word)
     return result_word
 
+def extract_address(keywords):
+    for i in range(len(keywords)):
+        sentence=keywords[i]
+        segment = HanLP.newSegment().enablePlaceRecognize(False)
+        term_list = segment.seg(sentence)
+        address_word = [str(i.word) for i in term_list if str(i.nature) == 'ns']
+        address_word = ''.join(address_word)
+        if address_word:
+            keywords[i]=address_word
+        else:
+            keywords[i]=sentence
+    return  keywords
 
 if __name__ == '__main__':
     # with open('evalue/企业基本信息_地址.txt', 'w', encoding='utf8')as wf:
