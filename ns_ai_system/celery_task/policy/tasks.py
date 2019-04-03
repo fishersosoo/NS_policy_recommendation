@@ -16,13 +16,13 @@ from service.policy_graph_construct import understand_guide
 
 
 @celery_app.task
-def understand_guide_task(guide_id,text):
+def understand_guide_task(guide_id, text):
     """
 
     :param guide_id: 指南的外部id
     :return:
     """
-    understand_guide(guide_id,text)
+    understand_guide(guide_id, text)
 
 
 @celery_app.task
@@ -39,9 +39,9 @@ def check_single_guide(company_id, guide_id, threshold=.0):
         triples = ret["triples"]
         reasons = []
         fail_to_check = 0
-        checked_fields=[]
+        checked_fields = []
         for triple in triples:
-            if triple["fields"][0]in checked_fields:
+            if triple["fields"][0] in checked_fields:
                 continue
             match, reason = check_single_requirement(company_id, triple)
             if match is None:
@@ -126,12 +126,12 @@ def compare_literal(data, triple):
         except:
             pass
     if len(query_values) == 0:
-        log.info(f"can not convert value of {field} to float")
+        log.info(f"can not convert value of {triple['fields'][0]} to float")
         return None, None
     try:
         value = conert_ch2num(triple["value"])
     except:
-        log.info(f"can not convert value \"{value}\" to float")
+        log.info(f"can not convert value \"{triple['value']}\" to float")
         return None, None
     if triple["relation"] == "大于":
         for query_value in query_values:
@@ -229,7 +229,7 @@ def recommend_task(company_id, threshold=.0):
     :return:
     """
     log.info(f"recommend_task for company: {company_id}")
-    guides = Guide.list_valid_guides()
+    guides = list(py_client.ai_system["parsing_result"].find({}))
     results = []
     for guide in guides:
         result = check_single_guide(company_id, guide["guide_id"])
