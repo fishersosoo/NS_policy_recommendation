@@ -1,3 +1,5 @@
+import json
+
 from condition_identification.bonus_identify.DocTree import *
 from condition_identification.name_entity_recognition.reg import get_field_value
 from condition_identification.relation_predict.extract_relation import get_relation
@@ -99,8 +101,11 @@ def triple_extract(tree):
 
 
 if __name__ == '__main__':
-    with open(r"F://txt//txt//29.txt",encoding="utf8") as f:
+    with open(r"/home/web/NS_policy_recommendation/ns_ai_system/res/doc/guide_doc/1547092343014.txt",
+              encoding="utf-8") as f:
         text = f.read()
     paragraph_extrac_output = paragraph_extract(text)
-
     triples = triple_extract(paragraph_extrac_output)
+    print(triples)
+    with open("/home/result.json", mode='w') as f:
+        json.dump(triples, f)

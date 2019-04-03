@@ -27,6 +27,7 @@ def get_field_value(sentence):
     value = Value()
     value_dict = value.construct_value_dict(keyword, bc)
     result = search_by_relative_pos(value_dict, field_dict, keyword)
+
     return result
 
 

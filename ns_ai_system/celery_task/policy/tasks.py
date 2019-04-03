@@ -11,17 +11,18 @@ from data_management.config import dataService, py_client
 from data_management.models import UUID
 from data_management.models.guide import Guide
 from data_management.models.word import Word
+from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
 
 
 @celery_app.task
-def understand_guide_task(guide_id):
+def understand_guide_task(guide_id,text):
     """
 
     :param guide_id: 指南的外部id
     :return:
     """
-    understand_guide(guide_id)
+    understand_guide(guide_id,text)
 
 
 @celery_app.task
@@ -38,12 +39,17 @@ def check_single_guide(company_id, guide_id, threshold=.0):
         triples = ret["triples"]
         reasons = []
         fail_to_check = 0
+        checked_fields=[]
         for triple in triples:
+            if triple["fields"][0]in checked_fields:
+                continue
             match, reason = check_single_requirement(company_id, triple)
             if match is None:
                 fail_to_check += 1
+            else:
+                checked_fields.append(triple["fields"][0])
             if match:
-                reasons.append(f'{len(reasons)+1}. {reason}')
+                reasons.append(f'{len(reasons)+1}. {reason}【{triple["sentence"]}】')
         record = format_record(company_id, len(triples) - fail_to_check, guide_id, reasons)
 
         py_client.ai_system["recommend_record"].update({"company_id": company_id,
@@ -82,7 +88,7 @@ def check_single_requirement(company_id, triple):
         return True, "是"
     if len(triple["fields"]) == 0:
         return None, None
-    field = triple["fields"][0].split("_")[1]
+    field = triple["fields"][0]
     field_info = py_client.ai_system["field"].find_one({"item_name": field})
     if field_info is None:
         log.info(f"no field {field}")
@@ -123,7 +129,7 @@ def compare_literal(data, triple):
         log.info(f"can not convert value of {field} to float")
         return None, None
     try:
-        value = float(triple["value"])
+        value = conert_ch2num(triple["value"])
     except:
         log.info(f"can not convert value \"{value}\" to float")
         return None, None

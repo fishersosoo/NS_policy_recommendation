@@ -12,7 +12,7 @@ from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from restful_server.policy import policy_service
 from restful_server.policy.base import check_callback
-from restful_server.server import mongo
+from restful_server.server import mongo, pool
 from service.file_processing import get_text_from_doc_bytes
 
 policy_api = Api(policy_service)
@@ -87,9 +87,11 @@ def upload_guide():
     policy_id = request.args.get("policy_id", default=None)
     if policy_id is not None:
         Guide.link_to_policy(guide_id, policy_id)
-    result = understand_guide_task.delay(guide_id)
+    pool.submit(understand_guide_task,guide_id,text)
+    # understand_guide_task(guide_id,text)
+    # result = understand_guide_task.delay(guide_id,text)
     return jsonify({
-        "task_id": result.id,
+        "task_id": "ok",
         "status": "SUCCESS"
     })
 

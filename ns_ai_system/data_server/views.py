@@ -72,7 +72,7 @@ def sendRequest(comp_id, params):
     value = json.loads(value)
     if value["Status"] == "Success":
         result = value["Result"]
-        return result.keys()
+        return [list(one.values())[0] for one in result ]
     else:
         return None
 
