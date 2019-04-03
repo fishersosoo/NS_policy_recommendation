@@ -85,23 +85,22 @@ def triple_extract(tree):
         # 解决三元组
         triples_dict = get_field_value(sentence)
         for key in triples_dict:
-            relation = get_relation(sentence, key)
+            relation, presentence = get_relation(sentence, key)
             triple = Triple()
             triple.relation = relation
             triple.value = key
-            triple.sentence = sentence
+            triple.sentence = presentence
             triple.filed = triples_dict[key]
             triples.append(triple.to_dict())
         tree[node].data = triples
+
     tree.show()
     return triples
 
 
 if __name__ == '__main__':
-    with open(r"/home/web/NS_policy_recommendation/ns_ai_system/res/doc/guide_doc/29.txt",encoding="GBK") as f:
+    with open(r"F://txt//txt//29.txt",encoding="utf8") as f:
         text = f.read()
-    print(text)
     paragraph_extrac_output = paragraph_extract(text)
 
     triples = triple_extract(paragraph_extrac_output)
-    print(triples)
