@@ -81,13 +81,19 @@ class Value(object):
 
         line_encode=bc([line])
         # 先取前30个作一下比较
-        part_value_encodes=bc(list(value)[0:30])
-        max_value, max_word=search_max_word(value,part_value_encodes,line_encode,line)
-        if max_word != '' and max_value > 0.945:
-            return True
+        if len(value) > 30:
+            part_value_encodes=bc(list(value)[0:30])
+            max_value, max_word=search_max_word(value,part_value_encodes,line_encode,line)
+            if max_word != '' and max_value > 0.945:
+                return True
+            else:
+                rest_value_encodes = bc(list(value)[30:])
+                max_value, max_word = search_max_word(value, rest_value_encodes, line_encode, line)
+                if max_word != '' and max_value > 0.945:
+                    return True
         else:
-            rest_value_encodes = bc(list(value)[30:])
-            max_value, max_word = search_max_word(value, rest_value_encodes, line_encode, line)
+            part_value_encodes=bc(list(value))
+            max_value, max_word=search_max_word(value,part_value_encodes,line_encode,line)
             if max_word != '' and max_value > 0.945:
                 return True
         return False
