@@ -110,6 +110,12 @@ class DocTree(object):
             if word == '':
                 continue
             is_node, key = self.__get_candicate_node(word)  # 判断可否作为节点,返回判断结果和判断依据
+
+            lword=word[0:5]
+            for level_word in level_words:
+                lword = re.sub(level_word, '',lword)
+            word=lword+word[5:]
+
             # 处理申请条件后单独存在的一句话
             # Example:二、申请条件  位于南沙区内
             if i == 1 and not is_node:
