@@ -1,6 +1,5 @@
 # coding=utf-8
 # from data_management.config import py_client
-from condition_identification.name_entity_recognition.args import *
 import os
 from collections import defaultdict
 
@@ -84,8 +83,8 @@ def get_num_fields():
 
 
     """
-    return [one["item_name"] for one in py_client.ai_system["field"].find({"type": "item", "item_type": "literal"})]
-
+    # return [one["item_name"] for one in py_client.ai_system["field"].find({"type": "item", "item_type": "literal"})]
+    return ['营业总收入','纳税总额','注册资本','资产总额','实缴出资额']
 
 def get_address_fields():
     """获得所有列值是地址的field集合
