@@ -1,4 +1,5 @@
 from condition_identification.util.string_process import getNumofCommonSubstr
+from condition_identification.util.specialcondition_identify import idf_nums
 def search_field_sameword(fields,sentence):
     field_list=[]
     for field in fields:
@@ -43,10 +44,11 @@ def search_by_relative_pos(value_dict, field_dict, keyword):
                     has_field = True
                     del field_dict[keyword[pos + i]]    # 找到一个就删掉他对应的field_dic里的值，防止重复
                     break
+        is_explicit_field[key] = True
         if not has_field:   # 如果没有找到匹配的field，就用 value_dic 值代替field 值
             value_field[key] = value_dict[key]
-            is_explicit_field[key]=False
-        else:
-            is_explicit_field[key] = True
+            if idf_nums(key):
+                is_explicit_field[key]=False
+
 
     return value_field,is_explicit_field

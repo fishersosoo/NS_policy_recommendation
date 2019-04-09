@@ -64,7 +64,7 @@ def relation_pre(sentence, word):
 
     # 地址约束
     for d in weiyu:
-        if d in sentence and is_location(word):
+        if d in sentence and is_location:
             relation = '位于'
 
     for d in fou:
