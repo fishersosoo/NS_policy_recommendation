@@ -1,4 +1,12 @@
-# coding=utf-8
+from condition_identification.util.string_process import getNumofCommonSubstr
+def search_field_sameword(fields,sentence):
+    field_list=[]
+    for field in fields:
+        has_word_count=getNumofCommonSubstr(field,sentence)[1]
+        if has_word_count>=2:# 因为这样ke'y
+            field_list.append(field)
+    return field_list
+
 def search_by_relative_pos(value_dict, field_dict, keyword):
     """确定field 和 value
 
@@ -12,9 +20,10 @@ def search_by_relative_pos(value_dict, field_dict, keyword):
         keyword: list
 
     Returns:
-        result: dic
+        value_field: dic
     """
-    result = {}
+    value_field = {}
+    is_explicit_field={}
     has_field = False
     for key in value_dict:
         pos = keyword.index(key)
@@ -23,17 +32,21 @@ def search_by_relative_pos(value_dict, field_dict, keyword):
             if pos - i > -1 and keyword[pos - i] in field_dict:  # 向前遍历，keyword是否在在field_dic
                 database_key = field_dict[keyword[pos - i]]
                 if database_key in value_dict[key]:     # 判断在value_dic
-                    result[key] = [database_key]
+                    value_field[key] = [database_key]
                     del field_dict[keyword[pos - i]]    # 找到一个就删掉他对应的field_dic里的值，防止重复
                     has_field = True
                     break
             if pos + i < len(keyword) - 1 and keyword[pos + i] in field_dict:  # 向后遍历，keyword是否在在field_dic
                 database_key = field_dict[keyword[pos + i]]
                 if database_key in value_dict[key]:  # 判断在value_dic
-                    result[key] = [database_key]
+                    value_field[key] = [database_key]
                     has_field = True
                     del field_dict[keyword[pos + i]]    # 找到一个就删掉他对应的field_dic里的值，防止重复
                     break
         if not has_field:   # 如果没有找到匹配的field，就用 value_dic 值代替field 值
-            result[key] = value_dict[key]
-    return result
+            value_field[key] = value_dict[key]
+            is_explicit_field[key]=False
+        else:
+            is_explicit_field[key] = True
+
+    return value_field,is_explicit_field

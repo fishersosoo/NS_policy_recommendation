@@ -1,6 +1,7 @@
 # coding=utf-8
 import re
-from condition_identification.name_entity_recognition.value import Value
+from condition_identification.util.specialcondition_identify import idf_address,idf_nums
+from condition_identification.util.sentence_preprocess import preprocess
 # 定义关键字
 dayu = ['大于', '以上', '超过', '多于', '高于', '至多', '以后']
 budayu = ['不' + x for x in dayu]
@@ -43,44 +44,28 @@ def relation_pre(sentence, word):
         str:返回的具体关系值，判断不出的一律返回"是"
     """
     # 约束 数字和地址
-    is_num = Value.idf_nums(word)
-    is_location = Value.idf_address(word)
+    is_num = idf_nums(word)
+    is_location = idf_address(word)
+    relation='是'
     # 数字约束
     if is_num:
         for d in dayu:
             if d in sentence:
                 for bd in budayu:
                     if bd in sentence:
-                        return '小于'
+                        relation = '小于'
                 return '大于'
         for d in xiaoyu:
             if d in sentence:
                 for bd in buxiaoyu:
                     if bd in sentence:
-                        return '大于'
-                return '小于'
-
-    # if not Value.idf_nums(sentence):
-    #     for d in dayu:
-    #         if d in sentence:
-    #             for bd in budayu:
-    #                 if bd in sentence:
-    #                     return '小于'
-    #             return '大于'
-    #     for d in xiaoyu:
-    #         if d in sentence:
-    #             for bd in buxiaoyu:
-    #                 if bd in sentence:
-    #                     return '大于'
-    #             return '小于'
+                        relation = '大于'
+                relation = '小于'
 
     # 地址约束
-    if is_location:
-        return "位于"
-
     for d in weiyu:
-        if d in sentence and Value.idf_address(word):
-            return '位于'
+        if d in sentence and is_location(word):
+            relation = '位于'
 
     for d in fou:
         if d in sentence:
@@ -92,85 +77,13 @@ def relation_pre(sentence, word):
                 if d in d12 and d12 in sentence:
                     flag = False
             if flag:
-                return '否'
+                relation = '否'
 
-    return '是'
-
-
-def preprocess(sentence, word):
-    """预处理
-
-    根据，。；对句子进行一个分割，找出实体所在的那个句子段，这样可以避免多个关系在同一个长句子中
-
-    Args:
-        sentence: str 原句子
-        word: str 实体
-
-    Returns:
-        max_s: str 最有可能实体所在的句子
-    """
-
-    sentence = filter_sentence(sentence)
-    candicate_sentence = []  # 候选的句子段
-    for l1 in sentence.split('。'):
-        for l2 in l1.split('；'):
-            for l3 in l2.split('，'):
-                candicate_sentence.append(l3)
-    sim_max = 0
-    sim_max_s = ''
-    # 判断的逻辑为与实体字相同最多的句子为所在句子。相同多的情况下取最后一个
-    for s1 in candicate_sentence:
-        count = 0
-        for w in word:
-            if w in s1:
-                count += 1
-        if count > sim_max:
-            sim_max = count
-            sim_max_s = s1
-    return sim_max_s
-
-#TODO 有待和实体抽取的整合
-def filter_sentence(sentence):
-    """过滤句子的无关内容
-
-    实际上是调用各个过滤函数的主体函数
-
-    """
-
-    sentence = filter_book(sentence)
-    sentence = filter_brackets(sentence)
-    return sentence
+    return relation
 
 
-def filter_book(lemma):
-    """过滤掉尖括号和尖括号之间的字符
-
-    把字符串中的尖括号跟括号里的所有字符去掉
-
-    Args:
-        lemma:str
-
-    Returns:
-        处理后新的字符串
-
-    """
-    lemma = lemma.strip()
-    lemma = re.sub(u"[<《＜].*[>》＞]", "", lemma)
-    return lemma
 
 
-def filter_brackets(lemma):
-    """过滤掉小括号和小括号之间的字符
 
-    把字符串中的小括号及括号里的所有字符去掉
 
-    Args:
-        lemma：str，要处理的字符串
 
-    Returns:
-        处理后的字符串
-
-    """
-    lemma = lemma.strip()
-    lemma = re.sub(u"[(（].*?[）)]", "", lemma)
-    return lemma

@@ -1,28 +1,10 @@
 # coding=utf-8
 from collections import defaultdict
 from pyhanlp import *
-from condition_identification.name_entity_recognition.args import *
-from condition_identification.name_entity_recognition.util import cos_sim
+from condition_identification.name_entity_recognition.args import NUMS,ADDRESS
+from condition_identification.util.specialcondition_identify import idf_nums,idf_address
 from data_management.api import get_value_dic
-
-def search_max_word(value,value_encodes,line_encode,line):
-    max_value = 0
-    max_word = ''
-    for word, value_encode in zip(value, value_encodes):
-        word = word.strip()
-        flag = False
-        for term in HanLP.segment(word):  # 必须要有相同的词才可以
-            if term.word in line:
-                flag = True
-                break
-        if flag:
-            value = cos_sim(line_encode, value_encode)
-            if max_value < value:
-                max_value = value
-                max_word = word
-            if max_word != '' and max_value > 0.945:
-                break
-    return max_value,max_word
+from condition_identification.util.similarity_calculation import compare_similarity
 
 
 class Value(object):
@@ -37,15 +19,15 @@ class Value(object):
     Example：{ "广州市南沙区黄阁镇境界大街22-1号地下室":["地址"],
             5千万元":['纳税总额','注册资本','营业总收入']}
     """
-    def __init__(self):
+    def __init__(self,bc):
         """用数据库里的值初始化values
 
         """
         self.values = self._get_value()
         self.value_dict = defaultdict(list)
+        self.bert_client = bc
 
-    @staticmethod
-    def _get_value():
+    def _get_value(self):
         """从数据库获取value
 
         各个字段处理后的value的字典
@@ -62,43 +44,7 @@ class Value(object):
             values[key] = values_set
         return values
 
-    @staticmethod
-    def compare_similarity(line, value, bc):
-        """ 计算 比较相似度 找出相似度最高的
-
-        利用bert获得词向量，计算相似度，找到相似度最高的那个
-
-        Args:
-            line:  str
-            value： list
-            bc: 获得词向量的bert 工具
-
-        Returns:
-          max_value:float  相似度最高的相似度值
-          max_word：str    相似度最高的那个词
-
-        """
-
-        line_encode=bc([line])
-        # 先取前30个作一下比较
-        if len(value) > 30:
-            part_value_encodes=bc(list(value)[0:30])
-            max_value, max_word=search_max_word(value,part_value_encodes,line_encode,line)
-            if max_word != '' and max_value > 0.945:
-                return True
-            else:
-                rest_value_encodes = bc(list(value)[30:])
-                max_value, max_word = search_max_word(value, rest_value_encodes, line_encode, line)
-                if max_word != '' and max_value > 0.945:
-                    return True
-        else:
-            part_value_encodes=bc(list(value))
-            max_value, max_word=search_max_word(value,part_value_encodes,line_encode,line)
-            if max_word != '' and max_value > 0.945:
-                return True
-        return False
-
-    def construct_value_dict(self, regs, bc):
+    def construct_value_dict(self, regs):
         """建立value_dict
 
          利用是否是数字 地址和相似度对regs建立value_dict
@@ -114,9 +60,9 @@ class Value(object):
         print(__name__)
         for line in regs:
             # 先判断是否是 地址或者数字
-            if self.idf_nums(line):
+            if idf_nums(line):
                 self.value_dict[line] = NUMS
-            elif self.idf_address(line):
+            elif idf_address(line):
                 self.value_dict[line] = ADDRESS
             else:        # 非数字和地址 就用相似度来判断
                 candidate_value = []
@@ -124,70 +70,16 @@ class Value(object):
                     if field in NUMS or field in ADDRESS:
                         continue
                     values = self.values[field]
-                    is_similar=self.compare_similarity(line, values, bc)
+                    is_similar=compare_similarity(line, values, self.bert_client)
                     if is_similar:      # 满足相似度要求
                         candidate_value.append(field)
-
                 if candidate_value:
                     self.value_dict[line] = candidate_value
         return self.value_dict
 
-    def get_filed_dict(self):
+    def get_value_dict(self):
         """ 获取value_dic"""
         return self.value_dict
-
-# TODO 这里应该放再抽关键字之前，因为有可能关键字没抽到
-    @staticmethod
-    def idf_nums(word):
-        """判断是否是数字
-
-        通过分词工具词性分析，判断数字
-
-        Args:
-            word:str
-
-        Returns:
-            True 或者 False
-
-        """
-        # 通过词法分析 根据词性判断
-
-        mflag = False
-        qflag = False
-        for term in HanLP.segment(word):
-            nature=str(term.nature)
-            if  nature== 'm':
-                mflag = True
-            if nature == 'q' or nature == 'l':
-                qflag = True
-        if mflag and qflag:
-            return True
-        else:
-            return False
-# TODO %
-# 数据库字段的地址就用地的相似度去找，
-    @staticmethod
-    def idf_address(sentence):
-        """判断是否是地址
-
-        判断是否是地址值，利用HanLP的地址识别
-
-        Args:
-            sentence:str
-
-        Returns：
-            True 或者 False
-
-        """
-        # 利用HanLP 接口识别是否是地址值
-        segment = HanLP.newSegment().enablePlaceRecognize(False)
-        term_list = segment.seg(sentence)
-        natures = [str(i.nature) for i in term_list]
-        if 'ns' in natures:
-            return True
-        else:
-            return False
-
 
 if __name__ == '__main__':
     # print(idf_nums('30岁'))

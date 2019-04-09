@@ -22,3 +22,5 @@ def cos_sim(vector_a, vector_b):
     cos = num / de_nom
     sim = 0.5 + 0.5 * cos
     return sim
+
+

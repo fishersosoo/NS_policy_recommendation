@@ -1,6 +1,6 @@
 # coding=utf-8
-from condition_identification.name_entity_recognition.extract import *
-from condition_identification.name_entity_recognition.util import cos_sim
+from condition_identification.name_entity_recognition.extract_keyword import *
+from condition_identification.util.distance_calculations import cos_sim
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
