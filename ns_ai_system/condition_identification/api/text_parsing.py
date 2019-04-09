@@ -1,9 +1,7 @@
 import json
 
 from condition_identification.bonus_identify.DocTree import *
-from condition_identification.name_entity_recognition.reg import get_field_value
-from condition_identification.relation_predict.extract_relation import get_relation
-
+from condition_identification.rdf_triple.triple_tree import construct_tripletree
 
 # coding=utf-8
 def paragraph_extract(text):
@@ -25,36 +23,7 @@ def paragraph_extract(text):
     return tree
 
 
-class Triple:
-    """保存三元组
-    用于保存三元组，存储内容包括(s, r, o)三元组、每个三元组对应的原文
 
-    Attributes:
-        filed: [] value可能对应的filed
-        relation:str 关系“大于、小于、位于、是、否”
-        value: str 值
-        sentence: str 对应原文
-
-    """
-
-    def __init__(self):
-        self.filed = []
-        self.relation = ''
-        self.value = ''
-        self.sentence = ''
-
-    def to_dict(self):
-        """
-        转化为dict
-
-        :return:
-        """
-        return {"fields": self.filed, "relation": self.relation, "value": self.value, "sentence": self.sentence}
-
-    def __repr__(self):
-        """打印三元组
-        """
-        return str((self.filed, self.relation, self.value))
 
 
 def triple_extract(tree):
@@ -70,42 +39,84 @@ def triple_extract(tree):
     Returns:
         tree: Tree 对输入的tree的node内容进行改写结果
     """
-    triples = []
-    for node in tree.expand_tree(mode=Tree.DEPTH):
-        sentence = "。".join(tree[node].data)
-        # 解决and/or
-        # 非and/or节点的tag值为原先值，即政策文本
-        if not tree[node].is_leaf():
-            if "之一" in sentence or '其二' in sentence:
-                tree[node].tag = 'or'
-            else:
-                tree[node].tag = 'and'
-        else:
-            # 叶子节点不改变tag
-            pass
-
-        # 解决三元组
-        triples_dict = get_field_value(sentence)
-        for key in triples_dict:
-            relation, presentence = get_relation(sentence, key)
-            triple = Triple()
-            triple.relation = relation
-            triple.value = key
-            triple.sentence = presentence
-            triple.filed = triples_dict[key]
-            triples.append(triple.to_dict())
-        tree[node].data = triples
-
+    triples,tree=construct_tripletree(tree)
     tree.show()
     return triples
 
 
 if __name__ == '__main__':
-    with open(r"/home/web/NS_policy_recommendation/ns_ai_system/res/doc/guide_doc/1547092343014.txt",
-              encoding="utf-8") as f:
-        text = f.read()
-    paragraph_extrac_output = paragraph_extract(text)
-    triples = triple_extract(paragraph_extrac_output)
-    print(triples)
-    with open("/home/result.json", mode='w') as f:
-        json.dump(triples, f)
+    import os
+    import pandas as pd
+
+    file_dir = r"F:\\txt\\txt"
+    tester = pd.read_csv(r'G:\\QQ文件\\政策标注.csv', engine='python')
+    acc_result=[]
+    all_true=0
+    all_count=0
+
+    for j in range(2,40):
+        score_record = open('score.txt', 'a')
+        file_tester=tester[tester['序号']==j]
+        if file_tester.shape[0]==0:
+            continue
+        with open(os.path.join(file_dir,str(j)+".txt"),encoding="utf8") as f:
+            text = f.read()
+        paragraph_extrac_output = paragraph_extract(text)
+        triples = triple_extract(paragraph_extrac_output)
+        if not triples:
+            continue
+        print(triples)
+        # import pickle
+        # f=open('0.pkl','rb')
+        # pickle.dump(triples,f)
+        # triples=pickle.load(f)
+
+        def isin(a,b):
+            isin_flag=True
+            for w in a:
+                if w not in b:
+                    isin_flag=False
+                    break
+            return isin_flag
+
+
+
+
+
+        tr=0
+        file_tester_len=file_tester.shape[0]
+        for i in range(file_tester_len):
+            sentence=file_tester['原文'].values[i]
+            target=file_tester['列名'].values[i]
+            is_none = True
+            pre=[]
+            for triple in triples:
+                if isin(triple['sentence'],sentence) or  isin(sentence,triple['sentence']):
+                    is_none = False
+                    pre = triple['fields']
+                    # 标注时把行业领域统一标成了经营业务范围
+                    if '行业领域' in pre:
+                        pre.append('经营业务范围')
+                    # 因为同一个句子可能有多个实体，所以需要遍历所有实体
+                    if target in pre:
+                        print(sentence)
+                        tr+=1
+                        break
+
+            if target == 'None':
+                if is_none:
+                    tr += 1
+        acc_result.append(tr/file_tester_len)
+        all_true+=tr
+        all_count+=file_tester_len
+        print("%s 文件准确率 %f"%(str(j),tr/file_tester_len))
+        score_record.write("%s 文件准确率 %f"%(str(j),tr/file_tester_len))
+        score_record.write('\n')
+        import numpy as np
+        print("总文件准确率 %f"%np.mean(np.array(acc_result)))
+        score_record.write("总文件准确率 %f"%np.mean(np.array(acc_result)))
+        score_record.write('\n')
+        print("all_count:%s\tall_true:%s\tprecision %f" % (all_count,all_true,all_true/all_count))
+        score_record.write("all_count:%s\tall_true:%s\tprecision %f" % (all_count,all_true,all_true/all_count))
+        score_record.write('\n')
+        score_record.close()
