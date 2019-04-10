@@ -1,6 +1,16 @@
 # 智能平台api说明
 
-最后更新：2019年1月4日
+最后更新：2019年4月10日
+
+更新记录
+
+| 时间      | 内容                                                         |
+| --------- | ------------------------------------------------------------ |
+| 2019-4-10 | 修改/policy/check_recommend/和/policy/recommend/接口，增加threshold字段用于筛选返回记录 |
+| 2019-1-4  | 增加/policy/check_recommend/和/policy/single_recommend/接口  |
+|           |                                                              |
+
+
 
 ## /policy/upload_policy/
 
@@ -60,9 +70,9 @@ doc:要求以UTF-8编码doc
 
 获取给该企业推荐的事项。
 
-/policy/recommend/?company_id=123
+/policy/recommend/?company_id=123&threshold=0.3
 
-使用company_id进行查询的时候，系统首先会将提交一个异步任务到后台，重新计算对该企业推荐哪些政策，异步任务的id放入返回内容中的`task_id`字段中。查找是否存在这个企业的历史推荐记录，历史记录会放入到返回内容中的`result`字段中，若不存在历史推荐记录，则`result`为一个空的列表。
+使用company_id进行查询的时候，系统首先会将提交一个异步任务到后台，重新计算对该企业推荐哪些政策，异步任务的id放入返回内容中的`task_id`字段中。新建异步任务之后，系统会查找是否存在这个企业的历史推荐记录，历史记录会放入到返回内容中的`result`字段中，若不存在历史推荐记录，则`result`为一个空的列表**（只返回匹配度大于阈值的记录）**
 
 `matching`表示推荐的结果和企业的匹配程度，例如，推荐的指南有10个条件，企业满足9个，则`matching`为0.9。
 
@@ -120,6 +130,7 @@ json格式
 {
     "companies": ["企业id1","企业id2",...,"企业idn"],
     "guide_id": "指南id",
+    "threshold":"匹配度阈值，只有大于该匹配度的结果才会再callback中返回",
     "callback": "回调函数url"
 }
 ```
