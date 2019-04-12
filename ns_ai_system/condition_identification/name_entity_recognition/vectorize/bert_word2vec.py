@@ -26,9 +26,16 @@ def bert_word2vec(strs):
     ret= np.mean(ret,axis=1)
     # print(time.time()-s)
     return ret
+
+
 class BertClient(object):
+    """封装 bert_word2vec
+
+    方便本地测试和修改，本地测试可以用bert_serving
+
+    """
     def encode(self,strs):
-        return strs
+        return bert_word2vec(strs)
 
 
 if __name__ == '__main__':
