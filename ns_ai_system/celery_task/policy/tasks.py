@@ -12,6 +12,7 @@ from data_management.models import UUID
 from data_management.models.guide import Guide
 from data_management.models.word import Word
 from service import conert_ch2num
+import numpy as np
 from service.policy_graph_construct import understand_guide
 
 
@@ -66,6 +67,8 @@ def check_single_guide(company_id, guide_id, threshold=.0):
 def format_record(company_id, count, guide_id, reasons):
     count = 1 if count == 0 else count
     matching = len(reasons) / count
+    if matching < 0.2 and matching != 0:
+        matching += 0.2
     reasons = "\n".join(reasons)
     reasons = f"企业满足以下条件：【括号中内容为企业的真实情况】\n{reasons}"
     record = dict(company_id=company_id,
@@ -97,7 +100,11 @@ def check_single_requirement(company_id, triple):
     ip = config.get('data_server', 'host')
     url = f"http://{ip}:3306/data"
     server = ServiceProxy(service_url=url)
-    data = server.data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")["result"]
+    return_data = server.data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
+    data=return_data.get("result",None)
+    if data is None:
+        log.info(f"{return_data}")
+        return None,None
     if triple["relation"] in ["大于", "小于"]:
         return compare_literal(data, triple)
     else:
@@ -243,10 +250,18 @@ def recommend_task(company_id, threshold=.0):
     return {"company_id": company_id, "results": results}
 
 
+def is_above_threshold(result, threshold):
+    try:
+        return float(result["matching"]) >= float(threshold)
+    except:
+        return False
+
+
 @celery_app.task()
-def check_single_guide_batch_companies_callback(group_result, companies, guide_id, url, task_id):
+def check_single_guide_batch_companies_callback(group_result, companies, guide_id, url, threshold, task_id):
     """
     调用callback 接口告知任务已经完成
+    :param threshold:
     :param task_id:
     :param companies:
     :param guide_id:
@@ -256,24 +271,23 @@ def check_single_guide_batch_companies_callback(group_result, companies, guide_i
     """
     return_result = {company: {"matching": .0, "status": "FAIL"} for company in companies}
     for result in group_result:
-        if result is None:
-            continue
-        return_result[result["company_id"]] = {"matching": result["matching"], "status": "SUCCESS"}
+        if is_above_threshold(result,threshold):
+            return_result[result["company_id"]] = {"matching": result["matching"], "status": "SUCCESS"}
     try:
         requests.post(url, json={
             "guide_id": guide_id,
             "task_id": task_id,
             "result": return_result
         })
-    except:
-        pass
+    except Exception:
+        return
 
 
-def create_chain_for_check_recommend(companies, guide_id, url):
+def create_chain_for_check_recommend(companies, threshold, guide_id, url):
     task_id = UUID()
     task_group = chord([check_single_guide.s(company, guide_id) for company in companies])
     task_chain = task_group(check_single_guide_batch_companies_callback.signature(
-        kwargs={'companies': companies, "guide_id": guide_id, "url": url, "task_id": task_id}))
+        kwargs={'companies': companies, "guide_id": guide_id, "url": url, "task_id": task_id, "threshold": threshold}))
     return task_id
 
 # @celery_app.task(bind=True)

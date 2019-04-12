@@ -6,7 +6,8 @@ from flask import request, jsonify, abort
 from flask_restful import Api, Resource, reqparse
 
 from celery_task.policy.base import get_pending_task
-from celery_task.policy.tasks import understand_guide_task, recommend_task, create_chain_for_check_recommend
+from celery_task.policy.tasks import understand_guide_task, recommend_task, create_chain_for_check_recommend, \
+    is_above_threshold
 from condition_identification.api.text_parsing import paragraph_extract
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
@@ -87,7 +88,7 @@ def upload_guide():
     policy_id = request.args.get("policy_id", default=None)
     if policy_id is not None:
         Guide.link_to_policy(guide_id, policy_id)
-    pool.submit(understand_guide_task,guide_id,text)
+    pool.submit(understand_guide_task, guide_id, text)
     # understand_guide_task(guide_id,text)
     # result = understand_guide_task.delay(guide_id,text)
     return jsonify({
@@ -106,9 +107,13 @@ def recommend():
     if "company_id" in request.args:
         # 根据企业id获取推荐，返回结果并异步更新结果
         company_id = request.args.get("company_id")
+        threshold = float(request.args.get("threshold", 0.))
         task_result = recommend_task.delay(company_id)
         response_dict["task_id"] = task_result.id
-        records = [one for one in mongo.db.recommend_record.find({"company_id": company_id, "latest": True})]
+        records = []
+        for one in mongo.db.recommend_record.find({"company_id": company_id, "latest": True}):
+            if is_above_threshold(one, threshold):
+                records.append(one)
         response_dict["result"] = records
         return jsonify(response_dict)
     if "task_id" in request.args:
@@ -141,6 +146,7 @@ def check_single_guide_for_companies():
     companies = params.get("companies", [])
     # 检查参数是否正确
     guide_id = params.get("guide_id", None)
+    threshold = float(params.get("threshold", .0))
     _, _, guide_node = Guide.find_by_guide_id(guide_id)
     print(guide_node)
     if guide_node is None:
@@ -174,7 +180,7 @@ def check_single_guide_for_companies():
         })
     elif max_input >= len(companies):
         # 队列能放进去
-        task_id = create_chain_for_check_recommend(companies, guide_id,
+        task_id = create_chain_for_check_recommend(companies, threshold, guide_id,
                                                    params.get("callback", None))
         return jsonify({
             "task_id": task_id,
@@ -186,7 +192,7 @@ def check_single_guide_for_companies():
         })
     else:
         # 队列有空位
-        task_id = create_chain_for_check_recommend(companies[:max_input], guide_id,
+        task_id = create_chain_for_check_recommend(companies[:max_input], threshold, guide_id,
                                                    params.get("callback", None))
         return jsonify({
             "task_id": task_id,
