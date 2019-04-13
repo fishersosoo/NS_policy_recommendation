@@ -3,6 +3,7 @@ from condition_identification.relation_predict.extract_relation import get_relat
 from condition_identification.rdf_triple.triple import Triple
 from condition_identification.bonus_identify.DocTree import *
 from condition_identification.util.search import search_field_sameword
+from condition_identification.rule.adjust_triple import adjust_byrule
 def construct_tripletree(tree):
     """提取条件树
 
@@ -42,7 +43,8 @@ def construct_tripletree(tree):
                 triple.filed = triples_dict[key]
             else:
                 triple.filed = search_field_sameword(triples_dict[key], presentence)
-
+            # 人工规则
+            triple = adjust_byrule(triple)
             if triple.filed:
                 triples.append(triple.to_dict())
             print(presentence)
