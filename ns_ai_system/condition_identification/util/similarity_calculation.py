@@ -1,11 +1,11 @@
 from pyhanlp import *
 from condition_identification.util.distance_calculations import cos_sim
 from condition_identification.util.string_process import getNumofCommonSubstr
-def _search_max_word(value,value_encodes,line_encode,line):
+def _search_max_word(value_word, value_encode,line_encode,line):
     max_value = 0
     max_word = ''
     has_max_word=False
-    for word, value_encode in zip(value, value_encodes):
+    for word, value_encode in zip(value_word, value_encode):
         word = word.strip()
         flag = False
         for term in HanLP.segment(word):  # 必须要有相同的词才可以
@@ -24,7 +24,7 @@ def _search_max_word(value,value_encodes,line_encode,line):
     return has_max_word
 
 
-def compare_similarity(line, value, bc):
+def compare_similarity(line, value_word, value_encode,bert_client):
     """ 计算 比较相似度 找出相似度最高的
 
     利用bert获得词向量，计算相似度，找到相似度最高的那个
@@ -40,18 +40,8 @@ def compare_similarity(line, value, bc):
 
     """
 
-    line_encode = bc.encode([line])
-    # 先取前30个作一下比较
-    if len(value) > 30:
-        part_value_encodes = bc.encode(list(value)[0:30])
-        has_max_word = _search_max_word(value, part_value_encodes, line_encode, line)
-
-        if not has_max_word:
-            rest_value_encodes = bc.encode(list(value)[30:])
-            has_max_word = _search_max_word(value, rest_value_encodes, line_encode, line)
-    else:
-        all_value_encodes = bc.encode(list(value))
-        has_max_word = _search_max_word(value, all_value_encodes, line_encode, line)
+    line_encode = bert_client.encode([line])
+    has_max_word = _search_max_word(value_word, value_encode, line_encode, line)
     return has_max_word
 
 

@@ -16,13 +16,19 @@ class Field(object):
         field_dict: dict， 与某个词相似度最高的field
 
     """
+    # 单例模式
+    def __new__(cls, *args, **kargs):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(Field, cls).__new__(cls)
+        return cls.instance
 
-    def __init__(self,bc):
-        self.bert_client=bc
-        self.field = self._get_database_columns()
-        self.field_dict=dict()
-        self.field_vec_dict =self._get_field_vec_dict()
-        self.bert_client=bc
+    def __init__(self, bc):
+        if not hasattr(self, "init_fir"):
+            self.init_fir = True
+            self.bert_client = bc
+            self.field = self._get_database_columns()
+            self.field_vec_dict = self._get_field_vec_dict()
+        self.field_dict = dict()
 
     def _get_database_columns(self):
         """获取field

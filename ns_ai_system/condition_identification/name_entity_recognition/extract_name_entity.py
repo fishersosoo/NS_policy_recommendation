@@ -25,7 +25,7 @@ def get_field_value(sentence):
     field = Field(bc)
     field_dict = field.construct_field_dict(keyword)
     value = Value(bc)
-    value_dict = value.construct_value_dict(keyword)
+    value_dict = value.construct_value_filed(keyword)
     result,is_explicit_field = search_by_relative_pos(value_dict, field_dict, keyword)
 
     return result,is_explicit_field
@@ -33,4 +33,6 @@ def get_field_value(sentence):
 if __name__ == '__main__':
     word = '申报单位为创业投资基金的管理机构，管理机构及其运营的创业投资基金均注册在南沙，管理机构和所运营的创业投资基金须在中国证券投资基金业协会备案登记'
     text='集聚境外创业企业不少于20家'
-    print(get_field_value(text))
+    # print(get_field_value(text))
+    bc = BertClient()
+    print(sum(bc.encode(['广州市南沙区'])[0]))
