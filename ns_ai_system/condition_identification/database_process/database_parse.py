@@ -1,14 +1,13 @@
 # coding=utf-8
 from condition_identification.name_entity_recognition.extract_keyword import *
 from condition_identification.util.distance_calculations import cos_sim
+from condition_identification.rule.adjust_database_keyword import adjust_database_keyword_byrule
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from condition_identification.name_entity_recognition.vectorize.bert_word2vec import bert_word2vec
-bc = bert_word2vec
 
 
-def database_extract(lines, max_length=-1, len_threshold=1):
+def database_extract(database_values,bc, max_length=-1, len_threshold=1):
     """对数据库的列值进行抽取
 
     数据库的列值进行抽取,
@@ -21,18 +20,16 @@ def database_extract(lines, max_length=-1, len_threshold=1):
     Returns:
         None
     """
-    result_word = []
-    count = 0
-    for line in lines:
-        count += 1
-        if max_length != -1 and count > max_length:     # max_length不是-1，抽取前max_length行
+    database_keywords = []
+    for index, database_value in enumerate(database_values):
+        if max_length != -1 and index > max_length:     # max_length不是-1，抽取前max_length行
             break
-        result_word.extend(extract_keyword(line, len_threshold))
-    result = database_cluster(result_word)
-    return result
+        database_keywords.extend(extract_keyword(database_value, len_threshold))
+    database_cluster_result = database_cluster(database_keywords,bc)
+    return database_cluster_result
 
 
-def database_cluster(lines):
+def database_cluster(database_keywords,bc):
     """对数据库列数据聚类
 
     对列数据很多的列进行聚类，从而剔除无关值
@@ -42,41 +39,32 @@ def database_cluster(lines):
 
      Returns:
          result: list 返回抽取后的列值
-
      """
     tqdm.pandas()
-    vs = set()
-    vec_dict = {}
-    result = lines
-    # 获得列数据的词向量 以及 对列数据去重
-    strs=[]
-    for line in tqdm(lines):
-        line = line.strip()
-        strs.append(line)
-    vecs=bc([strs])
-    for line,vec in zip(strs,vecs):
-        vec_dict[line] =vec
-        vs.add(line)
-    vs = list(vs)
+    # # 获得列数据的词向量 以及 对列数据去重
+    database_keyword_vecs=bc.encode(database_keywords)
     # 如果数据太少就没有清除的必要
-    if len(vs) > 300:
-        # 计算与其他数据的相似度，取相似度最高的那些数据
-        result_csv = pd.DataFrame({'field': np.array(vs), 'count': np.zeros(len(vs))})
-        diff = 0
-        for key in tqdm(vs):
-            value_csv = pd.DataFrame({'field': np.array(vs), 'value': np.zeros(len(vs))})
-            diff += 1
-            # 计算与其他列数据的相似度
-            for j in range(diff, len(vs)):
-                key2 = vs[j]
-                value_csv.loc[value_csv['field'] == key2, 'value'] = cos_sim(vec_dict[key], vec_dict[key2])
-            value_csv = value_csv[value_csv['value'] > 0.9]    # 对相似度大于0.9 的count 加一
-            value_csv = value_csv['field'].values
-            for i in range(value_csv.shape[0]):
-                result_csv.loc[result_csv['field'] == value_csv[i], 'count'] += 1
-        result_csv = result_csv[result_csv['count'] > result_csv['count'].quantile(0.4)]     # 取count 值最大的前百分之四十
-        result = result_csv['field'].values
-    return result
+    database_keywords_len = len(database_keywords)
+    if database_keywords_len < 300:
+        return database_keywords
+    elif database_keywords_len > 2000:
+        database_keyword_vecs = database_keyword_vecs[0:2000]
+        database_keywords = database_keywords[0:2000]
+    database_keywords=adjust_database_keyword_byrule(database_keywords)
+    # 循环计算相似度
+    count_dict = {keyword: 0 for keyword in database_keywords}
+    for index, database_keyword in tqdm(enumerate(database_keywords)):
+        for i in range(index+1,database_keywords_len):
+            if cos_sim(database_keyword_vecs[index], database_keyword_vecs[i])>0.9:
+                count_dict[database_keyword] += 1
+
+    # 取前0.4的数值
+    count_dict = sorted(count_dict.items(), key=lambda x: x[1], reverse=True)
+    count_dict = count_dict[0:int(len(count_dict)*0.4)]
+    cluster_word = [x[0] for x in count_dict]
+    return cluster_word
+
+
 
 
 if __name__ == '__main__':
