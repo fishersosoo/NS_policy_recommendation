@@ -6,26 +6,28 @@ from condition_identification.util.sentence_preprocess import filter_punctuation
 from bisect import bisect_left
 
 
-
-
-
 def insert(word, wait_word_id, wait_word):
-    """" 把word 插入到合适的数组
-     按ID顺序插入候选数组
+    """" 把word 根据id插入到合适的位置
+
+    抽取关键词，不能改变关键词组里词的位置顺序，
+    因此将词按照id大小插入合适的位置，
+    用二分法找到插入位置。
 
     Args:
-        word:待插入的word
-        wait_word:list ,候选词组
+        word: str ，待插入的词
+        wait_word:list ,候选词组成的list，有定中关系的词
         wait_word_id:候选词组的id
 
     Returns:
-        两个list数组
+        wait_word_id: list,
+        wait_word: list，有定中关系的词
+            Examples: wait_word: ['广州市', '南沙区', '范围', '内']
 
     """
     if word.ID in wait_word_id:
         return wait_word_id, wait_word
     # word.ID 和 word.LEMMA 插入到合适的位置
-    pos=bisect_left(wait_word_id, word.ID)
+    pos = bisect_left(wait_word_id, word.ID)
     wait_word_id.insert(pos, word.ID)
     wait_word.insert(pos, word.LEMMA)
     return wait_word_id, wait_word
@@ -33,18 +35,20 @@ def insert(word, wait_word_id, wait_word):
 
 # 如果定中之间杂夹了定中分不出来
 def extract_keyword(sentence, len_threshold):
-    """抽取句子的关键词
+    """抽取政策条件语句的关键词
 
-    利用 pyhanlp 分词和词法分析，获取句子的关键词
+       利用 pyhanlp 对政策语句进行分词和词法分析，获取关键词
 
-    Args:
-        sentence: str
-        len_threshold: int
+       Args:
+           sentence: str
+               Examples: '工商注册地、税务征管关系及统计关系在广州市南沙区范围内；'
+           len_threshold: int,
 
-    Returns:
-        list
+       Returns:
+           result_word: list,政策语句的关键词
+               Examples:  ['工商注册地', '征管关系', '统计关系', '广州市南沙区范围内']
 
-    """
+       """
     lines = sentence.split('；')
     result_word = []
     for line in lines:
@@ -78,6 +82,7 @@ def extract_keyword(sentence, len_threshold):
         if complete_word != '':
             result_word.append(complete_word)
     return result_word
+
 
 if __name__ == '__main__':
     # with open('evalue/企业基本信息_地址.txt', 'w', encoding='utf8')as wf:

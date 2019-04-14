@@ -1,4 +1,6 @@
 import re
+
+
 def preprocess(sentence, word):
     """预处理
 
@@ -13,15 +15,15 @@ def preprocess(sentence, word):
     """
 
     sentence = filter_sentence(sentence)
-    candicate_sentence = []  # 候选的句子段
+    candidate_sentence = []  # 候选的句子段
     for l1 in sentence.split('。'):
         for l2 in l1.split('；'):
             for l3 in l2.split('，'):
-                candicate_sentence.append(l3)
+                candidate_sentence.append(l3)
     sim_max = 0
     sim_max_s = ''
     # 判断的逻辑为与实体字相同最多的句子为所在句子。相同多的情况下取最后一个
-    for s1 in candicate_sentence:
+    for s1 in candidate_sentence:
         count = 0
         for w in word:
             if w in s1:
@@ -30,10 +32,6 @@ def preprocess(sentence, word):
             sim_max = count
             sim_max_s = s1
     return sim_max_s
-
-
-
-
 
 
 def filter_sentence(sentence):
@@ -46,6 +44,7 @@ def filter_sentence(sentence):
     sentence = _filter_book(sentence)
     sentence = _filter_brackets(sentence)
     return sentence
+
 
 def filter_punctuation(lemma, head_lemma):
     """过滤奇怪的标点符号
@@ -70,6 +69,8 @@ def filter_punctuation(lemma, head_lemma):
     head_lemma = re.sub(u"[！？｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》"
                         u"「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏.。,; ]+", "", head_lemma)
     return lemma, head_lemma
+
+
 def _filter_book(lemma):
     """过滤掉尖括号和尖括号之间的字符
 

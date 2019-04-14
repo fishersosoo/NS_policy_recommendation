@@ -1,12 +1,28 @@
 from condition_identification.util.string_process import getNumofCommonSubstr
 from condition_identification.util.specialcondition_identify import idf_nums
-def search_field_sameword(fields,sentence):
-    field_list=[]
+from condition_identification.args import field_has_word_count
+
+
+def search_field_sameword(fields, sentence):
+    """对有多个field值的做进一步抽取
+
+       Args:
+           fields: list,可能的field值
+           sentence:  str,政策条件语句
+               example: fields: ['营业总收入', '纳税总额', '注册资本', '资产总额', '实缴出资额']
+                        sentence: '纳税总额超过30万元'
+       Returns:
+           field_list: list, 筛选后符合要求的field值
+               example: ['纳税总额','资产总额']
+
+       """
+    field_list = []
     for field in fields:
-        has_word_count=getNumofCommonSubstr(field,sentence)[1]
-        if has_word_count>=2:# 因为这样ke'y
+        has_word_count = getNumofCommonSubstr(field, sentence)[1]
+        if has_word_count >= field_has_word_count:
             field_list.append(field)
     return field_list
+
 
 def search_by_relative_pos(value_dict, field_dict, keyword):
     """确定field 和 value
@@ -50,5 +66,4 @@ def search_by_relative_pos(value_dict, field_dict, keyword):
             if idf_nums(key):
                 is_explicit_field[key]=False
 
-
-    return value_field,is_explicit_field
+    return value_field, is_explicit_field

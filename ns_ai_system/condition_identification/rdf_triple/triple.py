@@ -11,7 +11,7 @@ class Triple:
     """
 
     def __init__(self):
-        self.filed = []
+        self.field = []
         self.relation = ''
         self.value = ''
         self.sentence = ''
@@ -22,9 +22,9 @@ class Triple:
 
         :return:
         """
-        return {"fields": self.filed, "relation": self.relation, "value": self.value, "sentence": self.sentence}
+        return {"fields": self.field, "relation": self.relation, "value": self.value, "sentence": self.sentence}
 
     def __repr__(self):
         """打印三元组
         """
-        return str((self.filed, self.relation, self.value))
+        return str((self.field, self.relation, self.value))

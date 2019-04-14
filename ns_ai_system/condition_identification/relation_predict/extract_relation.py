@@ -2,16 +2,7 @@
 import re
 from condition_identification.util.specialcondition_identify import idf_address,idf_nums
 from condition_identification.util.sentence_preprocess import preprocess
-# 定义关键字
-dayu = ['大于', '以上', '超过', '多于', '高于', '至多', '以后']
-budayu = ['不' + x for x in dayu]
-xiaoyu = ['小于', '以下', '少于', '低于', '至少', '未满', '以前']
-buxiaoyu = ['不' + x for x in xiaoyu]
-weiyu = ['位于', '区内', '范围内','在']
-fou = ['无', '不']
-
-
-
+from condition_identification.args import dayu, budayu, xiaoyu, buxiaoyu, fou, weiyu
 
 
 def get_relation(sentence, word):
@@ -28,7 +19,7 @@ def get_relation(sentence, word):
     """
     pre_sentence = preprocess(sentence, word)
     relation = relation_pre(pre_sentence, word)
-    return relation,pre_sentence
+    return relation, pre_sentence
 
 
 def relation_pre(sentence, word):
@@ -46,21 +37,23 @@ def relation_pre(sentence, word):
     # 约束 数字和地址
     is_num = idf_nums(word)
     is_location = idf_address(word)
-    relation='是'
+    relation = '是'
     # 数字约束
     if is_num:
         for d in dayu:
             if d in sentence:
                 for bd in budayu:
                     if bd in sentence:
-                        relation = '小于'
-                return '大于'
+                        return '小于'
+                    else:
+                        relation = '大于'
         for d in xiaoyu:
             if d in sentence:
                 for bd in buxiaoyu:
                     if bd in sentence:
-                        relation = '大于'
-                relation = '小于'
+                        return '大于'
+                    else:
+                        relation = '小于'
 
     # 地址约束
     for d in weiyu:
@@ -82,8 +75,5 @@ def relation_pre(sentence, word):
     return relation
 
 
-
-
-
-
-
+if __name__ == '__main__':
+    print(relation_pre('纳税总额在300万元以上', '300万元'))

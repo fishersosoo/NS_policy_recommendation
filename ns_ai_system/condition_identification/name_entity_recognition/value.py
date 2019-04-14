@@ -1,16 +1,19 @@
 # coding=utf-8
 from collections import defaultdict
 from pyhanlp import *
-from condition_identification.name_entity_recognition.args import NUMS,ADDRESS
-from condition_identification.util.specialcondition_identify import idf_nums,idf_address
+from condition_identification.args import NUMS, ADDRESS
+from condition_identification.util.specialcondition_identify import idf_nums, idf_address
 from data_management.api import get_value_dic
 from condition_identification.util.similarity_calculation import compare_similarity
 from condition_identification.database_process.database_parse import database_extract
 
+
 class Value(object):
-    """value类
+    """单例value类
 
     对于一个value值，找到他的value,数字，地址或者是与数据库某一列值（field)相似度很高
+    单例模式可以大大减少数据库读取操作和内存消耗，不用每次都从数据库读取数据
+
     Attributes：
         values:  dict , {str:set}数据库field 与其值组成的字典
         value_filed:   dict , 对某个数据值，利用相似性判读建立起的它的值 与 field 的对应
@@ -23,6 +26,7 @@ class Value(object):
         if not hasattr(cls, "instance"):
             cls.instance = super(Value, cls).__new__(cls)
         return cls.instance
+
     def __init__(self, bc):
         if not hasattr(self, "init_fir"):
             self.init_fir = True
@@ -31,8 +35,6 @@ class Value(object):
             self.values_word = defaultdict(list)
             self._get_value()
         self.value_filed = defaultdict(list)
-            
-
 
     def _get_value(self):
         """从数据库获取value
@@ -46,22 +48,25 @@ class Value(object):
         value_dic = get_value_dic()
         for key in value_dic:
             values_set = set(value_dic[key])
-            values_set = database_extract(values_set,self.bert_client)
+            values_set = database_extract(values_set, self.bert_client)
             values_set = list(values_set)
             print(values_set)
             self.values_encode[key] = self.bert_client.encode(values_set)
             self.values_word[key] = values_set
 
-
     def construct_value_filed(self, regs):
-        """建立value_filed
+        """对政策条件抽取出的关键词建立value_dict
 
-         利用是否是数字 地址和相似度对regs建立value_filed
+         利用是否是数字 地址和与数据库数据相似度比较对政策申请条件关键词regs建立value_dict
+
          Args:
-             regs:list
-             bc: bert 词向量工具
+             regs:list ，政策文本关键词
+                 Examples: ['工商注册地', '征管关系', '统计关系', '广州市南沙区范围内']
+
          Returns:
-             value_filed :dict
+             value_dict :dict
+                 Examples:
+                     {'广州市南沙区范围内': ['地址']}
 
         """
         print(__name__)
@@ -77,8 +82,8 @@ class Value(object):
                     if field in NUMS or field in ADDRESS:
                         continue
                     value_encode = self.values_encode[field]
-                    value_word=self.values_word[field]
-                    is_similar=compare_similarity(line, value_word, value_encode, self.bert_client)
+                    value_word = self.values_word[field]
+                    is_similar = compare_similarity(line, value_word, value_encode, self.bert_client)
                     if is_similar:      # 满足相似度要求
                         candidate_value.append(field)
                 if candidate_value:
@@ -89,7 +94,8 @@ class Value(object):
         """ 获取value_dic"""
         return self.value_filed
 
+
 if __name__ == '__main__':
-    # print(idf_nums('30岁'))
-    print(Value.idf_address("南沙区"))
+    print(idf_nums('30岁'))
+
 

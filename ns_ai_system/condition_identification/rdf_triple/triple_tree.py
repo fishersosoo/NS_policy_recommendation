@@ -4,6 +4,8 @@ from condition_identification.rdf_triple.triple import Triple
 from condition_identification.bonus_identify.DocTree import *
 from condition_identification.util.search import search_field_sameword
 from condition_identification.rule.adjust_triple import adjust_byrule
+
+
 def construct_tripletree(tree):
     """提取条件树
 
@@ -15,7 +17,12 @@ def construct_tripletree(tree):
         tree: Tree 指南拆解后的树
 
     Returns:
+        triples: list, 抽取到的三元组列表
         tree: Tree 对输入的tree的node内容进行改写结果
+            Examples:
+                triples: [{'fields': ['地址'], 'relation': '位于', 'value': '南沙',
+                           'sentence': '工商注册地、税务征管关系及统计关系在南沙新区范围内'}]
+
     """
     triples = []
     for node in tree.expand_tree(mode=Tree.DEPTH):
@@ -32,7 +39,7 @@ def construct_tripletree(tree):
             pass
 
         # 解决三元组
-        triples_dict,is_explicit_field = get_field_value(sentence)
+        triples_dict, is_explicit_field = get_field_value(sentence)
         for key in triples_dict:
             relation, presentence = get_relation(sentence, key)
             triple = Triple()
@@ -40,14 +47,14 @@ def construct_tripletree(tree):
             triple.value = key
             triple.sentence = presentence
             if is_explicit_field[key]:
-                triple.filed = triples_dict[key]
+                triple.field = triples_dict[key]
             else:
-                triple.filed = search_field_sameword(triples_dict[key], presentence)
+                triple.field = search_field_sameword(triples_dict[key], presentence)
             # 人工规则
             triple = adjust_byrule(triple)
-            if triple.filed:
+            if triple.field:
                 triples.append(triple.to_dict())
             print(presentence)
             print(triple)
         tree[node].data = triples
-    return triples,tree
+    return triples, tree
