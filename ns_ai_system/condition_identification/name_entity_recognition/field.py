@@ -2,7 +2,7 @@
 from condition_identification.util.distance_calculations import cos_sim
 
 from condition_identification.util.similarity_calculation import field_compare_similarity
-from data_management.api import list_field_info
+from data_management.api import list_all_field_name
 
 
 class Field(object):
@@ -41,7 +41,7 @@ class Field(object):
         """
         # 获取field 信息
 
-        field = set(list_field_info())
+        field = set(list_all_field_name())
         return field
     def _get_field_vec_dict(self):
         field_vectors = self.bert_client.encode(list(self.field))
