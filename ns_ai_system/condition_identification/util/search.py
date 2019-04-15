@@ -39,10 +39,11 @@ def search_by_relative_pos(value_dict, field_dict, keyword):
     Returns:
         value_field: dic
     """
+    # 备注：这个地方还是有可能会逻辑出错，因为有可能错误识别value然后就把真实的value的field抢走了
     value_field = {}
     is_explicit_field={}
-    has_field = False
     for key in value_dict:
+        has_field = False
         pos = keyword.index(key)
         for i in range(len(keyword)):
             # 它要同时在value_dict和field_dict中
@@ -60,6 +61,7 @@ def search_by_relative_pos(value_dict, field_dict, keyword):
                     has_field = True
                     del field_dict[keyword[pos + i]]    # 找到一个就删掉他对应的field_dic里的值，防止重复
                     break
+
         is_explicit_field[key] = True
         if not has_field:   # 如果没有找到匹配的field，就用 value_dic 值代替field 值
             value_field[key] = value_dict[key]
