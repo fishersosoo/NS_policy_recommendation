@@ -51,9 +51,8 @@ if __name__ == '__main__':
     acc_result = []
     all_true = 0
     all_count = 0
-
-    for j in range(2, 40):
-        score_record = open('score.txt', 'a')
+    for j in range(0,40):
+        score_record = open('score0415.txt', 'w')
         file_tester = tester[tester['序号'] == j]
         if file_tester.shape[0] == 0:
             continue
@@ -61,14 +60,7 @@ if __name__ == '__main__':
             text = f.read()
         paragraph_extrac_output = paragraph_extract(text)
         triples = triple_extract(paragraph_extrac_output)
-        if not triples:
-            continue
         print(triples)
-        # import pickle
-        # f=open('0.pkl','rb')
-        # pickle.dump(triples,f)
-        # triples=pickle.load(f)
-
         def isin(a, b):
             isin_flag = True
             for w in a:
@@ -95,7 +87,6 @@ if __name__ == '__main__':
                         print(sentence)
                         tr += 1
                         break
-
             if target == 'None':
                 if is_none:
                     tr += 1
