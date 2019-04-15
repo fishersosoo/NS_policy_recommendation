@@ -4,7 +4,7 @@ from condition_identification.rdf_triple.triple import Triple
 from condition_identification.bonus_identify.DocTree import *
 from condition_identification.util.search import search_field_sameword
 from condition_identification.rule.adjust_triple import adjust_byrule
-
+from condition_identification.rule.adjust_number import extract_num
 
 def construct_tripletree(tree):
     """提取条件树
@@ -53,6 +53,7 @@ def construct_tripletree(tree):
             # 人工规则
             triple = adjust_byrule(triple)
             if triple.field:
+                triple = extract_num(triple)
                 triples.append(triple.to_dict())
             print(presentence)
             print(triple)

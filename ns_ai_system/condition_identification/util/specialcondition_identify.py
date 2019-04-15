@@ -21,7 +21,6 @@ def idf_nums(word):
         if nature == 'm':
             mflag = True
         if (nature == 'q' or nature == 'l') and (word != '项' and word != '条'):
-            print(word)
             qflag = True
     if mflag and qflag:
         return True
