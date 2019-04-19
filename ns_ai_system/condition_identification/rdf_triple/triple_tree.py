@@ -5,7 +5,7 @@ from condition_identification.bonus_identify.DocTree import *
 from condition_identification.util.search import search_field_sameword
 from condition_identification.rule.adjust_triple import adjust_byrule
 from condition_identification.rule.adjust_number import extract_num
-
+from treelib.exceptions import DuplicatedNodeIdError
 def construct_tripletree(tree):
     """提取条件树
 
@@ -24,8 +24,10 @@ def construct_tripletree(tree):
                            'sentence': '工商注册地、税务征管关系及统计关系在南沙新区范围内'}]
 
     """
-    triples = []
+    alltriples = []
+    triple_tree = DocTree.copy_tree(tree,'')
     for node in tree.expand_tree(mode=Tree.DEPTH):
+        triples = []
         sentence = "。".join(tree[node].data)
         if tree[node].is_leaf():
             sentence=sentence.replace('；',"。")
@@ -34,14 +36,17 @@ def construct_tripletree(tree):
                 if sentence:
                     triple = construct_triple(sentence)
                     triples.extend(triple)
+            triple_tree[node].tag = 'and'
+            triple_tree = split_node(triple_tree, node, triples)
         else:
             if "之一" in sentence or '其二' in sentence:
-                tree[node].tag = 'or'
+                triple_tree[node].tag = 'or'
             else:
-                tree[node].tag = 'and'
+                triple_tree[node].tag = 'and'
 
-        tree[node].data = triples
-    return triples, tree
+        # tree[node].data = triples
+        alltriples.extend(triples)
+    return alltriples, triple_tree
 
 def construct_triple(sentence):
     """提取三元组
@@ -50,11 +55,6 @@ def construct_triple(sentence):
         tree: Tree 指南拆解后的树
         sentence: Str 需要拆解的三元组句子
     """
-
-    # 解决and/or
-    # 非and/or节点的tag值为原先值，即政策文本
-
-
     # 解决三元组
     triples = []
     triples_dict, is_explicit_field = get_field_value(sentence)
@@ -78,3 +78,15 @@ def construct_triple(sentence):
         print(presentence)
         print(triple)
     return triples
+
+def split_node(tree,node,triples):
+    unique=0
+    for triple in triples:
+        try:
+            tree.create_node(identifier=tree[node].identifier+'_'+triple['value'],data=triple, tag=[], parent=tree[node].identifier)
+        except DuplicatedNodeIdError:
+            tree.create_node(identifier=str(unique)+tree[node].identifier + '_' + triple['value'], data=triple, tag=[],
+                             parent=tree[node].identifier)
+            unique+=1
+
+    return tree

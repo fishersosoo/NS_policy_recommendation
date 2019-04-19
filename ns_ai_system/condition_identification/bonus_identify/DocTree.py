@@ -78,10 +78,10 @@ class DocTree(object):
             node = id_queue.get()
             nid = node.identifier
             try:
-                new_tree.create_node(identifier=new_id + '_' + nid, data=node.data, tag=node.tag,
-                                     parent=new_id + '_' + tree.parent(nid).identifier)
+                new_tree.create_node(identifier=new_id + nid, data=node.data, tag=node.tag,
+                                     parent=new_id + tree.parent(nid).identifier)
             except:
-                new_tree.create_node(identifier=new_id + '_' + nid, data=node.data, tag=node.tag)
+                new_tree.create_node(identifier=new_id + nid, data=node.data, tag=node.tag)
             if tree.children(nid):
                 for n in tree.children(nid):
                     id_queue.put(n)
