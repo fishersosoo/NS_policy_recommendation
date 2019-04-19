@@ -27,35 +27,54 @@ def construct_tripletree(tree):
     triples = []
     for node in tree.expand_tree(mode=Tree.DEPTH):
         sentence = "。".join(tree[node].data)
-        # 解决and/or
-        # 非and/or节点的tag值为原先值，即政策文本
-        if not tree[node].is_leaf():
+        if tree[node].is_leaf():
+            sentence=sentence.replace('；',"。")
+            sentences=sentence.split("。")
+            for sentence in sentences:
+                if sentence:
+                    triple = construct_triple(sentence)
+                    triples.extend(triple)
+        else:
             if "之一" in sentence or '其二' in sentence:
                 tree[node].tag = 'or'
             else:
                 tree[node].tag = 'and'
-        else:
-            # 叶子节点不改变tag
-            pass
 
-        # 解决三元组
-        triples_dict, is_explicit_field = get_field_value(sentence)
-        for key in triples_dict:
-            relation, presentence = get_relation(sentence, key)
-            triple = Triple()
-            triple.relation = relation
-            triple.value = key
-            triple.sentence = presentence
-            if is_explicit_field[key]:
-                triple.field = triples_dict[key]
-            else:
-                triple.field = search_field_sameword(triples_dict[key], presentence)
-            # 人工规则
-            triple = adjust_byrule(triple)
-            if triple.field:
-                triple = extract_num(triple)
-                triples.append(triple.to_dict())
-            print(presentence)
-            print(triple)
         tree[node].data = triples
     return triples, tree
+
+def construct_triple(sentence):
+    """提取三元组
+
+    Args:
+        tree: Tree 指南拆解后的树
+        sentence: Str 需要拆解的三元组句子
+    """
+
+    # 解决and/or
+    # 非and/or节点的tag值为原先值，即政策文本
+
+
+    # 解决三元组
+    triples = []
+    triples_dict, is_explicit_field = get_field_value(sentence)
+    for key in triples_dict:
+        relation, presentence = get_relation(sentence, key)
+        triple = Triple()
+        triple.relation = relation
+        triple.value = key
+        triple.sentence = presentence
+        if is_explicit_field[key]:
+            triple.field = triples_dict[key]
+        else:
+            triple.field = search_field_sameword(triples_dict[key], presentence)
+        # 人工规则
+        triple = adjust_byrule(triple)
+        # 提取单纯数字
+        if triple.field:
+            triple = extract_num(triple)
+
+        triples.append(triple.to_dict())
+        print(presentence)
+        print(triple)
+    return triples
