@@ -2,7 +2,7 @@
 import gridfs
 from py2neo import Node, NodeMatcher, Relationship, Subgraph
 
-from data_management.config import mongodb
+from data_management.config import py_client
 from data_management.models import graph_, BaseInterface, UUID
 from data_management.models.boon import Boon
 
@@ -44,7 +44,7 @@ class Policy(BaseInterface):
 
     @classmethod
     def get_file(cls, filename):
-        fs = gridfs.GridFS(mongodb, "policy_file")
+        fs = gridfs.GridFS(py_client.ai_system, "policy_file")
         return fs.get_version(filename=filename)
 
 

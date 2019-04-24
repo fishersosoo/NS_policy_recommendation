@@ -11,7 +11,6 @@ from read_config import ConfigLoader
 config = ConfigLoader()
 neo4j_config = config._config['neo4j']
 py_client = pymongo.MongoClient(host=config.get('mongoDB', 'host'), port=int(config.get('mongoDB', 'port')), connect=False)
-mongodb = py_client.ai_system
 dataService = DataService(url=f"http://{config.get('data_server','host')}:{config.get('data_server','port')}/data")
 
 if __name__ == '__main__':

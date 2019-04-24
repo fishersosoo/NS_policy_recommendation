@@ -4,7 +4,7 @@ import datetime
 import gridfs
 from py2neo import Node, Relationship, NodeMatcher, Subgraph
 
-from data_management.config import mongodb
+from data_management.config import  py_client
 from data_management.models import BaseInterface, UUID, graph_
 from data_management.models.policy import Policy
 
@@ -71,7 +71,7 @@ class Guide(BaseInterface):
 
     @classmethod
     def get_file(cls, filename):
-        fs = gridfs.GridFS(mongodb, "guide_file")
+        fs = gridfs.GridFS(py_client.ai_system, "guide_file")
         return fs.get_version(filename=filename)
 
     @classmethod
