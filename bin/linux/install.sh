@@ -70,7 +70,7 @@ systemctl start mongod.service
 mongorestore db_backup/mongo_data --gzip
 wget http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 rpm -ivh epel-release-6-8.noarch.rpm
-yum -y install libreoffice libreoffice-headless unoconv redis gcc-c++
+    yum -y install libreoffice libreoffice-headless unoconv redis gcc-c++
 
 redis-server redis.conf
 # setup python env

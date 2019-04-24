@@ -6,6 +6,7 @@ from condition_identification.util.search import search_field_sameword
 from condition_identification.rule.adjust_triple import adjust_byrule
 from condition_identification.rule.adjust_number import extract_num
 from treelib.exceptions import DuplicatedNodeIdError
+
 def construct_tripletree(tree):
     """提取条件树
 

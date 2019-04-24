@@ -7,7 +7,7 @@ from read_config import ConfigLoader
 from restful_server.func import CustomJSONEncoder
 
 from concurrent.futures.thread import ThreadPoolExecutor
-pool=ThreadPoolExecutor(1)
+# pool=ThreadPoolExecutor(1)
 config = ConfigLoader()
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder

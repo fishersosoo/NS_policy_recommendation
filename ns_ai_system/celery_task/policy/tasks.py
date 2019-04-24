@@ -101,10 +101,10 @@ def check_single_requirement(company_id, triple):
     url = f"http://{ip}:3306/data"
     server = ServiceProxy(service_url=url)
     return_data = server.data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
-    data=return_data.get("result",None)
+    data = return_data.get("result", None)
     if data is None:
         log.info(f"{return_data}")
-        return None,None
+        return None, None
     if triple["relation"] in ["大于", "小于"]:
         return compare_literal(data, triple)
     else:
@@ -257,7 +257,7 @@ def is_above_threshold(result, threshold):
         return False
 
 
-@celery_app.task()
+@celery_app.task(max_retries=1)
 def check_single_guide_batch_companies_callback(group_result, companies, guide_id, url, threshold, task_id):
     """
     调用callback 接口告知任务已经完成
@@ -271,7 +271,7 @@ def check_single_guide_batch_companies_callback(group_result, companies, guide_i
     """
     return_result = {company: {"matching": .0, "status": "FAIL"} for company in companies}
     for result in group_result:
-        if is_above_threshold(result,threshold):
+        if is_above_threshold(result, threshold):
             return_result[result["company_id"]] = {"matching": result["matching"], "status": "SUCCESS"}
     try:
         requests.post(url, json={
@@ -287,7 +287,8 @@ def create_chain_for_check_recommend(companies, threshold, guide_id, url):
     task_id = UUID()
     task_group = chord([check_single_guide.s(company, guide_id) for company in companies])
     task_chain = task_group(check_single_guide_batch_companies_callback.signature(
-        kwargs={'companies': companies, "guide_id": guide_id, "url": url, "task_id": task_id, "threshold": threshold}))
+        kwargs={'companies': companies, "guide_id": guide_id, "url": url, "task_id": task_id, "threshold": threshold}),
+        max_retries=1)
     return task_id
 
 # @celery_app.task(bind=True)

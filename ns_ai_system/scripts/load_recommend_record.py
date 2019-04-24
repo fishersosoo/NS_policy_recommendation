@@ -3,7 +3,7 @@ import csv
 import datetime
 import os
 
-from data_management.config import mongodb
+from data_management.config import py_client
 
 
 def load_recommend_record_from_csv(csv_path):
@@ -33,7 +33,7 @@ def load_recommend_record_from_csv(csv_path):
                 matching += 0.1
             record["matching"] = matching
             if matching > 0:
-                mongodb["recommend_record"].insert_one(record)
+                py_client.ai_system["recommend_record"].insert_one(record)
 
 
 if __name__ == '__main__':

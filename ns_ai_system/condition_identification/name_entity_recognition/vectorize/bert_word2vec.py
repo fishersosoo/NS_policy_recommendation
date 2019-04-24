@@ -32,11 +32,16 @@ def bert_word2vec(strs, batch_size=200, reduce_mean=True):
             ret = server.model.bert_word2vec(strs[i * batch_size:(i + 1) * batch_size])
             ret = ret["result"]
         except timeout:
+            print(f"timeout. reduce batch_size to {int(batch_size / 2)}")
             ret = bert_word2vec(strs[i * batch_size:(i + 1) * batch_size], int(batch_size / 2), reduce_mean=False)
         rets.extend(ret)
     server = ServiceProxy(service_url=url)
-    ret = server.model.bert_word2vec(strs[last:])
-    ret = ret["result"]
+    try:
+        ret = server.model.bert_word2vec(strs[i * batch_size:(i + 1) * batch_size])
+        ret = ret["result"]
+    except timeout:
+        print(f"timeout. reduce batch_size to {int(batch_size / 2)}")
+        ret = bert_word2vec(strs[i * batch_size:(i + 1) * batch_size], int(batch_size / 2), reduce_mean=False)
     rets.extend(ret)
     if reduce_mean:
         rets = np.mean(rets, axis=1).tolist()
