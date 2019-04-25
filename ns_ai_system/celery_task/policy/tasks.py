@@ -42,6 +42,8 @@ def check_single_guide(company_id, guide_id, threshold=.0):
         fail_to_check = 0
         checked_fields = []
         for triple in triples:
+            if len(triple["fields"]) == 0:
+                continue
             if triple["fields"][0] in checked_fields:
                 continue
             match, reason = check_single_requirement(company_id, triple)
@@ -52,14 +54,12 @@ def check_single_guide(company_id, guide_id, threshold=.0):
             if match:
                 reasons.append(f'{len(reasons)+1}. {reason}【{triple["sentence"]}】')
         record = format_record(company_id, len(triples) - fail_to_check, guide_id, reasons)
-
-        py_client.ai_system["recommend_record"].update({"company_id": company_id,
-                                                        "guide_id": guide_id},
-                                                       {"$set": {"latest": False}}, upsert=False, multi=True)
+        py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
+                                                             "guide_id": guide_id})
         py_client.ai_system["recommend_record"].insert_one(copy.deepcopy(record))
-
         return record
     except Exception as e:
+        log.error(str(guide_id))
         log.error(traceback.format_exc())
         return None
 

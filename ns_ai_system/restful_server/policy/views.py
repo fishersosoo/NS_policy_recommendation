@@ -97,6 +97,18 @@ def upload_guide():
         "status": "SUCCESS"
     })
 
+@policy_service.route("get_result/", methods=["GET"])
+def get_result():
+    """
+    获取理解结果
+    :return:
+    """
+    guide_id=request.args.get("guide_id",None)
+    if guide_id is None:
+        return jsonify(list(mongo.db.parsing_result.find({})))
+    else:
+        return jsonify(list(mongo.db.parsing_result.find({"guide_id":str(guide_id)})))
+
 
 @policy_service.route("recommend/", methods=["GET"])
 def recommend():
