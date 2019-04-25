@@ -1,4 +1,4 @@
-from pyhanlp import *
+
 from condition_identification.args import NUMS
 danwei = {'九':9, '八':8, '七':7, '六':6, '五':5, '四':4, '三':3, '二':2, '一':1, '零':0}
 
@@ -64,6 +64,7 @@ def get_num(word):
 
 
 def extract_num(triple):
+    from pyhanlp import HanLP
     if triple.field[0] in NUMS:
         line=triple.value
         number=''

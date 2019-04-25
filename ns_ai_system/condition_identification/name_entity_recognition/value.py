@@ -1,6 +1,5 @@
 # coding=utf-8
 from collections import defaultdict
-from pyhanlp import *
 from condition_identification.args import NUMS, ADDRESS
 from condition_identification.util.specialcondition_identify import idf_nums, idf_address
 from data_management.api import get_value_dic

@@ -1,4 +1,3 @@
-from pyhanlp import *
 from condition_identification.util.distance_calculations import cos_sim
 from condition_identification.util.string_process import getNumofCommonSubstr
 from condition_identification.args import similarity_value
@@ -20,6 +19,7 @@ def _search_max_word(value_word, value_encode, line_encode, line):
          has_max_word: bool ,是否找到相似度满足要求的value值
 
      """
+    from pyhanlp import HanLP
     max_value = 0
     max_word = ''
     has_max_word = False

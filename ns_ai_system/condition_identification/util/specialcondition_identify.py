@@ -1,4 +1,4 @@
-from pyhanlp import *
+
 
 
 def idf_nums(word):
@@ -12,6 +12,7 @@ def idf_nums(word):
     Returns:
         bool
     """
+    from pyhanlp import HanLP
     # 通过词法分析 根据词性判断
     mflag = False
     qflag = False
@@ -40,6 +41,7 @@ def idf_address(sentence):
     Returns：
         is_address: bool
     """
+    from pyhanlp import HanLP
     # 利用HanLP 接口识别是否是地址值
     segment = HanLP.newSegment().enablePlaceRecognize(False)
     term_list = segment.seg(sentence)
@@ -64,6 +66,7 @@ def extract_address(keywords):
     Returns:
         keywords:
     """
+    from pyhanlp import HanLP
     for i in range(len(keywords)):
         sentence = keywords[i]
         segment = HanLP.newSegment().enablePlaceRecognize(False)

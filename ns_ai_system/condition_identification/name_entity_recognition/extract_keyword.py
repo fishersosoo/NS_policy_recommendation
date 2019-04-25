@@ -1,5 +1,5 @@
 # coding=utf-8
-from pyhanlp import *
+
 import re
 from condition_identification.util.sentence_preprocess import filter_sentence
 from condition_identification.util.sentence_preprocess import filter_punctuation
@@ -49,6 +49,7 @@ def extract_keyword(sentence, len_threshold):
                Examples:  ['工商注册地', '征管关系', '统计关系', '广州市南沙区范围内']
 
        """
+    from pyhanlp import HanLP
     lines = sentence.split('；')
     result_word = []
     for line in lines:
