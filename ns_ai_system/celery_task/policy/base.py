@@ -4,7 +4,9 @@ from celery_task import celery_app
 
 def get_pending_task(task_name=None):
     pending_task = []
-    inspect = celery_app.control.inspect()
+    inspect=None
+    while inspect is None or inspect.scheduled() is None:
+        inspect = celery_app.control.inspect()
     print(inspect.scheduled())
     for worker,worker_tasks in inspect.scheduled().items():
         print(worker)

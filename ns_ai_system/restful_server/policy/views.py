@@ -89,7 +89,7 @@ def upload_guide():
     if policy_id is not None:
         Guide.link_to_policy(guide_id, policy_id)
     # pool.submit(understand_guide_task, guide_id, text)
-    task=understand_guide_task.delay(guide_id,text)
+    task = understand_guide_task.delay(guide_id, text)
     # understand_guide_task(guide_id,text)
     # result = understand_guide_task.delay(guide_id,text)
     return jsonify({
@@ -97,17 +97,39 @@ def upload_guide():
         "status": "SUCCESS"
     })
 
+
+@policy_service.route("get_text/", methods=["POST"])
+def get_text():
+    info = None
+    try:
+        guide_file = request.files['file']
+        if os.path.splitext(guide_file.filename)[1] not in [".doc", ".txt"]:
+            return jsonify({"status": "ERROR", "message": "请上传doc文件"})
+        guide_id = request.form.get("guide_id")
+
+        doc_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".doc")
+        guide_file.save(doc_temp_file)
+        doc_temp_file.close()
+        text = get_text_from_doc_bytes(doc_temp_file)
+        info = paragraph_extract(text)
+        if info is None:
+            raise Exception("指南内容格式不正确，无法进行理解")
+    except Exception as e:
+        return jsonify({"status": "ERROR", "message": e})
+    return jsonify({"text": text})
+
+
 @policy_service.route("get_result/", methods=["GET"])
 def get_result():
     """
     获取理解结果
     :return:
     """
-    guide_id=request.args.get("guide_id",None)
+    guide_id = request.args.get("guide_id", None)
     if guide_id is None:
         return jsonify(list(mongo.db.parsing_result.find({})))
     else:
-        return jsonify(list(mongo.db.parsing_result.find({"guide_id":str(guide_id)})))
+        return jsonify(list(mongo.db.parsing_result.find({"guide_id": str(guide_id)})))
 
 
 @policy_service.route("recommend/", methods=["GET"])
@@ -152,7 +174,7 @@ def check_single_guide_for_companies():
     :return:
     """
     MAX_PENDING = 10
-    print(request.headers)
+    # print(request.headers)
     params = request.json
     if params is None:
         abort(400)
@@ -161,7 +183,7 @@ def check_single_guide_for_companies():
     guide_id = params.get("guide_id", None)
     threshold = float(params.get("threshold", .0))
     _, _, guide_node = Guide.find_by_guide_id(guide_id)
-    print(guide_node)
+    # print(guide_node)
     if guide_node is None:
         return jsonify({
             "task_id": "",

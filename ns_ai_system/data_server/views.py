@@ -10,6 +10,7 @@ from data_management.models.policy import Policy
 from data_server.server import jsonrpc, mongo, max_seq, tokenizer, client, uid
 from model.bert_vec.data_processing import convert_to_ids
 from service.file_processing import get_text_from_doc_bytes
+from bert_serving.client import BertClient
 
 
 @jsonrpc.method("api.index")
@@ -70,6 +71,7 @@ def sendRequest(comp_id, params):
     """
     value = client.service.getParamInfo(uid, comp_id, params)._value_1
     value = json.loads(value)
+    print(params)
     if value["Status"] == "Success":
         result = value["Result"]
         return [list(one.values())[0] for one in result ]
@@ -88,15 +90,6 @@ def bert_word2vec(strs):
 
     """
     start_time = time.time()
-    print("converting")
-    ids = convert_to_ids(strs, max_seq, tokenizer)
-    url = "http://127.0.0.1:8501/v1/models/bert_embedding:predict"
-    data = {
-        "instances": [{"input_ids": one_ids} for one_ids in ids]
-    }
-    print("convert done")
-    res = requests.post(url, json=data)
-    print("predict done")
-    end_time = time.time()
-    print(end_time - start_time)
-    return json.loads(res.text)["predictions"]
+    bc = BertClient()
+    return bc.encode(strs)
+

@@ -1197,7 +1197,7 @@ def create_model(config, is_training, input_ids, input_mask, output_ids, output_
         input_mask=input_mask)
     output_layer = model.pooled_output
     if is_training:
-        output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
+        output_layer = tf.nn.dropout(output_layer, keep_prob=1.0)
     with tf.variable_scope("output_embeddings"):
         (output_embedding, output_embedding_table) = embedding_lookup(
             input_ids=output_ids,
@@ -1210,7 +1210,7 @@ def create_model(config, is_training, input_ids, input_mask, output_ids, output_
         # Add positional embeddings and token type embeddings, then layer
         # normalize and perform dropout.
         if is_training:
-            hidden_dropout_prob = config.hidden_dropout_prob
+            hidden_dropout_prob = 0.
         else:
             hidden_dropout_prob = 0.
         output_embedding = embedding_postprocessor(
@@ -1336,7 +1336,7 @@ def model_fn_builder(value2field_config, init_checkpoint, learning_rate, num_tra
             output_spec = tf.estimator.EstimatorSpec(
                 mode=mode,
                 export_outputs={"embedding": tf.estimator.export.PredictOutput({"embedding": input_embedding})},
-                predictions={"output_embedding": output_embedding})
+                predictions={"embedding": input_embedding})
         return output_spec
 
     return model_fn

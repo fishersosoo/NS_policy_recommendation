@@ -50,8 +50,6 @@ def bert_word2vec(strs, batch_size=200, reduce_mean=True):
         else:
             raise e
     rets.extend(ret)
-    if reduce_mean:
-        rets = np.mean(rets, axis=1).tolist()
     # assert len(rets) == len(strs)
     return rets
 
