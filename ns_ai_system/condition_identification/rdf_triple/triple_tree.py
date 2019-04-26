@@ -75,7 +75,7 @@ def construct_triple(sentence):
         if triple.field:
             triple = extract_num(triple)
 
-        triples.append(triple.to_dict())
+            triples.append(triple.to_dict())
         print(presentence)
         print(triple)
     return triples
