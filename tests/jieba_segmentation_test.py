@@ -1,20 +1,16 @@
 # coding=utf-8
-import sys
+from pyhanlp import *
+from multiprocessing import Process
+import os
+def func():
+    print("a")
+    with open("1.txt","w") as f:
+        for t in HanLP.segment('你好，欢迎在Python中调用HanLP的API'):
+            f.write(t.word+"|")
 
-from condition_identification.word_segmentation.jieba_segmentation import Segmentation
-
-sys.path.append("..")
-from tests.document_parsing_test import test_html_parser
-
-def test_cut():
-    dict_path=r'C:\Users\edward\Documents\GitHub\NS_policy_recommendation\res\word_segmentation\dict'
-    segmentation = Segmentation(dict_path)
-    # sentences = test_html_parser()
-    # for sentence in sentences:
-    #     words = segmentation.cut(sentence)
-    #     print('|'.join(words))
-    words = segmentation.psegcut("1000万以上超过至以下不高于不低于")
-    print(tuple(words))
-
-if __name__ == "__main__":
-     test_cut()
+# func()
+if __name__ == '__main__':
+    print(f"main:{os.getpid()}")
+    p = Process(target=func)
+    p.start()
+    p.join()

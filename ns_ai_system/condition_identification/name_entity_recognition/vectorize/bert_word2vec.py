@@ -5,6 +5,7 @@ from _socket import timeout
 
 import numpy as np
 from flask_jsonrpc.proxy import ServiceProxy
+from urllib.request import HTTPError
 
 from data_management.config import config
 
@@ -31,17 +32,23 @@ def bert_word2vec(strs, batch_size=200, reduce_mean=True):
         try:
             ret = server.model.bert_word2vec(strs[i * batch_size:(i + 1) * batch_size])
             ret = ret["result"]
-        except timeout:
-            print(f"timeout. reduce batch_size to {int(batch_size / 2)}")
-            ret = bert_word2vec(strs[i * batch_size:(i + 1) * batch_size], int(batch_size / 2), reduce_mean=False)
+        except HTTPError as e:
+            if e.code == "504":
+                print(f"timeout. reduce batch_size to {int(batch_size / 2)}")
+                ret = bert_word2vec(strs[i * batch_size:(i + 1) * batch_size], int(batch_size / 2), reduce_mean=False)
+            else:
+                raise e
         rets.extend(ret)
     server = ServiceProxy(service_url=url)
     try:
         ret = server.model.bert_word2vec(strs[last:])
         ret = ret["result"]
-    except timeout:
-        print(f"timeout. reduce batch_size to {int(batch_size / 2)}")
-        ret = bert_word2vec(strs[last:], int(batch_size / 2), reduce_mean=False)
+    except HTTPError as e:
+        if e.code == "504":
+            print(f"timeout. reduce batch_size to {int(batch_size / 2)}")
+            ret = bert_word2vec(strs[last:], int(batch_size / 2), reduce_mean=False)
+        else:
+            raise e
     rets.extend(ret)
     if reduce_mean:
         rets = np.mean(rets, axis=1).tolist()

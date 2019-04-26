@@ -4,7 +4,7 @@ import json
 from flask_jsonrpc.proxy import ServiceProxy
 from zeep import Client
 
-from data_management.config import mongodb, config
+from data_management.config import  config
 
 if __name__ == '__main__':
     # ip = "121.52.214.35"
