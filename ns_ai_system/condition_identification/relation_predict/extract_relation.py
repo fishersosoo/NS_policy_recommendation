@@ -56,21 +56,25 @@ def relation_pre(sentence, word):
                         relation = '小于'
 
     # 地址约束
-    for d in weiyu:
-        if d in sentence and is_location:
-            relation = '位于'
+    elif is_location:
+        for d in weiyu:
+            if d in sentence:
+                relation = '位于'
+        # 地址只有一个关系
+        relation = '位于'
 
-    for d in fou:
-        if d in sentence:
-            flag = True
-            for d11 in buxiaoyu:
-                if d in d11 and d11 in sentence:
-                    flag = False
-            for d12 in budayu:
-                if d in d12 and d12 in sentence:
-                    flag = False
-            if flag:
-                relation = '否'
+    else:
+        for d in fou:
+            if d in sentence:
+                flag = True
+                for d11 in buxiaoyu:
+                    if d in d11 and d11 in sentence:
+                        flag = False
+                for d12 in budayu:
+                    if d in d12 and d12 in sentence:
+                        flag = False
+                if flag:
+                    relation = '否'
 
     return relation
 
