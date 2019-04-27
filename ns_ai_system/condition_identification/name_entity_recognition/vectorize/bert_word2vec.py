@@ -8,7 +8,7 @@ from flask_jsonrpc.proxy import ServiceProxy
 from urllib.request import HTTPError
 
 from data_management.config import config
-
+from bert_serving.client import BertClient as _BertClient
 
 def bert_word2vec(strs, batch_size=200, reduce_mean=True):
     """
@@ -19,39 +19,12 @@ def bert_word2vec(strs, batch_size=200, reduce_mean=True):
     list, shape:[len(strs), 32, 768]
 
     """
-    # s=time.time()
-    rets = []
-    strs = list(strs)
-    ip = config.get('data_server', 'host')
-    url = f"http://{ip}:3306/data"
-    batch = math.ceil(len(strs) / batch_size)
-    last = 0
-    for i in range(batch - 1):
-        last = (i + 1) * batch_size
-        server = ServiceProxy(service_url=url)
-        try:
-            ret = server.model.bert_word2vec(strs[i * batch_size:(i + 1) * batch_size])
-            ret = ret["result"]
-        except HTTPError as e:
-            if e.code == "504":
-                print(f"timeout. reduce batch_size to {int(batch_size / 2)}")
-                ret = bert_word2vec(strs[i * batch_size:(i + 1) * batch_size], int(batch_size / 2), reduce_mean=False)
-            else:
-                raise e
-        rets.extend(ret)
-    server = ServiceProxy(service_url=url)
-    try:
-        ret = server.model.bert_word2vec(strs[last:])
-        ret = ret["result"]
-    except HTTPError as e:
-        if e.code == "504":
-            print(f"timeout. reduce batch_size to {int(batch_size / 2)}")
-            ret = bert_word2vec(strs[last:], int(batch_size / 2), reduce_mean=False)
-        else:
-            raise e
-    rets.extend(ret)
-    # assert len(rets) == len(strs)
-    return rets
+    bc=_BertClient()
+    if isinstance(strs,str):
+        strs=[strs]
+    start_time = time.time()
+    return bc.encode(strs).tolist()
+
 
 
 class BertClient(object):
@@ -66,4 +39,4 @@ class BertClient(object):
 
 
 if __name__ == '__main__':
-    print((bert_word2vec(["测试一下"] * 90)))
+    print((bert_word2vec(["测试一下"] * 2)))

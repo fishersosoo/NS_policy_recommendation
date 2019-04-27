@@ -12,6 +12,8 @@ from model.bert_vec.data_processing import convert_to_ids
 from service.file_processing import get_text_from_doc_bytes
 from bert_serving.client import BertClient
 
+bc = BertClient()
+
 
 @jsonrpc.method("api.index")
 def index():
@@ -89,7 +91,8 @@ def bert_word2vec(strs):
     list, shape:[len(strs), 32, 768]
 
     """
+    if isinstance(strs,str):
+        strs=[strs]
     start_time = time.time()
-    bc = BertClient()
-    return bc.encode(strs)
+    return bc.encode(strs).tolist()
 
