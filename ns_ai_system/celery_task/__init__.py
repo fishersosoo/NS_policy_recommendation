@@ -9,7 +9,7 @@ config = ConfigLoader()
 celery_app = Celery('ns_ai_system',
                     broker=config.get('celery', 'broker'))
 celery_app.conf.update(
-    CELERYD_CONCURRENCY=10,
+    CELERYD_CONCURRENCY=12,
     CELERY_TASK_SERIALIZER='json',
     CELERY_ACCEPT_CONTENT=['json'],  # Ignore other content
     CELERY_RESULT_SERIALIZER='json',

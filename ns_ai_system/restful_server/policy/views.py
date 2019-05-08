@@ -5,6 +5,7 @@ import tempfile
 from flask import request, jsonify, abort
 from flask_restful import Api, Resource, reqparse
 
+from celery_task import celery_app
 from celery_task.policy.base import get_pending_task
 from celery_task.policy.tasks import understand_guide_task, recommend_task, create_chain_for_check_recommend, \
     is_above_threshold
@@ -173,7 +174,7 @@ def check_single_guide_for_companies():
     多个企业和单个政策的匹配情况
     :return:
     """
-    MAX_PENDING = 10
+    MAX_PENDING = celery_app.conf.get("CELERYD_CONCURRENCY") - 2
     # print(request.headers)
     params = request.json
     if params is None:

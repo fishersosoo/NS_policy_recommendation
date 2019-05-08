@@ -4,6 +4,7 @@ import traceback
 import copy
 import requests
 from celery import group, chain, chord
+from celery.result import allow_join_result
 from flask_jsonrpc.proxy import ServiceProxy
 
 from celery_task import celery_app, log, config
@@ -14,6 +15,7 @@ from data_management.models.word import Word
 from service import conert_ch2num
 import numpy as np
 from service.policy_graph_construct import understand_guide
+from celery import group
 
 
 @celery_app.task
@@ -257,48 +259,60 @@ def is_above_threshold(result, threshold):
         return False
 
 
-@celery_app.task(max_retries=1)
-def check_single_guide_batch_companies_callback(group_result, companies, guide_id, url, threshold, task_id):
+@celery_app.task(default_retry_delay=300, max_retries=0)
+def check_single_guide_batch_companies(companies, threshold, guide_id):
     """
-    调用callback 接口告知任务已经完成
-    :param threshold:
-    :param task_id:
+    创建多个子任务检查企业是否满足，阻塞获取所有任务结果
+
     :param companies:
+    :param threshold:
     :param guide_id:
-    :param group_result:
-    :param url:
     :return:
     """
+    results = []
+    for company in companies:
+        results.append(check_single_guide.delay(company, guide_id))
+    group_result = []
+    with allow_join_result():
+        for result in results:
+            group_result.append(result.get())
     return_result = {company: {"matching": .0, "status": "FAIL"} for company in companies}
     for result in group_result:
         if is_above_threshold(result, threshold):
             return_result[result["company_id"]] = {"matching": result["matching"], "status": "SUCCESS"}
-    try:
-        requests.post(url, json={
-            "guide_id": guide_id,
-            "task_id": task_id,
-            "result": return_result
-        })
-    except Exception:
-        return
+    return return_result
+
+
+@celery_app.task(default_retry_delay=1000, max_retries=1)
+def push_single_guide_result(guide_id, url, task_id):
+    """
+    将批量检查企业的任务结果推送到指定url
+
+    :param task_result:
+    :param guide_id:指南id
+    :param url:推送接收地址
+    :return:
+    """
+    task_result = check_single_guide_batch_companies.AsyncResult(task_id)
+    with allow_join_result():
+        return_result = task_result.get()
+    requests.post(url, json={
+        "guide_id": guide_id,
+        "task_id": task_id,
+        "result": return_result
+    })
 
 
 def create_chain_for_check_recommend(companies, threshold, guide_id, url):
-    task_id = UUID()
-    task_group = chord([check_single_guide.s(company, guide_id) for company in companies])
-    task_chain = task_group(check_single_guide_batch_companies_callback.signature(
-        kwargs={'companies': companies, "guide_id": guide_id, "url": url, "task_id": task_id, "threshold": threshold}),
-        max_retries=1)
-    return task_id
+    """
+    创建任务组检查多个企业，创建推送任务
 
-# @celery_app.task(bind=True)
-# def check_single_guide_batch_companies(self, companies, guide_id, url):
-#     """
-#     批量检查多个企业和单个指南的匹配情况，完成后调用callback函数
-#     :param companies:
-#     :param callback:
-#     :return:
-#     """
-#     task_group = group([check_single_guide.s(company, guide_id) for company in companies])
-#     group_result = task_group().get()
-#     check_single_guide_batch_companies_callback(companies, guide_id, group_result, url, self.request.id)
+    :param companies: 企业id列表
+    :param threshold: 匹配度过滤阈值
+    :param guide_id: 指南id
+    :param url: 推送连接
+    :return: 任务id
+    """
+    task_result = check_single_guide_batch_companies.delay(companies=companies, threshold=threshold, guide_id=guide_id)
+    push_single_guide_result.delay(guide_id=guide_id, url=url, task_id=task_result.id)
+    return task_result.id
