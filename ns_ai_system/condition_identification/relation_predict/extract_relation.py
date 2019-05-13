@@ -18,7 +18,7 @@ def get_relation(sentence, word):
     """
     # pre_sentence = preprocess(sentence, word)
     relation = relation_pre(sentence, word)
-    return relation, sentence
+    return relation
 
 
 def relation_pre(sentence, word):

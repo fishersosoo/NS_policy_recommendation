@@ -7,7 +7,7 @@ class Triple:
         relation:str 关系“大于、小于、位于、是、否”
         value: str 值
         sentence: str 对应原文
-
+        sentence_id: str 对应原文的id
     """
 
     def __init__(self):
@@ -15,6 +15,7 @@ class Triple:
         self.relation = ''
         self.value = ''
         self.sentence = ''
+        self.sentence_id = ''
 
     def to_dict(self):
         """
@@ -22,7 +23,7 @@ class Triple:
 
         :return:
         """
-        return {"fields": self.field, "relation": self.relation, "value": self.value, "sentence": self.sentence}
+        return {"fields": self.field, "relation": self.relation, "value": self.value, "sentence": self.sentence,"sentence_id":self.sentence_id}
 
     def __repr__(self):
         """打印三元组

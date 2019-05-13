@@ -36,10 +36,11 @@ def triple_extract(tree):
 
     Returns:
         tree: Tree 对输入的tree的node内容进行改写结果
+        all_sentence: dict {id:sentence} 所有政策条件句子
     """
-    triples, tree = construct_tripletree(tree)
+    triples, tree, all_sentence = construct_tripletree(tree)
     tree.show()
-    return triples
+    return triples, all_sentence
 
 
 
