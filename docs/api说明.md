@@ -12,8 +12,6 @@
 #### triple_extract()
 参数：tree:抽取后的条件树
 
-返回：tree：抽取后的关系树
-
 **关系树的结构如下：**
 
 树中的每一个node有如下的三个属性：
@@ -24,10 +22,26 @@
 
 - tag：str 非叶子节点存储and或or的字符串，叶子节点储存[]空数组
 
-## 数据文本抽取(database_parse.py)
-###1.数据库文本解析抽取
-#### database_extract()
-参数：
-- list[str] 表示数据库该列的值
-- outputname 表示数据库该列的列名。(到时候三元组的field就是这个名字)
-- max_length 如果该列过长，耗时过长，debug的时候可以手动设置取多少行
+返回：triples:triple的数组，有可能多个tirple的sentence_id相同，因为都是同一个句子出来
+
+triple结构：
+
+- field:数据库列字段
+
+- relation:关系
+
+- value：值
+ 
+- sentence：所在句子
+
+- sentence_id:所在句子的id
+
+all_sentence： 字典{id:sentence}
+- id：与triple中的sentence_id对应
+- sentence：政策条件句子
+
+对接：一个句子只要有一个三元组满足就算满足，然后遍历
+
+
+
+
