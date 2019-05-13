@@ -1,5 +1,7 @@
 from condition_identification.api.text_parsing import paragraph_extract
 from condition_identification.api.text_parsing import triple_extract
+from condition_identification.util.string_process import getNumofCommonSubstr
+import Levenshtein
 import os
 import pandas as pd
 import numpy as np
@@ -25,7 +27,8 @@ def get_acc_pre(true_df_txt, triples):
         is_none = True
         acc_flag=True
         for triple in triples:
-            if isin(triple['sentence'], sentence) or isin(sentence, triple['sentence']):
+            min_len=min(len(triple['sentence']),len(sentence))
+            if getNumofCommonSubstr(triple['sentence'], sentence)[1] > min_len-5:
                 is_none = False
                 pre = triple['fields']
                 # 标注时把行业领域统一标成了经营业务范围
@@ -52,12 +55,18 @@ if __name__ == '__main__':
 
     policy_file_dir = r"F:\\txt\\txt"
     true_file=r'G:\\QQ文件\\政策标注.csv'
-    score_file='score0419.txt'
+    score_file='score0513.txt'
 
     true_df = pd.read_csv(true_file, engine='python')
     score_record = open(score_file, 'a')
 
     # 计算
+    a1=[]
+    a2=[]
+    a3=[]
+    a4=[]
+    a5=[]
+    a6=[]
     acc_result = []
     rec_result = []
     all_acctrue = 0
@@ -96,6 +105,16 @@ if __name__ == '__main__':
         all_count += true_df_txt_len
         all_precount += predict_len
 
+
+
+        a1.append(acc)
+        a2.append(recall)
+        a3.append(np.mean(np.array(acc_result)))
+        a4.append(np.mean(np.array(rec_result)))
+        a5.append(all_acctrue/all_count)
+        a6.append(all_rectrue/all_precount)
+
+
         print("%s 文件准确率 %f" % (str(j), acc))
         print("%s 文件召回率 %f" % (str(j), recall))
 
@@ -121,3 +140,4 @@ if __name__ == '__main__':
         score_record.write('\n')
 
     score_record.close()
+    pd.DataFrame({'文件准确率':a1,'文件召回率':a2,'总文件准确率':a3,'总文件召回率':a4,'allprecision':a5,'allprecount':a6}).to_csv('paperdata.csv')
