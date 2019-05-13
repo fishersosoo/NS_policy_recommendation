@@ -1,37 +1,37 @@
 import re
 
 
-def preprocess(sentence, word):
-    """预处理
-
-    根据，。；对句子进行一个分割，找出实体所在的那个句子段，这样可以避免多个关系在同一个长句子中
-
-    Args:
-        sentence: str 原句子
-        word: str 实体
-
-    Returns:
-        max_s: str 最有可能实体所在的句子
-    """
-
-    sentence = filter_sentence(sentence)
-    candidate_sentence = []  # 候选的句子段
-    for l1 in sentence.split('。'):
-        for l2 in l1.split('；'):
-            for l3 in l2.split('，'):
-                candidate_sentence.append(l3)
-    sim_max = 0
-    sim_max_s = ''
-    # 判断的逻辑为与实体字相同最多的句子为所在句子。相同多的情况下取最后一个
-    for s1 in candidate_sentence:
-        count = 0
-        for w in word:
-            if w in s1:
-                count += 1
-        if count > sim_max:
-            sim_max = count
-            sim_max_s = s1
-    return sim_max_s
+# def preprocess(sentence, word):
+#     """预处理
+#
+#     根据，。；对句子进行一个分割，找出实体所在的那个句子段，这样可以避免多个关系在同一个长句子中
+#
+#     Args:
+#         sentence: str 原句子
+#         word: str 实体
+#
+#     Returns:
+#         max_s: str 最有可能实体所在的句子
+#     """
+#
+#     sentence = filter_sentence(sentence)
+#     candidate_sentence = []  # 候选的句子段
+#     for l1 in sentence.split('。'):
+#         for l2 in l1.split('；'):
+#             for l3 in l2.split('，'):
+#                 candidate_sentence.append(l3)
+#     sim_max = 0
+#     sim_max_s = ''
+#     # 判断的逻辑为与实体字相同最多的句子为所在句子。相同多的情况下取最后一个
+#     for s1 in candidate_sentence:
+#         count = 0
+#         for w in word:
+#             if w in s1:
+#                 count += 1
+#         if count > sim_max:
+#             sim_max = count
+#             sim_max_s = s1
+#     return sim_max_s
 
 
 def filter_sentence(sentence):

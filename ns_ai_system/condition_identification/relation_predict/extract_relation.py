@@ -1,7 +1,6 @@
 # coding=utf-8
 import re
 from condition_identification.util.specialcondition_identify import idf_address,idf_nums
-from condition_identification.util.sentence_preprocess import preprocess
 from condition_identification.args import dayu, budayu, xiaoyu, buxiaoyu, fou, weiyu
 
 
@@ -17,9 +16,9 @@ def get_relation(sentence, word):
     Returns:
         relation: str 关系
     """
-    pre_sentence = preprocess(sentence, word)
-    relation = relation_pre(pre_sentence, word)
-    return relation, pre_sentence
+    # pre_sentence = preprocess(sentence, word)
+    relation = relation_pre(sentence, word)
+    return relation, sentence
 
 
 def relation_pre(sentence, word):
