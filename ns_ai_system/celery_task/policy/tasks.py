@@ -37,8 +37,10 @@ def check_single_guide(company_id, guide_id, threshold=.0):
     :return:
     """
     try:
+        matched_sentence_id = set()
         ret = py_client.ai_system["parsing_result"].find_one({"guide_id": str(guide_id)})
         assert ret is not None
+        sentences = ret.get("sentences", None)
         triples = ret["triples"]
         reasons = []
         fail_to_check = 0
@@ -54,8 +56,15 @@ def check_single_guide(company_id, guide_id, threshold=.0):
             else:
                 checked_fields.append(triple["fields"][0])
             if match:
-                reasons.append(f'{len(reasons)+1}. {reason}【{triple["sentence"]}】')
-        record = format_record(company_id, len(triples) - fail_to_check, guide_id, reasons)
+                reasons.append(f'{len(reasons)+1}. {reason}【{triple["sentence"]}\n')
+                if "sentence_id" in triple:
+                    matched_sentence_id.add(triple["sentence_id"])
+        if sentences is not None:
+            mismatched_sentence_id = set(sentences.keys()) - matched_sentence_id
+        else:
+            mismatched_sentence_id = None
+        record = format_record(company_id, len(triples) - fail_to_check, guide_id, reasons, sentences,
+                               mismatched_sentence_id)
         py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
                                                              "guide_id": guide_id})
         py_client.ai_system["recommend_record"].insert_one(copy.deepcopy(record))
@@ -66,13 +75,17 @@ def check_single_guide(company_id, guide_id, threshold=.0):
         return None
 
 
-def format_record(company_id, count, guide_id, reasons):
+def format_record(company_id, count, guide_id, reasons, sentences, mismatched_sentence_id):
     count = 1 if count == 0 else count
     matching = len(reasons) / count
-    if matching < 0.2 and matching != 0:
-        matching += 0.2
+    # if matching < 0.2 and matching != 0:
+    #     matching += 0.2
     reasons = "\n".join(reasons)
     reasons = f"企业满足以下条件：【括号中内容为企业的真实情况】\n{reasons}"
+    if sentences is not None:
+        mismatch = "未满足或无法匹配条件：\n"
+        for index, sentence_id in enumerate(mismatched_sentence_id):
+            mismatch += f"{index+1}. {sentences.get(sentence_id,'')}\n"
     record = dict(company_id=company_id,
                   guide_id=guide_id,
                   reason=reasons,

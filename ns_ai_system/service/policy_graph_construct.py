@@ -8,7 +8,7 @@ from data_management.models.guide import Guide
 from service.file_processing import get_text_from_doc_bytes
 
 
-def understand_guide(guide_id,text):
+def understand_guide(guide_id, text):
     """
     理解指定政策指南
 
@@ -19,13 +19,9 @@ def understand_guide(guide_id,text):
     # _, _, guide_node = Guide.find_by_guide_id(guide_id)
     # text = get_text_from_doc_bytes(Guide.get_file(guide_node["file_name"]).read())
     # print(text[:100])
-    history=list(py_client.ai_system["parsing_result"].find({"guide_id": guide_id}))
-    triples = triple_extract(paragraph_extract(text))
-    py_client.ai_system["parsing_result"].insert_one({"guide_id": guide_id, "triples": triples})
+    history = list(py_client.ai_system["parsing_result"].find({"guide_id": guide_id}))
+    triples, sentences = triple_extract(paragraph_extract(text))
+    py_client.ai_system["parsing_result"].insert_one({"guide_id": guide_id, "triples": triples, "sentences": sentences})
     for one in history:
         py_client.ai_system["parsing_result"].delete_one({"_id": one["_id"]})
     print("done")
-
-
-
-
