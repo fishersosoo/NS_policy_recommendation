@@ -20,7 +20,7 @@ def understand_guide(guide_id, text):
     # text = get_text_from_doc_bytes(Guide.get_file(guide_node["file_name"]).read())
     # print(text[:100])
     history = list(py_client.ai_system["parsing_result"].find({"guide_id": guide_id}))
-    triples, sentences = triple_extract(paragraph_extract(text))
+    triples, _, sentences = triple_extract(paragraph_extract(text))
     py_client.ai_system["parsing_result"].insert_one({"guide_id": guide_id, "triples": triples, "sentences": sentences})
     for one in history:
         py_client.ai_system["parsing_result"].delete_one({"_id": one["_id"]})

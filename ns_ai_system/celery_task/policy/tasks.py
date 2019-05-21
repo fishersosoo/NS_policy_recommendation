@@ -60,7 +60,12 @@ def check_single_guide(company_id, guide_id, threshold=.0):
                 if "sentence_id" in triple:
                     matched_sentence_id.add(triple["sentence_id"])
         if sentences is not None:
+            ids=list(sentences.keys())
+            for id in ids:
+                if sentences[id] == "":
+                    sentences.pop(id)
             mismatched_sentence_id = set(sentences.keys()) - matched_sentence_id
+            log.info(mismatched_sentence_id)
         else:
             mismatched_sentence_id = None
         record = format_record(company_id, len(triples) - fail_to_check, guide_id, reasons, sentences,
@@ -86,6 +91,7 @@ def format_record(company_id, count, guide_id, reasons, sentences, mismatched_se
         mismatch = "未满足或无法匹配条件：\n"
         for index, sentence_id in enumerate(mismatched_sentence_id):
             mismatch += f"{index+1}. {sentences.get(sentence_id,'')}\n"
+        reasons += mismatch
     record = dict(company_id=company_id,
                   guide_id=guide_id,
                   reason=reasons,

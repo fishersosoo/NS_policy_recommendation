@@ -40,7 +40,7 @@ def triple_extract(tree):
     """
     triples, tree, all_sentence = construct_tripletree(tree)
     tree.show()
-    return triples, all_sentence
+    return triples, tree,all_sentence
 
 
 
