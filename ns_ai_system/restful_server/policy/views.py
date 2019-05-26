@@ -2,6 +2,7 @@
 import os
 import tempfile
 
+import gridfs
 from flask import request, jsonify, abort
 from flask_restful import Api, Resource, reqparse
 
@@ -59,6 +60,20 @@ def upload_policy():
     })
 
 
+@policy_service.route("re_understand/", methods=["POST"])
+def re_understand():
+    guide_id = request.form.get("guide_id")
+    _, _, guide_node = Guide.find_by_guide_id(guide_id)
+    print(guide_node)
+    text = get_text_from_doc_bytes(Guide.get_file(guide_node["file_name"]).read())
+    info = paragraph_extract(text)
+    task = understand_guide_task.delay(guide_id, text)
+    return jsonify({
+        "task_id": task.id,
+        "status": "SUCCESS"
+    })
+
+
 @policy_service.route("upload_guide/", methods=["POST"])
 def upload_guide():
     """
@@ -69,22 +84,23 @@ def upload_guide():
     if os.path.splitext(guide_file.filename)[1] not in [".doc", ".txt"]:
         return jsonify({"status": "ERROR", "message": "请上传doc文件"})
     guide_id = request.form.get("guide_id")
-
+    if guide_id is None:
+        return jsonify({"status": "ERROR", "message": "请填充指南id字段：guide_id"})
     doc_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".doc")
     guide_file.save(doc_temp_file)
     doc_temp_file.close()
     info = None
     try:
-        text = get_text_from_doc_bytes(doc_temp_file)
+        text = get_text_from_doc_bytes(doc_temp_file, remove_file=False)
         info = paragraph_extract(text)
         if info is None:
             raise Exception("指南内容格式不正确，无法进行理解")
     except Exception as e:
+        os.remove(doc_temp_file.name)
         return jsonify({"status": "ERROR", "message": e})
-
-    assert guide_id is not None
-    mongo.save_file(filename=guide_file.filename,
-                    fileobj=guide_file, base="guide_file")
+    with open(doc_temp_file.name, "rb") as f:
+        mongo.save_file(filename=guide_file.filename,
+                        fileobj=f, base="guide_file")
     Guide.create(guide_id=guide_id, file_name=guide_file.filename)
     policy_id = request.args.get("policy_id", default=None)
     if policy_id is not None:
@@ -93,6 +109,7 @@ def upload_guide():
     task = understand_guide_task.delay(guide_id, text)
     # understand_guide_task(guide_id,text)
     # result = understand_guide_task.delay(guide_id,text)
+    os.remove(doc_temp_file.name)
     return jsonify({
         "task_id": task.id,
         "status": "SUCCESS"

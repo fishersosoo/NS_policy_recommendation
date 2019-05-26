@@ -18,7 +18,7 @@ from service.policy_graph_construct import understand_guide
 from celery import group
 
 
-@celery_app.task
+@celery_app.task(rate_limit="2/h")
 def understand_guide_task(guide_id, text):
     """
 
@@ -56,7 +56,7 @@ def check_single_guide(company_id, guide_id, threshold=.0):
             else:
                 checked_fields.append(triple["fields"][0])
             if match:
-                reasons.append(f'{len(reasons)+1}. {reason}【{triple["sentence"]}\n')
+                reasons.append(f'{len(reasons)+1}. {triple["sentence"]}【{reason}】\n')
                 if "sentence_id" in triple:
                     matched_sentence_id.add(triple["sentence_id"])
         if sentences is not None:
@@ -83,8 +83,8 @@ def check_single_guide(company_id, guide_id, threshold=.0):
 def format_record(company_id, count, guide_id, reasons, sentences, mismatched_sentence_id):
     count = 1 if count == 0 else count
     matching = len(reasons) / count
-    # if matching < 0.2 and matching != 0:
-    #     matching += 0.2
+    if matching < 0.2 and matching != 0:
+        matching += 0.2
     reasons = "\n".join(reasons)
     reasons = f"企业满足以下条件：【括号中内容为企业的真实情况】\n{reasons}"
     if sentences is not None:
