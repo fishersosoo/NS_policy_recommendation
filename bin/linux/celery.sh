@@ -38,55 +38,50 @@ EOF
 function start() {
 	echo "Starting"
 	echo "----------------"
-	celery multi start \
-	    understand_worker -A celery_task -c 2 -Q understand --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid
-    celery multi start \
-	    batch_check_callback_worker -A celery_task -c 4 -Q batch_check_callback --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid
-    celery multi start \
-	    check_single_guide_worker -A celery_task -c 10 -Q check_single_guide --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid
-    celery multi start \
-	    recommend_task_worker -A celery_task -c 10 -Q recommend_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid
+	celery multi start\
+	    understand_worker batch_check_callback_worker check_single_guide_worker recommend_task_worker \
+	    -A celery_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid \
+	    -c:understand_worker 2 -c:batch_check_callback_worker 4 -c:check_single_guide_worker 10 -c:recommend_task_worker 10 \
+	    -Q:understand_worker understand -Q:batch_check_callback_worker batch_check_callback \
+	    -Q:check_single_guide_worker check_single_guide -Q:recommend_task_worker recommend_task
 }
 
 function stop() {
 	echo "Warm shutdown. Waiting for tasks to complete."
-	echo "(Use 'kill' to perform the cold shutdown)"
+	echo "(Use 'kill' to perform cold shutdown)"
 	echo "----------------"
-	celery multi stop \
-	    understand_worker -A celery_task -c 2 -Q understand --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid -TERM
-	celery multi stop \
-	    batch_check_callback_worker -A celery_task -c 4 -Q batch_check_callback --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid -TERM
-	celery multi stop \
-	    check_single_guide_worker -A celery_task -c 10 -Q check_single_guide --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid -TERM
-	celery multi stop \
-	    recommend_task_worker -A celery_task -c 10 -Q recommend_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid -TERM
+	celery multi stop\
+	    understand_worker batch_check_callback_worker check_single_guide_worker recommend_task_worker \
+	    -A celery_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid \
+	    -c:understand_worker 2 -c:batch_check_callback_worker 4 -c:check_single_guide_worker 10 -c:recommend_task_worker 10 \
+	    -Q:understand_worker understand -Q:batch_check_callback_worker batch_check_callback \
+	    -Q:check_single_guide_worker check_single_guide -Q:recommend_task_worker recommend_task \
+	    -TERM
 }
 
 function killProsess() {
     echo "Cold shutdown. All running task will be lost."
 	echo "----------------"
-	celery multi stop \
-	    understand_worker -A celery_task -c 2 -Q understand --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid -QUIT
-	celery multi stop \
-	    batch_check_callback_worker -A celery_task -c 4 -Q batch_check_callback --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid -QUIT
-	celery multi stop \
-	    check_single_guide_worker -A celery_task -c 10 -Q check_single_guide --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid -QUIT
-	celery multi stop \
-	    recommend_task_worker -A celery_task -c 10 -Q recommend_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid -QUIT
+	celery multi stop\
+	    understand_worker batch_check_callback_worker check_single_guide_worker recommend_task_worker \
+	    -A celery_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid \
+	    -c:understand_worker 2 -c:batch_check_callback_worker 4 -c:check_single_guide_worker 10 -c:recommend_task_worker 10 \
+	    -Q:understand_worker understand -Q:batch_check_callback_worker batch_check_callback \
+	    -Q:check_single_guide_worker check_single_guide -Q:recommend_task_worker recommend_task \
+	    -QUIT
 }
 
 
 function restart() {
-	echo "restart"
+	echo "Restarting. Warm shutdown before restart. "
+	echo "(Manually use 'kill' and 'start' to perform cold shutdown)"
 	echo "----------------"
-	celery multi restart \
-	    understand_worker -A celery_task -c 2 -Q understand --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid
-    celery multi restart \
-	    batch_check_callback_worker -A celery_task -c 4 -Q batch_check_callback --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid
-    celery multi restart \
-	    check_single_guide_worker -A celery_task -c 10 -Q check_single_guide --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid
-    celery multi restart \
-	    recommend_task_worker -A celery_task -c 10 -Q recommend_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid
+	celery multi restart\
+	    understand_worker batch_check_callback_worker check_single_guide_worker recommend_task_worker \
+	    -A celery_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid \
+	    -c:understand_worker 2 -c:batch_check_callback_worker 4 -c:check_single_guide_worker 10 -c:recommend_task_worker 10 \
+	    -Q:understand_worker understand -Q:batch_check_callback_worker batch_check_callback \
+	    -Q:check_single_guide_worker check_single_guide -Q:recommend_task_worker recommend_task
 }
 
 

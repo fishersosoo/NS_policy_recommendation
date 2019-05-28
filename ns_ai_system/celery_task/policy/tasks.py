@@ -18,7 +18,8 @@ from service.policy_graph_construct import understand_guide
 from celery import group
 
 
-@celery_app.task(rate_limit="2/h")
+# @celery_app.task(rate_limit="2/h")
+@celery_app.task
 def understand_guide_task(guide_id, text):
     """
 
