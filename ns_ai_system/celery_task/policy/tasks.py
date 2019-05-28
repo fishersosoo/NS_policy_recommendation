@@ -18,7 +18,8 @@ from service.policy_graph_construct import understand_guide
 from celery import group
 
 
-@celery_app.task(rate_limit="2/h")
+# @celery_app.task(rate_limit="2/h")
+@celery_app.task
 def understand_guide_task(guide_id, text):
     """
 
@@ -278,8 +279,8 @@ def is_above_threshold(result, threshold):
         return False
 
 
-@celery_app.task(default_retry_delay=300, max_retries=0)
-def check_single_guide_batch_companies(companies, threshold, guide_id):
+@celery_app.task(bind=True,default_retry_delay=300, max_retries=0)
+def check_single_guide_batch_companies(self,companies, threshold, guide_id,url):
     """
     创建多个子任务检查企业是否满足，阻塞获取所有任务结果
 
@@ -299,6 +300,7 @@ def check_single_guide_batch_companies(companies, threshold, guide_id):
     for result in group_result:
         if is_above_threshold(result, threshold):
             return_result[result["company_id"]] = {"matching": result["matching"], "status": "SUCCESS"}
+    push_single_guide_result.delay(guide_id=guide_id, url=url, task_id=self.request.id)
     return return_result
 
 
@@ -332,6 +334,5 @@ def create_chain_for_check_recommend(companies, threshold, guide_id, url):
     :param url: 推送连接
     :return: 任务id
     """
-    task_result = check_single_guide_batch_companies.delay(companies=companies, threshold=threshold, guide_id=guide_id)
-    push_single_guide_result.delay(guide_id=guide_id, url=url, task_id=task_result.id)
+    task_result = check_single_guide_batch_companies.delay(companies=companies, threshold=threshold, guide_id=guide_id,url=url)
     return task_result.id
