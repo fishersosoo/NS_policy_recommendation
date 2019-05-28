@@ -9,6 +9,14 @@ from condition_identification.args import database_cluster_quantile
 from condition_identification.args import database_cluster_max_length
 from condition_identification.args import database_cluster_min_length
 from condition_identification.args import database_cluster_similarity
+from condition_identification.name_entity_recognition.vectorize.bert_word2vec import BertClient
+
+def data_filter(database_value):
+    bert_client = BertClient()
+    values_set = set(database_value)
+    values_set = database_extract(values_set, bert_client)
+    return values_set
+
 
 
 def database_extract(database_values, bc, max_length=-1, len_threshold=1):
