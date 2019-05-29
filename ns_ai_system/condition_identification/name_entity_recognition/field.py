@@ -2,7 +2,7 @@
 from condition_identification.util.distance_calculations import cos_sim
 
 from condition_identification.util.similarity_calculation import field_compare_similarity
-from data_management.api import list_all_field_name
+from data_management.api.field_info import list_all_field_name
 from condition_identification.args import similarity_value
 
 

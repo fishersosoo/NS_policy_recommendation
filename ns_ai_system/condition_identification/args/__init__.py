@@ -1,7 +1,6 @@
 # coding=utf-8
 import os
-from data_management.api import get_num_fields
-from data_management.api import get_address_fields
+from data_management.api.field_info import get_num_fields, get_address_fields
 
 # 数据库所有列值数字的field值
 NUMS = get_num_fields()
