@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+import json
 import tempfile
 
 import gridfs
@@ -17,6 +18,7 @@ from restful_server.policy import policy_service
 from restful_server.policy.base import check_callback
 from restful_server.server import mongo
 from service.file_processing import get_text_from_doc_bytes
+from service.rabbit_mq import file_event
 
 policy_api = Api(policy_service)
 
@@ -106,6 +108,7 @@ def upload_guide():
     if policy_id is not None:
         Guide.link_to_policy(guide_id, policy_id)
     # pool.submit(understand_guide_task, guide_id, text)
+    file_event(message=json.dumps({"guide_id": guide_id, "event": "add"}), routing_key="event.file.add")
     task = understand_guide_task.delay(guide_id, text)
     # understand_guide_task(guide_id,text)
     # result = understand_guide_task.delay(guide_id,text)

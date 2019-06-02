@@ -10,7 +10,10 @@ from data_management.models.policy import Policy
 from data_server.server import jsonrpc, mongo, max_seq, tokenizer, client, uid
 from model.bert_vec.data_processing import convert_to_ids
 from service.file_processing import get_text_from_doc_bytes
+from service.rabbit_mq import file_event
+
 from bert_serving.client import BertClient
+
 
 bc = BertClient()
 
@@ -63,6 +66,11 @@ def get_guide_text(guide_id):
     return text
 
 
+@jsonrpc.method('test.upload_guide')
+def test_upload_guide(guide_id):
+    file_event(message=json.dumps({"guide_id": guide_id, "event": "add"}), routing_key="event.file.add")
+
+
 @jsonrpc.method('data.sendRequest')
 def sendRequest(comp_id, params):
     """
@@ -76,7 +84,7 @@ def sendRequest(comp_id, params):
     print(params)
     if value["Status"] == "Success":
         result = value["Result"]
-        return [list(one.values())[0] for one in result ]
+        return [list(one.values())[0] for one in result]
     else:
         return None
 
@@ -91,8 +99,7 @@ def bert_word2vec(strs):
     list, shape:[len(strs), 32, 768]
 
     """
-    if isinstance(strs,str):
-        strs=[strs]
+    if isinstance(strs, str):
+        strs = [strs]
     start_time = time.time()
     return bc.encode(strs).tolist()
-
