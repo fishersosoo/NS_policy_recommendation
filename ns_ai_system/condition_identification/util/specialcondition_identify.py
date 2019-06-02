@@ -1,7 +1,7 @@
 
 
 
-def idf_nums(word):
+def idf_quantifiers(word):
     """判断政策条件抽取出的关键词是否是数字
 
     通过分词工具词性分析，判断是否是数字
@@ -78,3 +78,22 @@ def extract_address(keywords):
         else:
             keywords[i] = sentence
     return keywords
+
+def idf_chinese_name(sentence):
+    from pyhanlp import HanLP
+    segment = HanLP.newSegment().enableNameRecognize(True);
+    term_list = segment.seg(sentence)
+    is_chinese_name = False
+    if 'nr' in [str(i.nature) for i in term_list]:
+        is_chinese_name = True
+    return is_chinese_name
+
+def idf_contain_en(sentence):
+    import re
+    en_pattern = re.compile('[A-Za-z]+')
+    return en_pattern.findall(sentence)
+
+def idf_contain_num(sentence):
+    import re
+    num_pattern = re.compile('[0-9]+')
+    return num_pattern.findall(sentence)
