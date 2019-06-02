@@ -42,7 +42,7 @@ def _search_max_word(value_word, value_encode, line_encode, line):
     return has_max_word
 
 
-def compare_similarity(line, value_word, value_encode, bert_client):
+def value_compare_similarity(line_word, line_encode, value_word, value_encode):
     """计算keyword与filed对应的数据库列值的相似度，找到相似度最高的列值
 
     利用bert获得词向量，计算相似度，找到相似度最高的那个
@@ -60,8 +60,7 @@ def compare_similarity(line, value_word, value_encode, bert_client):
       max_word：str    相似度最高的那个词
 
     """
-    line_encode = bert_client.encode([line])
-    has_max_word = _search_max_word(value_word, value_encode, line_encode, line)
+    has_max_word = _search_max_word(value_word, value_encode, line_encode, line_word)
     return has_max_word
 
 

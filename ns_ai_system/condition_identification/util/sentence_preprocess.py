@@ -34,7 +34,7 @@ import re
 #     return sim_max_s
 
 
-def filter_sentence(sentence):
+def filter_punctuation_include_content(sentence):
     """过滤句子的无关内容
 
     实际上是调用各个过滤函数的主体函数
