@@ -6,9 +6,8 @@ def adjust_database_keyword_byrule(keywords):
         keywords: list，数据库列值
 
     """
-    result = []
-    for s in keywords:
-        s = s.replace('企业', '')
-        if s:
-            result.append(s)
+    result = [s.replace('企业', '') for s in keywords]
+    result = list(filter(None, result))
     return result
+
+

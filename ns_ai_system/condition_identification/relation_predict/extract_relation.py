@@ -1,6 +1,6 @@
 # coding=utf-8
 import re
-from condition_identification.util.specialcondition_identify import idf_address,idf_nums
+from condition_identification.util.specialcondition_identify import idf_address,idf_quantifiers
 from condition_identification.args import dayu, budayu, xiaoyu, buxiaoyu, fou, weiyu
 
 
@@ -34,7 +34,7 @@ def relation_pre(sentence, word):
         str:返回的具体关系值，判断不出的一律返回"是"
     """
     # 约束 数字和地址
-    is_num = idf_nums(word)
+    is_num = idf_quantifiers(word)
     is_location = idf_address(word)
     relation = '是'
     # 数字约束
