@@ -4,7 +4,6 @@
 """
 from data_management.config import py_client
 
-
 def list_all_field_name():
     """
     获取所有field的名称
@@ -14,7 +13,7 @@ def list_all_field_name():
         example: ["企业基本信息","企业股东及出资信息","企业主要管理人员信息"]
     """
     field_info = get_all_field_info()
-    return {one["item_name"].strip() for one in field_info}
+    return list({one["item_name"].strip() for one in field_info})
 
 
 def get_all_field_info():
