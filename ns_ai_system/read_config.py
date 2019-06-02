@@ -26,5 +26,6 @@ class ConfigLoader:
         return self._config[section][key]
 
 
+config = ConfigLoader()
 if __name__ == '__main__':
     print(get_config_dict())

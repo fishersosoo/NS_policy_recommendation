@@ -75,36 +75,40 @@ https://github.com/fishersosoo/NS_policy_recommendation/tree/feature/tests/data_
 
 对应政策文件中的的字符串
 
-### file.register(url: str, use: str, id: str) -> str
+## 消息队列相关
 
+基于rabbitmq实现文件相关事件的发布
 
-注册回调函数，之后文件发生的变化将会通过该回调函数进行通知
+测试服务器上连接rabbitmq参数：
 
-方法名称:file.register
+```ini
+host=127.0.0.1
+port=8001
+user=guest
+pwd=guest
+```
 
-输入：
+问答和全文检索系统对应的队列为`file_event_qa`和`file_evnet_query`
 
-| 参数 | 类型 | 备注                                         |
-| ---- | ---- | -------------------------------------------- |
-| url  | str  | 回调函数地址                                 |
-| use  | str  | 说明用途                                     |
-| id   | str  | 不填则为添加回调函数，否则为修改对应回调函数 |
+返回的消息以`json`方式编码，格式如下
 
-返回：
+```json
+{
+    "guide_id":"123",
+    "event":"add"
+}
+```
 
-添加回调函数时候，会返回id，后续用这个id来进行修改
+目前`event`类型：
 
-修改回调函数时候，如果成功修改则返回True，否则返回Flase
+| event   | 意义       |
+| ------- | ---------- |
+| add     | 添加指南   |
+| disable | 标记为无效 |
+| enable  | 标记为有效 |
 
-#### 回调信息
+rpc接口提供以下方法供测试消费者函数是否正确：
 
-回调接口只需要正常接收http post请求即可
+**test.upload_guide(guide_id: str) -> any**
 
-信息为json格式，字段如下
-
-| 字段  |                     |      |
-| ----- | ------------------- | ---- |
-| event | delete、add、update |      |
-| type  | policy、guide       |      |
-| id    |                     |      |
-
+调用该方法会将向队列中添加该指南文件被添加的消息。（但是实际没有文件上传，所以不能调用上面接口来获取文件内容）
