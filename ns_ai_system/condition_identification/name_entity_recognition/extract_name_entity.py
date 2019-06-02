@@ -7,7 +7,7 @@ from condition_identification.name_entity_recognition.vectorize.bert_word2vec im
 from condition_identification.util.specialcondition_identify import extract_address
 # from bert_serving.client import BertClient
 from condition_identification.args import keyword_len_threshold
-
+from condition_identification.rule.adjust_database_keyword import adjust_database_keyword_byrule
 
 def get_field_value(sentence):
     """获取语句的field
@@ -29,6 +29,7 @@ def get_field_value(sentence):
     bc = BertClient()
     keyword = extract_keyword(sentence, keyword_len_threshold)
     keyword = extract_address(keyword)
+    keyword = adjust_database_keyword_byrule(keyword)
     field = Field(bc)
     field_dict = field.construct_field_dict(keyword)
     value = Value(bc)
