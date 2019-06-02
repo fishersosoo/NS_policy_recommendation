@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import re
-from condition_identification.util.sentence_preprocess import filter_sentence
+from condition_identification.util.sentence_preprocess import filter_punctuation_include_content
 from condition_identification.util.sentence_preprocess import filter_punctuation
 from bisect import bisect_left
 
@@ -53,7 +53,7 @@ def extract_keyword(sentence, len_threshold):
     lines = sentence.split('；')
     result_word = []
     for line in lines:
-        line = filter_sentence(line)
+        line = filter_punctuation_include_content(line)
         b = HanLP.parseDependency(line)
         word_array = b.getWordArray()
         wait_word = []
@@ -85,25 +85,6 @@ def extract_keyword(sentence, len_threshold):
     return result_word
 
 
-if __name__ == '__main__':
-    # with open('evalue/企业基本信息_地址.txt', 'w', encoding='utf8')as wf:
-    #     result_csv=result_csv['filed'].values
-    #     for i in range(len(result_csv)):
-    #         wf.write(result_csv[i])
-    #         wf.write('\n')
-    # text=['广州市南沙区黄阁镇境界大街22-1号地下室','广州市南沙区南沙街裕兴东街103号101铺','4号1023房',
-    #       '广州市南沙区品汇街68号102房','广州市南沙区进港大道12号702房','广州市南沙区南沙街江南路22号101商铺',
-    #       '广州市南沙区环市北路1号逸涛雅苑会所302室','广州市南沙区成汇街1号成荟广场商务办公B栋西梯1208房',
-    #       '广州市南沙区南沙街环市大道中452号一楼','广州市南沙区进港大道12号1211房','广州市南沙区成汇街3号1108房',
-    #       '广州市南沙区海滨路171号南沙金融大厦16楼1601室之22','广州市南沙区海滨路171号南沙金融大厦16楼1601之43',
-    #       '广州市南沙区成汇街1号1607房','广州市南沙区大岗镇高沙路蓝怡街2号','核居委广场路','358号101房']
-    # for i in text:
-    #     print(extract_keyword(i, 2))
-    from bisect import bisect_left, bisect_right
-
-    keys=[1,2,5,7,9]
-    end = bisect_left(keys, 10)
-    print(end)
 
 
 

@@ -1,10 +1,10 @@
 # coding=utf-8
 from collections import defaultdict
 from condition_identification.args import NUMS, ADDRESS
-from condition_identification.util.specialcondition_identify import idf_nums, idf_address
-from data_management.api import get_value_dic
-from condition_identification.util.similarity_calculation import compare_similarity
-from condition_identification.database_process.database_parse import database_extract
+from condition_identification.util.specialcondition_identify import idf_quantifiers, idf_address
+from data_management.api.filtered_values import get_filtered_values
+from data_management.api.field_info import list_all_field_name
+from condition_identification.util.similarity_calculation import value_compare_similarity
 
 
 class Value(object):
@@ -20,38 +20,12 @@ class Value(object):
     Example：{ "广州市南沙区黄阁镇境界大街22-1号地下室":["地址"],
             5千万元":['纳税总额','注册资本','营业总收入']}
     """
-    # 单例模式
-    def __new__(cls, *args, **kargs):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(Value, cls).__new__(cls)
-        return cls.instance
-
     def __init__(self, bc):
-        if not hasattr(self, "init_fir"):
-            self.init_fir = True
-            self.bert_client = bc
-            self.values_encode = defaultdict(list)
-            self.values_word = defaultdict(list)
-            self._get_value()
-        self.value_filed = defaultdict(list)
+        self.bert_client = bc
+        self.values_filed = defaultdict(list)
+        self.filed_names = list_all_field_name()
+        self.values_encode={}
 
-    def _get_value(self):
-        """从数据库获取value
-
-        各个字段处理后的value的字典
-
-        Returns:
-              values : dict, value值和他对应的field
-              example:  {"企业基本信息_地址":["广州市南沙区金隆路26号1402房"],"企业基本信息_经营业务范围":["航空项目"]}
-        """
-        value_dic = get_value_dic()
-        for key in value_dic:
-            values_set = set(value_dic[key])
-            values_set = database_extract(values_set, self.bert_client)
-            values_set = list(values_set)
-            print(values_set)
-            self.values_encode[key] = self.bert_client.encode(values_set)
-            self.values_word[key] = values_set
 
     def construct_value_filed(self, regs):
         """对政策条件抽取出的关键词建立value_dict
@@ -71,27 +45,32 @@ class Value(object):
         print(__name__)
         for line in regs:
             # 先判断是否是 地址或者数字
-            if idf_nums(line):
-                self.value_filed[line] = NUMS
+            if idf_quantifiers(line):
+                self.values_filed[line] = NUMS
             elif idf_address(line):
-                self.value_filed[line] = ADDRESS
+                self.values_filed[line] = ADDRESS
             else:        # 非数字和地址 就用相似度来判断
                 candidate_value = []
-                for field in self.values_encode:    # 用每一个field 下的value值与其做相似性判断
-                    if field in NUMS or field in ADDRESS:
+                line_word = line
+                line_encode = self.bert_client.encode(line_word)
+                for field in self.filed_names:    # 用每一个field 下的value值与其做相似性判断
+                    value_word = get_filtered_values(field)
+                    if value_word is None or field in NUMS or field in ADDRESS:
                         continue
-                    value_encode = self.values_encode[field]
-                    value_word = self.values_word[field]
-                    is_similar = compare_similarity(line, value_word, value_encode, self.bert_client)
+                    else:
+                        value_word = value_word['values']
+                    if field in self.values_encode:
+                        value_encode = self.values_encode[field]
+                    else:
+                        value_encode = self.bert_client.encode(value_word)
+                        self.values_encode[field] = value_encode
+                    is_similar = value_compare_similarity(line_word, line_encode, value_word, value_encode)
                     if is_similar:      # 满足相似度要求
                         candidate_value.append(field)
                 if candidate_value:
-                    self.value_filed[line] = candidate_value
-        return self.value_filed
+                    self.values_filed[line] = candidate_value
+        return self.values_filed
 
-    def get_value_filed(self):
-        """ 获取value_dic"""
-        return self.value_filed
 
 
 if __name__ == '__main__':
