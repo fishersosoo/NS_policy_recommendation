@@ -3,7 +3,7 @@
 提供数据列的过滤后的值进行增删改查等操作的接口
 """
 from data_management.config import py_client
-
+from data_management.api.field_info import get_all_field_info
 
 def insert_filtered_values(*filtered_values):
     """
@@ -37,7 +37,7 @@ def update_filtered_values(field, new_values):
     Returns:
 
     """
-    py_client.ai_system["field_filtered_values"].update_one({"field": field}, {"values": new_values}, upsert=True)
+    py_client.ai_system["field_filtered_values"].update_one({"field": field}, {"$set":{"values": new_values}}, upsert=True)
 
 
 def delete_filtered_values(field):
@@ -73,5 +73,16 @@ def get_filtered_values(field):
             {'field': 'field_1', 'values': [1, 2, 3, 4, 5]}
 
     """
-    get_filtered_values("field_1")
     return py_client.ai_system["field_filtered_values"].find_one({"field": field})
+
+def clean_up_filtered_values():
+    """
+    清空所有field对应的值
+
+    """
+    all_field_info = get_all_field_info()
+    for field_info in all_field_info:
+        item_name = field_info['item_name']
+        delete_filtered_values(item_name)
+
+    return True

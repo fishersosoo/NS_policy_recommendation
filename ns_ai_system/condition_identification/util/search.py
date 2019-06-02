@@ -1,5 +1,5 @@
 from condition_identification.util.string_process import getNumofCommonSubstr
-from condition_identification.util.specialcondition_identify import idf_nums
+from condition_identification.util.specialcondition_identify import idf_quantifiers
 from condition_identification.args import field_has_word_count
 
 
@@ -65,7 +65,7 @@ def search_by_relative_pos(value_dict, field_dict, keyword):
         is_explicit_field[key] = True
         if not has_field:   # 如果没有找到匹配的field，就用 value_dic 值代替field 值
             value_field[key] = value_dict[key]
-            if idf_nums(key):
+            if idf_quantifiers(key):
                 is_explicit_field[key]=False
 
     return value_field, is_explicit_field
