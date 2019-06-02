@@ -15,7 +15,7 @@ similarity_value = 0.945
 database_cluster_min_length = 300
 
 # 数据库值过多只取前max_length条
-database_cluster_max_length = 2000
+database_cluster_max_length = 3000
 
 # 对数据库数据聚类的相似度要求
 database_cluster_similarity = 0.9
