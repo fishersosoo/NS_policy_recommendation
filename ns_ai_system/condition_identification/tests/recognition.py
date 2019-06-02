@@ -1,7 +1,6 @@
 from condition_identification.api.text_parsing import paragraph_extract
 from condition_identification.api.text_parsing import triple_extract
 from condition_identification.util.string_process import getNumofCommonSubstr
-import Levenshtein
 import os
 import pandas as pd
 import numpy as np
@@ -53,11 +52,11 @@ def get_acc_pre(true_df_txt, triples):
 
 if __name__ == '__main__':
 
-    policy_file_dir = r"F:\\txt\\txt"
-    true_file=r'G:\\QQ文件\\政策标注.csv'
-    score_file='score0513.txt'
+    policy_file_dir = r"/data/txt/txt"
+    true_file = r'/data/政策标注.csv'
+    score_file = 'score0601.txt'
 
-    true_df = pd.read_csv(true_file, engine='python')
+    true_df = pd.read_csv(true_file,encoding = 'gbk')
     score_record = open(score_file, 'a')
 
     # 计算
@@ -82,9 +81,11 @@ if __name__ == '__main__':
             text = f.read()
 
         paragraph_extract_output = paragraph_extract(text)
-        triples = triple_extract(paragraph_extract_output)
+        triples, tree, all_sentence = triple_extract(paragraph_extract_output)
         true_df_txt_len = true_df_txt.shape[0]
         print(triples)
+        for triple in triples:
+            print(triple)
         txt_tr, triple_tr, predict_len = get_acc_pre(true_df_txt, triples)
 
 
