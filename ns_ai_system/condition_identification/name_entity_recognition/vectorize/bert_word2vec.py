@@ -51,7 +51,7 @@ def bert_word2vec(strs, batch_size=200, reduce_mean=True):
     vectors, need_compute_strs, need_compute_index = _from_cache(strs)
     if len(need_compute_strs) != 0:
         bc = _BertClient()
-        compute_vectors = bc.encode(strs).tolist()
+        compute_vectors = bc.encode(need_compute_strs).tolist()
         for i, compute_vector in enumerate(compute_vectors):
             vectors[need_compute_index[i]] = compute_vector
             redis_cache.set(need_compute_strs[i],compute_vector)
@@ -71,4 +71,4 @@ class BertClient(object):
 
 
 if __name__ == '__main__':
-    print((bert_word2vec(["测试一下"] * 2)))
+    print((bert_word2vec(["测试"]*2)))

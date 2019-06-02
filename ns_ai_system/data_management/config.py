@@ -13,6 +13,7 @@ config = ConfigLoader()
 pool = redis.ConnectionPool(host=config.get('cache_redis', 'host'), port=int(config.get('cache_redis', 'port')),
                             decode_responses=True, db=int(config.get('cache_redis', 'db')))
 redis_cache = redis.Redis(connection_pool=pool)
+redis_cache.set_response_callback("MGET", lambda l: [eval(i) if i is not None else None for i in l])
 neo4j_config = config._config['neo4j']
 py_client = pymongo.MongoClient(host=config.get('mongoDB', 'host'), port=int(config.get('mongoDB', 'port')),
                                 connect=False)
