@@ -5,6 +5,7 @@ import time
 import requests
 from bson import ObjectId
 
+from data_management.config import py_client
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from data_server.server import jsonrpc, mongo, max_seq, tokenizer, client, uid
@@ -14,13 +15,23 @@ from service.rabbit_mq import file_event
 
 from bert_serving.client import BertClient
 
-
 bc = BertClient()
 
 
 @jsonrpc.method("api.index")
 def index():
     return "index"
+
+
+@jsonrpc.method('guide.list_guide_id')
+def list_guide_id():
+    """
+    返回所有指南id
+
+    Returns:
+
+    """
+    return [one["guide_id"] for one in list(py_client.ai_system["guide_file"].find())]
 
 
 @jsonrpc.method("file.register")

@@ -75,6 +75,16 @@ https://github.com/fishersosoo/NS_policy_recommendation/tree/feature/tests/data_
 
 对应政策文件中的的字符串
 
+### guide.list_guide_id() -> list[str]
+
+获取所有指南id
+
+方法名称:guide.list_guide_id
+
+返回：
+
+指南id列表
+
 ## 消息队列相关
 
 基于rabbitmq实现文件相关事件的发布

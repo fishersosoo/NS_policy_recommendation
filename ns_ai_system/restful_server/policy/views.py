@@ -23,28 +23,6 @@ from service.rabbit_mq import file_event
 policy_api = Api(policy_service)
 
 
-class PolicyUnderstandAPI(Resource):
-    """
-    处理政策理解请求
-    """
-    post_parser = reqparse.RequestParser()
-    post_parser.add_argument("id", type=str, required=True)
-    post_parser.add_argument("content", type=str, required=True)
-
-    def post(self):
-        kwargs = self.post_parser.parse_args()
-        return {}, 200
-
-
-class PolicyRecommendAPI(Resource):
-    get_parser = reqparse.RequestParser()
-    get_parser.add_argument("id", type=str, required=True)
-
-    def get(self):
-        kwargs = self.get_parser.parse_args()
-        return {}, 200
-
-
 @policy_service.route("upload_policy/", methods=["POST"])
 def upload_policy():
     """
@@ -86,6 +64,7 @@ def upload_guide():
     if os.path.splitext(guide_file.filename)[1] not in [".doc", ".txt"]:
         return jsonify({"status": "ERROR", "message": "请上传doc文件"})
     guide_id = request.form.get("guide_id")
+    effective = request.form.get("effective", True)
     if guide_id is None:
         return jsonify({"status": "ERROR", "message": "请填充指南id字段：guide_id"})
     doc_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".doc")
@@ -101,17 +80,9 @@ def upload_guide():
         os.remove(doc_temp_file.name)
         return jsonify({"status": "ERROR", "message": e})
     with open(doc_temp_file.name, "rb") as f:
-        mongo.save_file(filename=guide_file.filename,
-                        fileobj=f, base="guide_file")
-    Guide.create(guide_id=guide_id, file_name=guide_file.filename)
-    policy_id = request.args.get("policy_id", default=None)
-    if policy_id is not None:
-        Guide.link_to_policy(guide_id, policy_id)
-    # pool.submit(understand_guide_task, guide_id, text)
+        Guide.create(guide_id, guide_file.filename, f, effective=effective)
     file_event(message=json.dumps({"guide_id": guide_id, "event": "add"}), routing_key="event.file.add")
     task = understand_guide_task.delay(guide_id, text)
-    # understand_guide_task(guide_id,text)
-    # result = understand_guide_task.delay(guide_id,text)
     os.remove(doc_temp_file.name)
     return jsonify({
         "task_id": task.id,
@@ -119,25 +90,19 @@ def upload_guide():
     })
 
 
-@policy_service.route("get_text/", methods=["POST"])
-def get_text():
-    info = None
-    try:
-        guide_file = request.files['file']
-        if os.path.splitext(guide_file.filename)[1] not in [".doc", ".txt"]:
-            return jsonify({"status": "ERROR", "message": "请上传doc文件"})
-        guide_id = request.form.get("guide_id")
+@policy_service.route("set_guide/", methods=["POST"])
+def set_guide():
+    """
+    修改指南属性
 
-        doc_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".doc")
-        guide_file.save(doc_temp_file)
-        doc_temp_file.close()
-        text = get_text_from_doc_bytes(doc_temp_file)
-        info = paragraph_extract(text)
-        if info is None:
-            raise Exception("指南内容格式不正确，无法进行理解")
-    except Exception as e:
-        return jsonify({"status": "ERROR", "message": e})
-    return jsonify({"text": text})
+    Returns:
+
+    """
+    params = request.json
+    guide_id = params.get("guide_id")
+    effective = params.get("effective")
+    result = mongo.db.guide_file.update_one({"guide_id": guide_id}, {"$set": {"effective": effective}}, upsert=False)
+    return jsonify(result.raw_result)
 
 
 @policy_service.route("get_result/", methods=["GET"])
@@ -161,13 +126,15 @@ def recommend():
     """
     response_dict = dict()
     if "company_id" in request.args:
+        valid_guides = [one["guide_id"] for one in Guide.list_valid_guides()]
         # 根据企业id获取推荐，返回结果并异步更新结果
         company_id = request.args.get("company_id")
         threshold = float(request.args.get("threshold", 0.))
         task_result = recommend_task.delay(company_id)
         response_dict["task_id"] = task_result.id
         records = []
-        for one in mongo.db.recommend_record.find({"company_id": company_id, "latest": True}):
+        for one in mongo.db.recommend_record.find(
+                {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True}):
             if is_above_threshold(one, threshold):
                 records.append(one)
         response_dict["result"] = records
@@ -200,12 +167,18 @@ def check_single_guide_for_companies():
     if params is None:
         abort(400)
     companies = params.get("companies", [])
+    if len(companies) == 0:
+        return jsonify({
+            "message":
+                {
+                    "status": "empty companies ",
+                    "traceback": "companies字段不能为空"
+                }})
     # 检查参数是否正确
     guide_id = params.get("guide_id", None)
     threshold = float(params.get("threshold", .0))
-    _, _, guide_node = Guide.find_by_guide_id(guide_id)
-    # print(guide_node)
-    if guide_node is None:
+    guide_ = mongo.db.guide_file.find_one({"guide_id": guide_id})
+    if guide_ is None:
         return jsonify({
             "task_id": "",
             "message":
@@ -264,9 +237,17 @@ def check_single_guide_for_companies():
 def single_recommend():
     company_id = request.args.get("company_id", None)
     guide_id = request.args.get("guide_id", None)
-    print(guide_id, company_id)
     return jsonify(mongo.db.recommend_record.find_one({"guide_id": guide_id, "company_id": company_id, "latest": True}))
 
 
-policy_api.add_resource(PolicyUnderstandAPI, "understand/")
-policy_api.add_resource(PolicyRecommendAPI, "recommend/")
+@policy_service.route("guide_file/", methods=["GET"])
+def download_guide_file():
+    guide_id = request.args.get("guide_id")
+    guide_ = mongo.db.guide_file.find_one({"guide_id": guide_id})
+    if guide_ is not None:
+        response = mongo.send_file(guide_["file_name"], base="guide_file")
+        response.headers["Content-Disposition"] = "attachment; filename={}".format(guide_["file_name"])
+        response.headers["x-suggested-filename"] = guide_["file_name"]
+        return response
+    else:
+        return jsonify({"message": "not found", "guide_id": guide_id})

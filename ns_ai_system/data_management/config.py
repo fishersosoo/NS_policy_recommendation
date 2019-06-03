@@ -6,10 +6,9 @@
 import pymongo
 
 from data_management.data_service_proxy import DataService
-from read_config import ConfigLoader
 import redis
+from read_config import config
 
-config = ConfigLoader()
 pool = redis.ConnectionPool(host=config.get('cache_redis', 'host'), port=int(config.get('cache_redis', 'port')),
                             decode_responses=True, db=int(config.get('cache_redis', 'db')))
 redis_cache = redis.Redis(connection_pool=pool)

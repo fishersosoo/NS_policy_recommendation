@@ -1,33 +1,16 @@
 # coding=utf-8
 import datetime
+from mimetypes import guess_type
 
 import gridfs
 from py2neo import Node, Relationship, NodeMatcher, Subgraph
 
-from data_management.config import  py_client
+from data_management.config import py_client
 from data_management.models import BaseInterface, UUID, graph_
 from data_management.models.policy import Policy
 
 
 class Guide(BaseInterface):
-    @classmethod
-    def find_leaf_requirement(cls, id_):
-        """
-        寻找政策最底层的requirement
-        :param id_:
-        :return:
-        """
-        ql = """
-        MATCH
-          path = (guide:Guide{id:{id_}})-[*]->(requirement:Requirement)
-        UNWIND relationShips(path) AS r
-        WITH collect(DISTINCT endNode(r))   AS endNodes, 
-             collect(DISTINCT startNode(r)) AS startNodes
-        UNWIND endNodes AS leaf
-        WITH leaf WHERE NOT leaf IN startNodes
-        RETURN leaf
-        """
-        return list(graph_().run(ql, parameters=dict(id_=id_)))
 
     @classmethod
     def list_valid_guides(cls):
@@ -36,52 +19,42 @@ class Guide(BaseInterface):
         :rtype: list[Node]
         :return: 指南节点
         """
-        # now = datetime.datetime.now()
-        # nodes = list(
-        #     NodeMatcher(graph_).match(cls.__name__).where(effective_time_begin__gte=now, effective_time_end__lte=now))
-        nodes = list(
-            NodeMatcher(graph_()).match(cls.__name__))
-        return nodes
+        return list(py_client.ai_system["guide_file"].find({"effective": {"$ne": False}}))
 
     @classmethod
-    def create(cls, guide_id, file_name, **kwargs):
-        print(guide_id)
-        node = Node(cls.__name__, id=UUID(), guide_id=guide_id, file_name=file_name, **kwargs)
-        graph_().create(node)
-        return node["id"]
+    def create(cls, guide_id, file_name, fileobj, base="guide_file", **kwargs):
+        """
+        保存指南id以及指南文件到mongo数据库
 
-    @classmethod
-    def set_effective_time(cls, id_, begin, end):
-        Guide.update_by_id(id_, effective_time_begin=begin, effective_time_end=end)
+        Args:
+            guide_id: 指南id
+            file_name: 保存的文件名
+            fileobj: 已经打开的fileobj
+            base: 保存到mongo数据库表名
+            **kwargs: 其他需要保存的信息
 
-    @classmethod
-    def find_by_guide_id(cls, guide_id):
-        node = NodeMatcher(graph_()).match(cls.__name__, guide_id=guide_id).first()
-        if node is None:
-            return [],dict(),None
-        return node.labels, dict(**node), node
+        Returns:
 
-    @classmethod
-    def link_to_policy(cls, guide_id, policy_id):
-        _, _, guide_node = Guide.find_by_guide_id(guide_id)
-        _, _, policy_node = Policy.find_by_policy_id(policy_id)
-        relationship = Relationship(guide_node, "BASE_ON", policy_node)
-        sub_graph = Subgraph([guide_node, policy_node], [relationship])
-        graph_().create(sub_graph)
+        """
+        if not (hasattr(fileobj, "read") and callable(fileobj.read)):
+            raise TypeError("'fileobj' must have read() method")
+        content_type, _ = guess_type(file_name)
+        with py_client.ai_system["guide_file"].start_session() as session:
+            with session.start_transaction():
+                py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
+                                                             {"$set": {"file_name": file_name, "guide_id": guide_id}},
+                                                             upsert=True, session=session)
+                storage = gridfs.GridFS(py_client.ai_system, base)
+                for grid_out in storage.find({"filename": file_name},
+                                             no_cursor_timeout=True, session=session):
+                    storage.delete(grid_out._id, session=session)
+                file_id = storage.put(fileobj, filename=file_name, content_type=content_type, session=session)
+                record = {"file_name": file_name, "guide_id": guide_id,
+                          "file_id": file_id}.update(kwargs)
+                py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
+                                                             {"$set": record},
+                                                             upsert=True, session=session)
 
-    @classmethod
-    def get_file(cls, filename):
-        fs = gridfs.GridFS(py_client.ai_system, "guide_file")
-        return fs.get_version(filename=filename)
 
-    @classmethod
-    def add_boons(cls, id_, boons=None):
-        if boons is None:
-            boons = []
-        _, _, guide = Guide.find_by_id(id_)
-        boon_list = list(NodeMatcher(graph_()).match("Boon").where(f"_.id in {boons}"))
-        relationships = []
-        for boon in boon_list:
-            relationships.append(Relationship(guide, "HAS_BOON", boon))
-        sub_graph = Subgraph(boon_list + [guide], relationships)
-        graph_().create(sub_graph)
+if __name__ == '__main__':
+    print(Guide.list_valid_guides())

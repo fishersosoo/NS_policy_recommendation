@@ -1,21 +1,17 @@
 # coding=utf-8
+import copy
 import datetime
 import traceback
-import copy
+
 import requests
-from celery import group, chain, chord
 from celery.result import allow_join_result
 from flask_jsonrpc.proxy import ServiceProxy
 
 from celery_task import celery_app, log, config
 from data_management.config import dataService, py_client
-from data_management.models import UUID
-from data_management.models.guide import Guide
 from data_management.models.word import Word
 from service import conert_ch2num
-import numpy as np
 from service.policy_graph_construct import understand_guide
-from celery import group
 
 
 # @celery_app.task(rate_limit="2/h")
