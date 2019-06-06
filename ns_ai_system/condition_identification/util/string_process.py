@@ -26,6 +26,18 @@ def getNumofCommonSubstr(str1, str2):
                     p = i + 1    # 记录最大匹配长度的终止位置
     return str1[p - maxNum:p], maxNum
 
+def cmp_stringlist(sl1,sl2):
+    sl1 = set(sl1)
+    sl2 = set(sl2)
+    if len(sl1) != len(sl2):
+        return False
+    else:
+        c = [x for x in sl1 if x in sl2]
+        if len(c) != len(sl1):
+            return False
+        else:
+            return True
+
 
 if __name__ == '__main__':
-    print(getNumofCommonSubstr('sdaf', 'dfwasd'))
+    print(cmp_stringlist(['sds','sds1'],['sds1','sds']))
