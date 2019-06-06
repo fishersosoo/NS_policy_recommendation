@@ -4,7 +4,7 @@
 """
 from data_management.config import py_client
 from data_management.api.field_info import get_all_field_info
-
+from condition_identification.args import FILTED_FIELD
 def insert_filtered_values(*filtered_values):
     """
     保存每个数据列过滤后的值。重复的key不会覆盖。
@@ -84,5 +84,7 @@ def clean_up_filtered_values():
     for field_info in all_field_info:
         item_name = field_info['item_name']
         delete_filtered_values(item_name)
-
+    update_filtered_values(FILTED_FIELD,[])
     return True
+if __name__ =='__main__':
+    clean_up_filtered_values()
