@@ -1,12 +1,12 @@
 # coding=utf-8
 from collections import defaultdict
-from condition_identification.args import NUMS, ADDRESS
+from condition_identification.args import NUMS, ADDRESS,FILTED_FIELD
 from condition_identification.util.specialcondition_identify import idf_quantifiers, idf_address
 from data_management.api.filtered_values import get_filtered_values
 from data_management.api.field_info import list_all_field_name
 from condition_identification.util.similarity_calculation import value_compare_similarity
-
-
+from condition_identification.util.string_process import cmp_stringlist
+from data_management.api.filtered_values_storage import filtered_values_store
 class Value(object):
     """单例value类
 
@@ -53,6 +53,11 @@ class Value(object):
                 candidate_value = []
                 line_word = line
                 line_encode = self.bert_client.encode(line_word)
+
+                # 如果发现过滤后的列名和给的列名有不一致，则自动重新更新
+                if not cmp_stringlist(self.filed_names,get_filtered_values(FILTED_FIELD)['values']):
+                    filtered_values_store()
+
                 for field in self.filed_names:    # 用每一个field 下的value值与其做相似性判断
                     value_word = get_filtered_values(field)
                     if value_word is None or field in NUMS or field in ADDRESS:
@@ -74,6 +79,8 @@ class Value(object):
 
 
 if __name__ == '__main__':
-    print(idf_nums('30岁'))
+    print(list_all_field_name())
+    print(get_filtered_values('经营状态'))
+    print(cmp_stringlist(list_all_field_name(),get_filtered_values(FILTED_FIELD)['values']))
 
 

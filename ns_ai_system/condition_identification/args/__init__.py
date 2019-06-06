@@ -39,3 +39,6 @@ cos_similarity_multiplier = 0.5
 
 # 对有多个field值的进一步抽取，相同的字数限制
 field_has_word_count = 2
+
+# 存filted的列名数组对应的列名：
+FILTED_FIELD = 'title*'
