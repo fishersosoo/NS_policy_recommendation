@@ -10,6 +10,9 @@ from urllib.request import HTTPError
 from data_management.config import redis_cache
 from bert_serving.client import BertClient as _BertClient
 
+from read_config import ConfigLoader
+
+config = ConfigLoader()
 
 def _check_NONE(vectors):
     for v in vectors:
@@ -50,7 +53,7 @@ def bert_word2vec(strs, batch_size=200, reduce_mean=True):
         strs = [strs]
     vectors, need_compute_strs, need_compute_index = _from_cache(strs)
     if len(need_compute_strs) != 0:
-        bc = _BertClient()
+        bc = _BertClient(ip=config.get('bert', 'ip'))
         compute_vectors = bc.encode(need_compute_strs).tolist()
         for i, compute_vector in enumerate(compute_vectors):
             vectors[need_compute_index[i]] = compute_vector

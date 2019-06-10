@@ -1,6 +1,9 @@
 # coding=utf-8
 from celery import Celery
 from celery.utils.log import get_task_logger
+from celery.signals import after_setup_logger
+from my_log import Loggers
+import logging
 
 from read_config import ConfigLoader
 from kombu import Queue
@@ -40,5 +43,9 @@ celery_app.conf.CELERY_ROUTES = {
 }
 
 log = get_task_logger(__name__)
+
+@after_setup_logger.connect
+def setup_loggers(logger, *args, **kwargs):
+    Loggers.init_app('celery', logger)
 
 from celery_task.policy import *

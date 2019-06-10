@@ -15,7 +15,9 @@ from service.rabbit_mq import file_event
 
 from bert_serving.client import BertClient
 
-bc = BertClient()
+from read_config import ConfigLoader
+
+config = ConfigLoader()
 
 
 @jsonrpc.method("api.index")
@@ -113,4 +115,5 @@ def bert_word2vec(strs):
     if isinstance(strs, str):
         strs = [strs]
     start_time = time.time()
+    bc = BertClient(ip=config.get('bert', 'ip'))
     return bc.encode(strs).tolist()

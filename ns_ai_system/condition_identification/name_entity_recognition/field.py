@@ -3,6 +3,9 @@ from condition_identification.util.similarity_calculation import field_compare_s
 from data_management.api.field_info import list_all_field_name
 from condition_identification.args import similarity_value
 
+from read_config import ConfigLoader
+
+config = ConfigLoader()
 
 class Field(object):
     """单例模式field 类
@@ -68,7 +71,7 @@ class Field(object):
 
 if __name__ == '__main__':
     from bert_serving.client import BertClient
-    bc = BertClient()
+    bc = BertClient(ip=config.get('bert', 'ip'))
     f = Field(bc)
     print(f.instance)
     print(f.init_fir)
