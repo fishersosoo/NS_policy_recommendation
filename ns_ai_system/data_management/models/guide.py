@@ -39,21 +39,20 @@ class Guide(BaseInterface):
         if not (hasattr(fileobj, "read") and callable(fileobj.read)):
             raise TypeError("'fileobj' must have read() method")
         content_type, _ = guess_type(file_name)
-        with py_client.ai_system["guide_file"].start_session() as session:
-            with session.start_transaction():
-                py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
-                                                             {"$set": {"file_name": file_name, "guide_id": guide_id}},
-                                                             upsert=True, session=session)
-                storage = gridfs.GridFS(py_client.ai_system, base)
-                for grid_out in storage.find({"filename": file_name},
-                                             no_cursor_timeout=True, session=session):
-                    storage.delete(grid_out._id, session=session)
-                file_id = storage.put(fileobj, filename=file_name, content_type=content_type, session=session)
-                record = {"file_name": file_name, "guide_id": guide_id,
-                          "file_id": file_id}.update(kwargs)
-                py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
-                                                             {"$set": record},
-                                                             upsert=True, session=session)
+        py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
+                                                        {"$set": {"file_name": file_name, "guide_id": guide_id}},
+                                                        upsert=True)
+        storage = gridfs.GridFS(py_client.ai_system, base)
+        for grid_out in storage.find({"filename": file_name},
+                                        no_cursor_timeout=True):
+            storage.delete(grid_out._id)
+        file_id = storage.put(fileobj, filename=file_name, content_type=content_type)
+        record = {"file_name": file_name, "guide_id": guide_id,
+                    "file_id": file_id}
+        record.update(kwargs)
+        py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
+                                                        {"$set": record},
+                                                        upsert=True)
 
 
 if __name__ == '__main__':
