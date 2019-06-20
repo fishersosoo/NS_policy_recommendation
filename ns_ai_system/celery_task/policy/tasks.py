@@ -219,30 +219,6 @@ def field_lookup(subject, predicate, object):
     return field_info
 
 
-def query_data(company_id):
-    # get data
-    value = dataService.sendRequest("getEntByKeyword", {"keyword": company_id, "type": 1})
-    try:
-        company_name = value["RESULTDATA"][0]["ENTNAME"]
-    except Exception as e:
-        log.error(value)
-        return None
-    # get base info
-    base_info = dataService.sendRequest("getRegisterInfo", {"entName": company_name})["RESULTDATA"][0]
-    # get qualify
-    qualify_certify_count = \
-        dataService.sendRequest("getQualifyCertifyInfo", {"entName": company_name, 'pageNo': 1, "pageSize": 1})[
-            "PAGEINFO"][
-            "TOTAL_COUNT"]
-    if qualify_certify_count == 0:
-        base_info["FQZ_ZZMC"] = []
-    else:
-        qualifies = \
-            dataService.sendRequest("getQualifyCertifyInfo",
-                                    {"entName": company_name, 'pageNo': 1, "pageSize": qualify_certify_count})[
-                "RESULTDATA"]
-        base_info["FQZ_ZZMC"] = [one["FQZ_ZZMC"] for one in qualifies]
-    return base_info
 
 
 @celery_app.task

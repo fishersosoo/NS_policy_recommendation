@@ -196,7 +196,7 @@ def check_single_guide_for_companies():
                     "traceback": callback_stack
                 }
         })
-    max_input = MAX_PENDING - len(get_pending_task("check_single_guide"))
+    max_input = 20
     if max_input == 0:
         # 队列已满
         return jsonify({
