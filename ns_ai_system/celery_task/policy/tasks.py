@@ -9,6 +9,7 @@ from flask_jsonrpc.proxy import ServiceProxy
 
 from celery_task import celery_app, log, config
 from data_management.config import dataService, py_client
+from data_management.models.guide import Guide
 from data_management.models.word import Word
 from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
@@ -25,7 +26,7 @@ def understand_guide_task(guide_id, text):
     understand_guide(guide_id, text)
 
 
-@celery_app.task
+@celery_app.task(soft_time_limit=30)
 def check_single_guide(company_id, guide_id, threshold=.0):
     """
     检查单个指南和企业的匹配信息，如果存在匹配则存放到数据库中
@@ -57,7 +58,7 @@ def check_single_guide(company_id, guide_id, threshold=.0):
                 if "sentence_id" in triple:
                     matched_sentence_id.add(triple["sentence_id"])
         if sentences is not None:
-            ids=list(sentences.keys())
+            ids = list(sentences.keys())
             for id in ids:
                 if sentences[id] == "":
                     sentences.pop(id)
@@ -219,8 +220,6 @@ def field_lookup(subject, predicate, object):
     return field_info
 
 
-
-
 @celery_app.task
 def recommend_task(company_id, threshold=.0):
     """
@@ -230,7 +229,7 @@ def recommend_task(company_id, threshold=.0):
     :return:
     """
     log.info(f"recommend_task for company: {company_id}")
-    guides = list(py_client.ai_system["parsing_result"].find({}))
+    guides = list(Guide.list_valid_guides())
     results = []
     for guide in guides:
         result = check_single_guide(company_id, guide["guide_id"])
@@ -251,8 +250,8 @@ def is_above_threshold(result, threshold):
         return False
 
 
-@celery_app.task(bind=True,default_retry_delay=300, max_retries=0)
-def check_single_guide_batch_companies(self,companies, threshold, guide_id,url):
+@celery_app.task(bind=True, default_retry_delay=300, max_retries=0,soft_time_limit=60)
+def check_single_guide_batch_companies(self, companies, threshold, guide_id, url):
     """
     创建多个子任务检查企业是否满足，阻塞获取所有任务结果
 
@@ -270,13 +269,13 @@ def check_single_guide_batch_companies(self,companies, threshold, guide_id,url):
             group_result.append(result.get())
     return_result = {company: {"matching": .0, "status": "FAIL"} for company in companies}
     for result in group_result:
-        if is_above_threshold(result, threshold):
+        if result is not None and is_above_threshold(result, threshold):
             return_result[result["company_id"]] = {"matching": result["matching"], "status": "SUCCESS"}
     push_single_guide_result.delay(guide_id=guide_id, url=url, task_id=self.request.id)
     return return_result
 
 
-@celery_app.task(default_retry_delay=1000, max_retries=1)
+@celery_app.task
 def push_single_guide_result(guide_id, url, task_id):
     """
     将批量检查企业的任务结果推送到指定url
@@ -306,5 +305,6 @@ def create_chain_for_check_recommend(companies, threshold, guide_id, url):
     :param url: 推送连接
     :return: 任务id
     """
-    task_result = check_single_guide_batch_companies.delay(companies=companies, threshold=threshold, guide_id=guide_id,url=url)
+    task_result = check_single_guide_batch_companies.delay(companies=companies, threshold=threshold, guide_id=guide_id,
+                                                           url=url)
     return task_result.id
