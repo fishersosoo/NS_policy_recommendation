@@ -117,7 +117,7 @@ def check_single_requirement(company_id, triple):
         return None, None
     # query_data
     ip = config.get('data_server', 'host')
-    url = f"http://{ip}:3306/data"
+    url = f"http://{ip}:{config.get('data_server','port')}/data"
     server = ServiceProxy(service_url=url)
     return_data = server.data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
     data = return_data.get("result", None)

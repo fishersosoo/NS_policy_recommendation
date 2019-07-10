@@ -47,5 +47,6 @@ log = get_task_logger(__name__)
 @after_setup_logger.connect
 def setup_loggers(logger, *args, **kwargs):
     Loggers.init_app('celery', logger)
+    logger.setLevel(logging.INFO)
 
 from celery_task.policy import *
