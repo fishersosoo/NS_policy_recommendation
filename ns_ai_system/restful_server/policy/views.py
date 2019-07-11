@@ -1,6 +1,7 @@
 # coding=utf-8
 import os
 import json
+import datetime
 import tempfile
 
 import gridfs
@@ -15,8 +16,8 @@ from condition_identification.api.text_parsing import paragraph_extract
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from restful_server.policy import policy_service
-from restful_server.policy.base import check_callback
-from restful_server.server import mongo
+from restful_server.policy.base import check_callback, check_contains
+from restful_server.server import mongo, app
 from service.file_processing import get_text_from_doc_bytes
 from service.rabbit_mq import file_event
 
@@ -130,11 +131,28 @@ def recommend():
         # 根据企业id获取推荐，返回结果并异步更新结果
         company_id = request.args.get("company_id")
         threshold = float(request.args.get("threshold", 0.))
-        task_result = recommend_task.delay(company_id)
-        response_dict["task_id"] = task_result.id
+        # 记录有效时间，默认为24小时
+        valid_hours = float(request.args.get("hours", mongo.db.config.find({'key':'hours'})[0]['value']))
+        recommend_records = [one for one in mongo.db.recommend_record.find(
+                {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True})]
+        for one in valid_guides:
+            contain_res = check_contains(one, recommend_records)
+            if contain_res['is_contain']:
+                now = datetime.datetime.now()
+                delta = ((now-contain_res['guide']['time']).days)*24 + ((now-contain_res['guide']['time']).seconds) / 3600
+                app.logger.info(delta)
+                if delta <= valid_hours:
+                    continue
+                else:
+                    app.logger.info(f"recommend_task for guide: {one}")
+                    recommend_task.delay(company_id, one)
+            else:
+                app.logger.info(f"recommend_task for guide: {one}")
+                recommend_task.delay(company_id, one)
+        # task_result = recommend_task.delay(company_id)
+        # response_dict["task_id"] = task_result.id
         records = []
-        for one in mongo.db.recommend_record.find(
-                {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True}):
+        for one in recommend_records:
             if is_above_threshold(one, threshold):
                 records.append(one)
         response_dict["result"] = records

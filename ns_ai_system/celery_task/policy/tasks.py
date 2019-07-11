@@ -221,26 +221,28 @@ def field_lookup(subject, predicate, object):
 
 
 @celery_app.task
-def recommend_task(company_id, threshold=.0):
+def recommend_task(company_id, guide_id, threshold=.0):
     """
     更新指定企业的推荐记录
     :param company_id: 企业id
     :param threshold: 匹配度阈值（尚未使用），只有企业与指南匹配度高于此值时候才会推荐
+    :param guide_id: 政策id
     :return:
     """
     log.info(f"recommend_task for company: {company_id}")
-    guides = list(Guide.list_valid_guides())
-    results = []
-    for guide in guides:
-        result = check_single_guide(company_id, guide["guide_id"])
-        if result is not None:
-            results.append(result)
+    log.info(f"recommend_task for guide: {guide_id}")
+    # guides = list(Guide.list_valid_guides())
+    # results = []
+    # for guide in guides:
+    result = check_single_guide(company_id, guide_id)
+        # if result is not None:
+            # results.append(result)
     # task_group = group([check_single_guide.s(company_id, guide) for guide in guides])
     # 异步执行
     # result = job.apply_async()
     # 同步执行
     # result = task_group().get()
-    return {"company_id": company_id, "results": results}
+    return {"company_id": company_id, "result": result}
 
 
 def is_above_threshold(result, threshold):

@@ -31,3 +31,18 @@ def check_callback(url, guide_id):
         pass
     finally:
         return is_ok, stack
+
+def check_contains(guide_id, guide_lists):
+    """
+    检查guide_id是否在guide_lists中
+    :param guide_id:政策的id
+    :param guide_lists: 政策的列表，是一个字典列表
+    :return dict, is_contain bool值，表示是否包含，guide，表示政策
+    """
+    result = dict()
+    result['is_contain'] = False
+    for one in guide_lists:
+        if guide_id == one['guide_id'] :
+            result['guide'] = one
+            result['is_contain'] = True
+    return result
