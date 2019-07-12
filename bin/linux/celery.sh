@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 
 arg_help="0"
 function parse_arguments() {
@@ -24,7 +24,7 @@ function parse_arguments() {
 
 function print_help() {
   cat <<EOF
-Usage: ./celery.sh [command] [project path]
+Usage: ./celery.sh [command] [project path] [log path]
 
 Param:
     command      : start | stop | restart | kill
@@ -40,7 +40,7 @@ function start() {
 	echo "----------------"
 	celery multi start\
 	    understand_worker batch_check_callback_worker check_single_guide_worker recommend_task_worker \
-	    -A celery_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid \
+	    -A celery_task --logfile=/data/logs/%n.log -l warning --pidfile=pid/%n.pid \
 	    -c:understand_worker 2 -c:batch_check_callback_worker 4 -c:check_single_guide_worker 10 -c:recommend_task_worker 10 \
 	    -Q:understand_worker understand -Q:batch_check_callback_worker batch_check_callback \
 	    -Q:check_single_guide_worker check_single_guide -Q:recommend_task_worker recommend_task
@@ -52,7 +52,7 @@ function stop() {
 	echo "----------------"
 	celery multi stop\
 	    understand_worker batch_check_callback_worker check_single_guide_worker recommend_task_worker \
-	    -A celery_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid \
+	    -A celery_task --logfile=/data/logs/%n.log -l warning --pidfile=pid/%n.pid \
 	    -c:understand_worker 2 -c:batch_check_callback_worker 4 -c:check_single_guide_worker 10 -c:recommend_task_worker 10 \
 	    -Q:understand_worker understand -Q:batch_check_callback_worker batch_check_callback \
 	    -Q:check_single_guide_worker check_single_guide -Q:recommend_task_worker recommend_task \
@@ -64,7 +64,7 @@ function killProsess() {
 	echo "----------------"
 	celery multi stop\
 	    understand_worker batch_check_callback_worker check_single_guide_worker recommend_task_worker \
-	    -A celery_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid \
+	    -A celery_task --logfile=/data/logs/%n.log -l warning --pidfile=pid/%n.pid \
 	    -c:understand_worker 2 -c:batch_check_callback_worker 4 -c:check_single_guide_worker 10 -c:recommend_task_worker 10 \
 	    -Q:understand_worker understand -Q:batch_check_callback_worker batch_check_callback \
 	    -Q:check_single_guide_worker check_single_guide -Q:recommend_task_worker recommend_task \
@@ -78,7 +78,7 @@ function restart() {
 	echo "----------------"
 	celery multi restart\
 	    understand_worker batch_check_callback_worker check_single_guide_worker recommend_task_worker \
-	    -A celery_task --logfile=logs/%n.log -l warning --pidfile=pid/%n.pid \
+	    -A celery_task --logfile=/data/logs/%n.log -l warning --pidfile=pid/%n.pid \
 	    -c:understand_worker 2 -c:batch_check_callback_worker 4 -c:check_single_guide_worker 10 -c:recommend_task_worker 10 \
 	    -Q:understand_worker understand -Q:batch_check_callback_worker batch_check_callback \
 	    -Q:check_single_guide_worker check_single_guide -Q:recommend_task_worker recommend_task
@@ -94,7 +94,7 @@ cd $2
 case "$1" in
 	start )
 		echo "****************"
-		mkdir logs
+		mkdir /data/logs
 		mkdir pid
 		start
 		echo "****************"

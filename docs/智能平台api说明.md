@@ -8,7 +8,7 @@
 | --------- | ------------------------------------------------------------ |
 | 2019-4-10 | 修改/policy/check_recommend/和/policy/recommend/接口，增加threshold字段用于筛选返回记录 |
 | 2019-1-4  | 增加/policy/check_recommend/和/policy/single_recommend/接口  |
-|           |                                                              |
+| 2019-7-12 | 增加/policy/guides/接口                                      |
 
 
 
@@ -282,3 +282,47 @@ json格式
 | -------- | ------ |
 | guide_id | 指南id |
 |          |        |
+
+## /policy/guides/
+
+获取已经上传的文件的保存情况
+
+返回字段含义
+
+| key                | 含义                                                |
+| ------------------ | --------------------------------------------------- |
+| guide_id           | 指南id                                              |
+| effective          | 是否有效                                            |
+| contentType        | 文件类型                                            |
+| filename           | 文件名                                              |
+| uploadDate         | 上传时间                                            |
+| doneDate           | 理解完成时间                                        |
+| processAfterUpload | 理解完成-上传时间，负数表示上次上传之后理解还没完成 |
+
+样例
+
+```json
+[
+    {
+        "contentType": "application/msword",
+        "doneDate": "2019-07-12 17:06:10.084000+08:00",
+        "effective": true,
+        "filename": "114-1529981551435.doc",
+        "guide_id": "114",
+        "processAfterUpload": "0:01:04.033000",
+        "uploadDate": "2019-07-12 17:05:06.051000+08:00"
+    },
+    {
+        "contentType": "application/pdf",
+        "doneDate": "None",
+        "effective": true,
+        "filename": "Dynamic Resource Management Using.pdf",
+        "guide_id": "115",
+        "processAfterUpload": "政策未理解",
+        "uploadDate": "2019-07-12 16:43:49.568000+08:00"
+    }
+]
+```
+
+
+

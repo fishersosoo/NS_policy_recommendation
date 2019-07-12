@@ -1,18 +1,12 @@
 # coding=utf-8
-import math
-import time
-from _socket import timeout
 
-import numpy as np
-from flask_jsonrpc.proxy import ServiceProxy
-from urllib.request import HTTPError
-
-from data_management.config import redis_cache
 from bert_serving.client import BertClient as _BertClient
 
+from data_management.config import redis_cache
 from read_config import ConfigLoader
 
 config = ConfigLoader()
+
 
 def _check_NONE(vectors):
     for v in vectors:
@@ -36,7 +30,6 @@ def _from_cache(strs):
         if vector is None:
             need_compute_strs.append(strs[index])
             need_compute_index.append(index)
-    print(f"miss {len(need_compute_strs)} in {len(strs)}")
     return vectors, need_compute_strs, need_compute_index
 
 
@@ -57,7 +50,7 @@ def bert_word2vec(strs, batch_size=200, reduce_mean=True):
         compute_vectors = bc.encode(need_compute_strs).tolist()
         for i, compute_vector in enumerate(compute_vectors):
             vectors[need_compute_index[i]] = compute_vector
-            redis_cache.set(need_compute_strs[i],compute_vector)
+            redis_cache.set(need_compute_strs[i], compute_vector)
     # _check_NONE(vectors)
     return vectors
 
@@ -74,4 +67,4 @@ class BertClient(object):
 
 
 if __name__ == '__main__':
-    print((bert_word2vec(["测试"]*2)))
+    print((bert_word2vec(["测试"] * 2)))

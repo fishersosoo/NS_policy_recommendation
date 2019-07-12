@@ -37,7 +37,9 @@ def check_single_guide(company_id, guide_id, threshold=.0):
     try:
         matched_sentence_id = set()
         ret = py_client.ai_system["parsing_result"].find_one({"guide_id": str(guide_id)})
-        assert ret is not None
+        if ret is None:
+            log.info(f"guide_id:{guide_id} not found or have not been processed.")
+            return None
         sentences = ret.get("sentences", None)
         triples = ret["triples"]
         reasons = []
@@ -94,7 +96,7 @@ def format_record(company_id, count, guide_id, reasons, sentences, mismatched_se
                   guide_id=guide_id,
                   reason=reasons,
                   matching=matching,
-                  time=datetime.datetime.now(),
+                  time=datetime.datetime.utcnow(),
                   latest=True
                   )
     return record
@@ -188,36 +190,6 @@ def infer_field_info_from_object_type(object):
     # TODO:log推断失败
     log.info(f"无法从obejct推断字段信息{object}")
     return None
-
-
-def field_lookup(subject, predicate, object):
-    """
-
-    :return: field_info: {'name':中文名, 'field':字段名}
-    """
-    # subject上有字段信息
-    if subject.get("type", None) == "field":
-        field_info = Word.get_field(entity_name=subject["tag"])
-        if field_info is not None:
-            return field_info
-        else:
-            # TODO:log 字段匹配失败
-            log.info(f"找不到对应字段\n:{subject}")
-            return None
-    if object.get("type", None) == "field":
-        field_info = Word.get_field(entity_name=object["tag"])
-        if field_info is not None:
-            return field_info
-        else:
-            # TODO:log 字段匹配失败
-            log.info(f"找不到对应字段\n:{object}")
-            return None
-    if object.get("type", None) == "event" or subject.get("type", None) == "event":
-        log.info("事件条件不处理")
-        return None
-    # subject 上没有字段信息。需要根据object类型推断
-    field_info = infer_field_info_from_object_type(object)
-    return field_info
 
 
 @celery_app.task

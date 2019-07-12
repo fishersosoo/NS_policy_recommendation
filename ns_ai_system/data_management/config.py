@@ -4,6 +4,7 @@
 """
 
 import pymongo
+import pytz
 
 from data_management.data_service_proxy import DataService
 import redis
@@ -14,7 +15,7 @@ pool = redis.ConnectionPool(host=config.get('cache_redis', 'host'), port=int(con
 redis_cache = redis.Redis(connection_pool=pool)
 redis_cache.set_response_callback("MGET", lambda l: [eval(i) if i is not None else None for i in l])
 neo4j_config = config._config['neo4j']
-py_client = pymongo.MongoClient(host=config.get('mongoDB', 'host'), port=int(config.get('mongoDB', 'port')),
+py_client = pymongo.MongoClient(host=config.get('mongoDB', 'host'), port=int(config.get('mongoDB', 'port')), tz_aware=True,tzinfo=pytz.timezone('Asia/Shanghai'),
                                 connect=False)
 dataService = DataService(url=f"http://{config.get('data_server','host')}:{config.get('data_server','port')}/data")
 

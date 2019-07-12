@@ -62,8 +62,6 @@ def upload_guide():
     :return:
     """
     guide_file = request.files['file']
-    if os.path.splitext(guide_file.filename)[1] not in [".doc", ".txt"]:
-        return jsonify({"status": "ERROR", "message": "请上传doc文件"})
     guide_id = request.form.get("guide_id")
     effective = request.form.get("effective", True)
     if guide_id is None:
@@ -71,6 +69,12 @@ def upload_guide():
     doc_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".doc")
     guide_file.save(doc_temp_file)
     doc_temp_file.close()
+    if os.path.splitext(guide_file.filename)[1] not in [".doc", ".txt"]:
+        with open(doc_temp_file.name, "rb") as f:
+            Guide.create(guide_id, guide_file.filename, f, effective=effective)
+            os.remove(doc_temp_file.name)
+        return jsonify({"status": "ERROR", "message": "非doc或txt文件，文件已保存，但是不会提交理解"})
+
     info = None
     try:
         text = get_text_from_doc_bytes(doc_temp_file, remove_file=False)
@@ -132,18 +136,17 @@ def recommend():
         company_id = request.args.get("company_id")
         threshold = float(request.args.get("threshold", 0.))
         # 记录有效时间，默认为24小时
-        valid_hours = float(request.args.get("hours", mongo.db.config.find({'key':'hours'})[0]['value']))
+        expired = float(request.args.get("recommend_expired_time",
+                                         mongo.db.config.find_one({"recommend_expired_hours": {'$exists': True}})[
+                                             "recommend_expired_hours"]))
+        expired = datetime.timedelta(hours=expired)
         recommend_records = [one for one in mongo.db.recommend_record.find(
-                {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True})]
+            {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True})]
         for one in valid_guides:
             contain_res = check_contains(one, recommend_records)
             if contain_res['is_contain']:
-                now = datetime.datetime.now()
-                delta = ((now-contain_res['guide']['time']).days)*24 + ((now-contain_res['guide']['time']).seconds) / 3600
-                app.logger.info(delta)
-                if delta <= valid_hours:
-                    continue
-                else:
+                app.logger.info(str(datetime.datetime.utcnow() - contain_res['guide']['time']))
+                if expired < datetime.datetime.utcnow() - contain_res['guide']['time']:
                     app.logger.info(f"recommend_task for guide: {one}")
                     recommend_task.delay(company_id, one)
             else:
@@ -269,3 +272,32 @@ def download_guide_file():
         return response
     else:
         return jsonify({"message": "not found", "guide_id": guide_id})
+
+
+@policy_service.route("guides/", methods=["GET"])
+def list_guide():
+    """
+    返回状态
+    """
+
+    ret = []
+    for one_guide in Guide.list_guide():
+        file_info = Guide.file_info(one_guide["file_id"])
+        paring_info = Guide.parsing_info(one_guide["guide_id"])
+        if file_info.get("uploadDate") != None and paring_info.get("doneTime") != None:
+            if paring_info.get("doneTime")<file_info.get("uploadDate"):
+                after= file_info.get("uploadDate")-paring_info.get("doneTime")
+                after=f"- {str(after)}"
+            else:
+                after = paring_info.get("doneTime") - file_info.get("uploadDate")
+        else:
+            after = "政策未理解"
+        ret.append({"guide_id": one_guide["guide_id"],
+                    "effective": one_guide.get("effective"),
+                    "filename": file_info.get("filename"),
+                    "contentType": file_info.get("contentType"),
+                    "uploadDate": str(file_info.get("uploadDate")),
+                    "doneDate": str(paring_info.get("doneTime")),
+                    "processAfterUpload": str(after)
+                    })
+    return jsonify(ret)

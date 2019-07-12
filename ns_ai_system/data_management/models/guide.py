@@ -1,5 +1,6 @@
 # coding=utf-8
 import datetime
+from collections import defaultdict
 from mimetypes import guess_type
 
 import gridfs
@@ -11,6 +12,40 @@ from data_management.models.policy import Policy
 
 
 class Guide(BaseInterface):
+    @classmethod
+    def parsing_info(self, guide_id):
+        ret = py_client.ai_system["parsing_result"].find_one({"guide_id": guide_id})
+        if ret is not None:
+            return ret
+        else:
+            return defaultdict(str)
+
+    @classmethod
+    def file_info(cls, file_id):
+        """
+
+        Args:
+            file_id:
+
+        Returns:
+
+        """
+        storage = gridfs.GridFS(py_client.ai_system, "guide_file")
+        ret = storage.find_one({"_id": file_id})
+        if ret is None:
+            return defaultdict(str)
+        else:
+            return {"uploadDate": ret.uploadDate, "filename": ret.filename, "contentType": ret.contentType}
+
+    @classmethod
+    def list_guide(cls):
+        """
+
+        Returns:
+        返回所有指南记录列表
+
+        """
+        return list(py_client.ai_system["guide_file"].find({}))
 
     @classmethod
     def list_valid_guides(cls):
@@ -39,20 +74,22 @@ class Guide(BaseInterface):
         if not (hasattr(fileobj, "read") and callable(fileobj.read)):
             raise TypeError("'fileobj' must have read() method")
         content_type, _ = guess_type(file_name)
-        py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
-                                                        {"$set": {"file_name": file_name, "guide_id": guide_id}},
-                                                        upsert=True)
         storage = gridfs.GridFS(py_client.ai_system, base)
-        for grid_out in storage.find({"filename": file_name},
-                                        no_cursor_timeout=True):
-            storage.delete(grid_out._id)
+        # 检查是否有旧纪录，如果有删除对应的文件
+        old_rets = list(py_client.ai_system["guide_file"].find({"guide_id": guide_id}))
+        for one in old_rets:
+            storage.delete(one["file_id"])
+        # 插入或更新数据
+        py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
+                                                     {"$set": {"file_name": file_name, "guide_id": guide_id}},
+                                                     upsert=True)
         file_id = storage.put(fileobj, filename=file_name, content_type=content_type)
         record = {"file_name": file_name, "guide_id": guide_id,
-                    "file_id": file_id}
+                  "file_id": file_id}
         record.update(kwargs)
         py_client.ai_system["guide_file"].update_one({"guide_id": guide_id},
-                                                        {"$set": record},
-                                                        upsert=True)
+                                                     {"$set": record},
+                                                     upsert=True)
 
 
 if __name__ == '__main__':
