@@ -18,7 +18,7 @@ def get_doctime(docTree):
         return None
     if min_year:
         return min(min_year)
-    return datetime.datetime.now().year
+    return datetime.datetime.utcnow().year
 
 
 def get_alltime(doc_tree, c_nid, min_year):
@@ -37,7 +37,7 @@ def judge_time(data_list):
     re_result = re.findall('2\d+', ','.join(data_list))
     for num_s in re_result:
         # 第一次过滤
-        if len(num_s) == 4 and int(num_s) <= datetime.datetime.now().year:
+        if len(num_s) == 4 and int(num_s) <= datetime.datetime.utcnow().year:
             result.append(int(num_s))
     if result:
         return [min(result)]
@@ -47,8 +47,8 @@ def judge_time(data_list):
 def get_handletime(DocTree):
     doc_tree = DocTree.get_tree()
     c_nid = ''
-    time_word = "{0}年{1}月{2}日".format(datetime.datetime.now().year, datetime.datetime.now().month,
-                                      datetime.datetime.now().day)
+    time_word = "{0}年{1}月{2}日".format(datetime.datetime.utcnow().year, datetime.datetime.utcnow().month,
+                                      datetime.datetime.utcnow().day)
     if DocTree.level_one:
         for nid in DocTree.level_one:
             if '时间' in doc_tree.get_node(nid).data[0]:
@@ -62,7 +62,7 @@ def get_handletime(DocTree):
         if year:
             year = max(year)
         else:
-            year = str(datetime.datetime.now().year)
+            year = str(datetime.datetime.utcnow().year)
         year_month_day = [year + i for i in re.findall('\d+月\d+日', time_word)]
         if year_month_day:
             min_time = min(year_month_day)

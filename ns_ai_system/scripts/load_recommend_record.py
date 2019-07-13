@@ -11,7 +11,7 @@ def load_recommend_record_from_csv(csv_path):
     with open(csv_path, encoding='utf-8') as csv_file:
         csv_data = csv.DictReader(csv_file)
         for row in csv_data:
-            record = dict(guide_id=guide_id, time=datetime.datetime.now(), latest=True)
+            record = dict(guide_id=guide_id, time=datetime.datetime.utcnow(), latest=True)
             reasons = ["企业满足以下条件：【括号中内容为企业的真实情况】"]
             matched_count = 0
             requirement_count = 0
