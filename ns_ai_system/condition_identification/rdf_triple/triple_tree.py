@@ -6,6 +6,7 @@ from condition_identification.util.search import search_field_sameword
 from condition_identification.rule.adjust_triple import adjust_byrule
 from condition_identification.rule.adjust_number import extract_num
 from treelib.exceptions import DuplicatedNodeIdError
+from condition_identification.util.sentence_preprocess import filter_punctuation_include_content
 import uuid
 
 
@@ -59,6 +60,7 @@ def construct_sentence_triple(sentence, all_sentence):
         triples:list 构建的三元组列表，一个句子可能会有多个三元组
     """
     triples = []
+    sentence = filter_punctuation_include_content(sentence)
     sentence = sentence.replace('；', "。")
     sentences = sentence.split("。")
     for sentence in sentences:

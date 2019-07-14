@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import re
-from condition_identification.util.sentence_preprocess import filter_punctuation_include_content
 from condition_identification.util.sentence_preprocess import filter_punctuation
 from bisect import bisect_left
 
@@ -53,7 +52,6 @@ def extract_keyword(sentence, len_threshold):
     lines = sentence.split('；')
     result_word = []
     for line in lines:
-        line = filter_punctuation_include_content(line)
         b = HanLP.parseDependency(line)
         word_array = b.getWordArray()
         wait_word = []
