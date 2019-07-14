@@ -61,12 +61,13 @@ def construct_sentence_triple(sentence, all_sentence):
     """
     triples = []
     sentence = filter_punctuation_include_content(sentence)
+    # 排除掉符合以下全部申请条件的这些句子。
     sentence = sentence.replace('；', "。")
     sentences = sentence.split("。")
     for sentence in sentences:
         unique_id = str(uuid.uuid1())
-        all_sentence[unique_id]=sentence
-        if sentence:
+        if sentence and not ("：" in sentence):
+            all_sentence[unique_id] = sentence
             triple = construct_triples(sentence, unique_id)
             triples.extend(triple)
     return triples
