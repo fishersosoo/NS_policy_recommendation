@@ -4,6 +4,7 @@ from collections import defaultdict
 from mimetypes import guess_type
 
 import gridfs
+from bson import ObjectId
 from py2neo import Node, Relationship, NodeMatcher, Subgraph
 
 from data_management.config import py_client
@@ -19,6 +20,27 @@ class Guide(BaseInterface):
             return ret
         else:
             return defaultdict(str)
+
+    @classmethod
+    def get_file(cls, guide_id):
+        """
+        获取指南文件
+        Args:
+            guide_id: 指南id
+
+        Returns:
+            GridOut对象
+        """
+        ret = py_client.ai_system["guide_file"].find_one({"guide_id": guide_id})
+        if ret is None:
+            return None
+        else:
+            storage = gridfs.GridFS(py_client.ai_system, "guide_file")
+            grid_out = storage.find_one({"_id": ret["file_id"]})
+            if grid_out is None:
+                return None
+            else:
+                return grid_out
 
     @classmethod
     def file_info(cls, file_id):
