@@ -43,16 +43,16 @@ def upload_policy():
 
 @policy_service.route("re_understand/", methods=["POST"])
 def re_understand():
-    guide_id = request.form.get("guide_id")
-    _, _, guide_node = Guide.find_by_guide_id(guide_id)
-    print(guide_node)
-    text = get_text_from_doc_bytes(Guide.get_file(guide_node["file_name"]).read())
-    info = paragraph_extract(text)
-    task = understand_guide_task.delay(guide_id, text)
-    return jsonify({
-        "task_id": task.id,
-        "status": "SUCCESS"
-    })
+    guide_id = request.form.get("guide_id", None)
+    if guide_id is None:
+        guides = list(mongo.db.guide_file.find({}))
+    else:
+        guides = list(mongo.db.guide_file.find({"guide_id": str(guide_id)}))
+    for guide in guides:
+        if Guide.file_info(guide["file_id"])["contentType"]=="application/msword":
+            text = get_text_from_doc_bytes(Guide.get_file(guide["guide_id"]).read())
+            task = understand_guide_task.delay(guide["guide_id"], text)
+    return jsonify([one["guide_id"] for one in guides])
 
 
 @policy_service.route("upload_guide/", methods=["POST"])
@@ -266,7 +266,19 @@ def download_guide_file():
     guide_id = request.args.get("guide_id")
     guide_ = mongo.db.guide_file.find_one({"guide_id": guide_id})
     if guide_ is not None:
-        response = mongo.send_file(guide_["file_name"], base="guide_file")
+        grid_out = Guide.get_file(guide_id)
+        if grid_out is None:
+            return jsonify({"message": "not found", "guide_id": guide_id})
+        response = app.response_class(
+            grid_out.read(),
+            mimetype=grid_out.content_type,
+            direct_passthrough=True,
+        )
+        response.content_length = grid_out.length
+        response.last_modified = grid_out.upload_date
+        response.set_etag(grid_out.md5)
+        response.cache_control.public = True
+        response.make_conditional(request)
         response.headers["Content-Disposition"] = "attachment; filename={}".format(guide_["file_name"])
         response.headers["x-suggested-filename"] = guide_["file_name"]
         return response
@@ -285,9 +297,9 @@ def list_guide():
         file_info = Guide.file_info(one_guide["file_id"])
         paring_info = Guide.parsing_info(one_guide["guide_id"])
         if file_info.get("uploadDate") != None and paring_info.get("doneTime") != None:
-            if paring_info.get("doneTime")<file_info.get("uploadDate"):
-                after= file_info.get("uploadDate")-paring_info.get("doneTime")
-                after=f"- {str(after)}"
+            if paring_info.get("doneTime") < file_info.get("uploadDate"):
+                after = file_info.get("uploadDate") - paring_info.get("doneTime")
+                after = f"- {str(after)}"
             else:
                 after = paring_info.get("doneTime") - file_info.get("uploadDate")
         else:

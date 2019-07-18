@@ -4,12 +4,13 @@ from celery.utils.log import get_task_logger
 from celery.signals import after_setup_logger
 from my_log import Loggers
 import logging
+import socket
 
 from read_config import ConfigLoader
 from kombu import Queue
 
 config = ConfigLoader()
-
+socket.setdefaulttimeout(30)
 celery_app = Celery('ns_ai_system',
                     broker=config.get('celery', 'broker'))
 celery_app.conf.update(

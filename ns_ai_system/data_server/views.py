@@ -94,7 +94,7 @@ def sendRequest(comp_id, params):
     """
     value = client.service.getParamInfo(uid, comp_id, params)._value_1
     value = json.loads(value)
-    print(params)
+    print(f"{comp_id}:{params}")
     if value["Status"] == "Success":
         result = value["Result"]
         return [list(one.values())[0] for one in result]
