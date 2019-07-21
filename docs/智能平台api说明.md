@@ -9,6 +9,8 @@
 | 2019-4-10 | 修改/policy/check_recommend/和/policy/recommend/接口，增加threshold字段用于筛选返回记录 |
 | 2019-1-4  | 增加/policy/check_recommend/和/policy/single_recommend/接口  |
 | 2019-7-12 | 增加/policy/guides/接口                                      |
+| 2019-7-19 | 修改推荐记录返回                                             |
+| 2019-7-21 | 使用任务队列取代推送接口                                     |
 
 
 
@@ -106,7 +108,7 @@ doc:要求以UTF-8编码doc
 
 
 
-## /policy/check_recommend/
+## （准备删除）/policy/check_recommend/
 
 ### POST
 
@@ -315,4 +317,97 @@ json格式
 ```
 
 
+
+## 任务队列
+
+端口、用户名、密码信息尚未确定。
+
+政策推送任务通过rabbitMQ任务队列来进行输入输出信息的交换。
+
+| 任务                   | 输入routing_key     | 输出队列              |
+| ---------------------- | ------------------- | --------------------- |
+| 单个企业和单个政策匹配 | `task.single.input` | `single_guide_result` |
+| 单个企业和多个政策匹配 | `task.muilt.input`  | `multi_guide_result`  |
+
+
+
+### 添加任务
+
+如果进行单个企业和单个政策的匹配，则使用`task.single.input`作为routing_key，输入队列的信息形如`{"guide_id": guide_id, "company_id": company_id}`的序列化json。
+
+如果进行单个企业和多个政策的匹配，则使用`task.muilt.input`作为routing_key，输入队列的信息形如`{"company_id": company_id}`的序列化json。
+
+python例子如下：
+
+```python
+# coding=utf-8
+# 添加任务的例子
+import pika
+import json
+
+host = "127.0.0.1"
+port = 8001
+user = "guest"
+pwd = "guest"
+
+if __name__ == '__main__':
+    # 初始化channel，channel请复用以减少带宽消耗
+    credentials = pika.credentials.PlainCredentials(user, pwd)
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+        host=host, port=port, virtual_host="/", credentials=credentials))
+    channel = connection.channel()
+    company_id = "企业id"
+    guide_id = "指南id"
+    message = json.dumps({"guide_id": guide_id, "company_id": company_id})  # 需要序列化成json字符串
+    channel.basic_publish(exchange='task', routing_key='task.single.input', body=message)
+```
+
+### 获取结果
+
+获取结果需要为特定队列绑定一个回调函数，在回调函数处理队列中的消息。
+
+如果进行单个企业和单个政策的匹配，则结果队列为`single_guide_result`，队列的信息形如`{"guide_id": guide_id, "company_id": company_id,"score":0.1}`的序列化json。
+
+如果进行单个企业和多个政策的匹配，则结果队列为`multi_guide_result`，队列的信息如下的序列化json。
+
+```json
+{
+    "company_id": company_id,
+    "results":[
+        {"guide_id": "100", "score": 0.1},
+        {"guide_id": "101", "score": 0.2}
+    ]
+}
+```
+
+
+
+python例子如下
+
+```python
+# coding=utf-8
+import json
+import pika
+
+host = "127.0.0.1"
+port = 8001
+user = "guest"
+pwd = "guest"
+
+def single_result_callback(channel, method, properties, message):
+    """
+    从队列中取出一个消息之后的回调函数，在这个函数内处理返回结果
+    """
+    print(f"{channel}\n{method}\n{properties}\n{message}")
+    print("____________________")
+
+if __name__ == '__main__':
+    credentials = pika.credentials.PlainCredentials(user, pwd)
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+        host=host, port=port, virtual_host="/", credentials=credentials))
+    channel = connection.channel()
+    channel.basic_consume(on_message_callback=single_result_callback, queue="single_guide_result", auto_ack=True)	# 将回调函数绑定到队列上。auto_ack=True，否则队列中的消息会一直存在。
+    channel.start_consuming()	# 线程会阻塞
+
+```
 

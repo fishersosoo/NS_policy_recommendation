@@ -65,6 +65,14 @@ def init_mq():
     channel = connection.channel()
     create_queue_bind(channel, "file_event_qa", "event.file", "event.file.#")
     create_queue_bind(channel, "file_event_query", "event.file", "event.file.#")
+    create_queue_bind(channel, "single_guide_task", "task", "task.single.input")
+    create_queue_bind(channel, "single_guide_result", "task", "task.single.output")
+    create_queue_bind(channel, "multi_guide_task", "task", "task.multi.input")
+    create_queue_bind(channel, "multi_guide_result", "task", "task.multi.output")
+
     assert exist_queue("file_event_qa")
     assert exist_queue("file_event_query")
-
+    assert exist_queue("single_guide_task")
+    assert exist_queue("single_guide_result")
+    assert exist_queue("multi_guide_task")
+    assert exist_queue("multi_guide_result")
