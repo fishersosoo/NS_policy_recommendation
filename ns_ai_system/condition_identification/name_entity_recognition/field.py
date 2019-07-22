@@ -3,9 +3,8 @@ from condition_identification.util.similarity_calculation import field_compare_s
 from data_management.api.field_info import list_all_field_name
 from condition_identification.args import similarity_value
 
-from read_config import ConfigLoader
+from read_config import config
 
-config = ConfigLoader()
 
 class Field(object):
     """单例模式field 类

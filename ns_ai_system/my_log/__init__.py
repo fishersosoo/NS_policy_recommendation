@@ -2,10 +2,9 @@ import os
 import logging
 import time
 from logging.handlers import TimedRotatingFileHandler
-from read_config import ConfigLoader
+from read_config import config
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-config = ConfigLoader()
 
 
 class InfoFilter(logging.Filter):

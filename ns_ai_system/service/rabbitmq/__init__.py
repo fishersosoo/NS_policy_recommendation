@@ -3,7 +3,7 @@ import pika
 import requests
 from requests.auth import HTTPBasicAuth
 
-from restful_server.server import config
+from read_config import config
 
 host = config.get('rabbit_mq', 'host')
 port = int(config.get('rabbit_mq', 'port'))
@@ -76,3 +76,7 @@ def init_mq():
     assert exist_queue("single_guide_result")
     assert exist_queue("multi_guide_task")
     assert exist_queue("multi_guide_result")
+
+
+if __name__ == '__main__':
+    print(list_queue())

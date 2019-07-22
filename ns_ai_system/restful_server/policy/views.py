@@ -1,25 +1,21 @@
 # coding=utf-8
 import os
 import json
-import datetime
 import tempfile
 
-import gridfs
 from flask import request, jsonify, abort
-from flask_restful import Api, Resource, reqparse
+from flask_restful import Api
 
-from celery_task import celery_app
-from celery_task.policy.base import get_pending_task
 from celery_task.policy.tasks import understand_guide_task, recommend_task, create_chain_for_check_recommend, \
     is_above_threshold
 from condition_identification.api.text_parsing import paragraph_extract
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
 from restful_server.policy import policy_service
-from restful_server.policy.base import check_callback, check_contains
+from service.base_func import need_to_update_guides
 from restful_server.server import mongo, app
 from service.file_processing import get_text_from_doc_bytes
-from service.rabbit_mq import file_event
+from service.rabbitmq.rabbit_mq import file_event
 
 policy_api = Api(policy_service)
 
@@ -49,7 +45,7 @@ def re_understand():
     else:
         guides = list(mongo.db.guide_file.find({"guide_id": str(guide_id)}))
     for guide in guides:
-        if Guide.file_info(guide["file_id"])["contentType"]=="application/msword":
+        if Guide.file_info(guide["file_id"])["contentType"] == "application/msword":
             text = get_text_from_doc_bytes(Guide.get_file(guide["guide_id"]).read())
             task = understand_guide_task.delay(guide["guide_id"], text)
     return jsonify([one["guide_id"] for one in guides])
@@ -136,122 +132,19 @@ def recommend():
         company_id = request.args.get("company_id")
         threshold = float(request.args.get("threshold", 0.))
         # 记录有效时间，默认为24小时
-        expired = float(request.args.get("recommend_expired_time",
-                                         mongo.db.config.find_one({"recommend_expired_hours": {'$exists': True}})[
-                                             "recommend_expired_hours"]))
-        expired = datetime.timedelta(hours=expired)
+        expired = request.args.get("recommend_expired_time",
+                                   None)
         recommend_records = [one for one in mongo.db.recommend_record.find(
             {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True})]
-        for one in valid_guides:
-            contain_res = check_contains(one, recommend_records)
-            if contain_res['is_contain']:
-                app.logger.info(str(datetime.datetime.utcnow() - contain_res['guide']['time']))
-                if expired < datetime.datetime.utcnow() - contain_res['guide']['time']:
-                    app.logger.info(f"recommend_task for guide: {one}")
-                    recommend_task.delay(company_id, one)
-            else:
-                app.logger.info(f"recommend_task for guide: {one}")
-                recommend_task.delay(company_id, one)
-        # task_result = recommend_task.delay(company_id)
-        # response_dict["task_id"] = task_result.id
+        guide_ids = need_to_update_guides(company_id, expired, recommend_records)
+        for guide_id in guide_ids:
+            recommend_task.delay(company_id, guide_id)
         records = []
         for one in recommend_records:
             if is_above_threshold(one, threshold):
                 records.append(one)
         response_dict["result"] = records
         return jsonify(response_dict)
-    if "task_id" in request.args:
-        # 查看异步任务结果
-        task_id = request.args.get("task_id")
-        result = recommend_task.AsyncResult(task_id)
-        state = result.state
-        response_dict['status'] = state
-        if state == "SUCCESS":
-            results = result.get()
-            records = [one for one in
-                       mongo.db.recommend_record.find({"company_id": results["company_id"], "latest": True})]
-            response_dict["result"] = records
-        else:
-            response_dict["result"] = []
-    return jsonify(response_dict)
-
-
-@policy_service.route("check_recommend/", methods=["POST"])
-def check_single_guide_for_companies():
-    """
-    多个企业和单个政策的匹配情况
-    :return:
-    """
-    MAX_PENDING = celery_app.conf.get("CELERYD_CONCURRENCY") - 2
-    # print(request.headers)
-    params = request.json
-    if params is None:
-        abort(400)
-    companies = params.get("companies", [])
-    if len(companies) == 0:
-        return jsonify({
-            "message":
-                {
-                    "status": "empty companies ",
-                    "traceback": "companies字段不能为空"
-                }})
-    # 检查参数是否正确
-    guide_id = params.get("guide_id", None)
-    threshold = float(params.get("threshold", .0))
-    guide_ = mongo.db.guide_file.find_one({"guide_id": guide_id})
-    if guide_ is None:
-        return jsonify({
-            "task_id": "",
-            "message":
-                {
-                    "status": "NOT_FOUND",
-                    "traceback": guide_id
-                }})
-    callback_ok, callback_stack = check_callback(params.get("callback", None), params.get("guide_id", ))
-    if not callback_ok:
-        return jsonify({
-            "task_id": "",
-            "message":
-                {
-                    "status": "CALLBACK_FAIL",
-                    "traceback": callback_stack
-                }
-        })
-    max_input = 20
-    if max_input == 0:
-        # 队列已满
-        return jsonify({
-            "task_id": "",
-            "message":
-                {
-                    "status": "FULL",
-                    "traceback": companies
-                }
-        })
-    elif max_input >= len(companies):
-        # 队列能放进去
-        task_id = create_chain_for_check_recommend(companies, threshold, guide_id,
-                                                   params.get("callback", None))
-        return jsonify({
-            "task_id": task_id,
-            "message":
-                {
-                    "status": "SUCCESS",
-                    "traceback": None
-                }
-        })
-    else:
-        # 队列有空位
-        task_id = create_chain_for_check_recommend(companies[:max_input], threshold, guide_id,
-                                                   params.get("callback", None))
-        return jsonify({
-            "task_id": task_id,
-            "message":
-                {
-                    "status": "FULL",
-                    "traceback": companies[max_input:]
-                }
-        })
 
 
 @policy_service.route("single_recommend/", methods=["GET"])

@@ -2,22 +2,18 @@
 import json
 import time
 
-import requests
 from bson import ObjectId
 
 from data_management.config import py_client
 from data_management.models.guide import Guide
 from data_management.models.policy import Policy
-from data_server.server import jsonrpc, mongo, max_seq, tokenizer, client, uid
-from model.bert_vec.data_processing import convert_to_ids
+from data_server.server import jsonrpc, mongo, client, uid
 from service.file_processing import get_text_from_doc_bytes
-from service.rabbit_mq import file_event
+from service.rabbitmq.rabbit_mq import file_event
 
 from bert_serving.client import BertClient
 
-from read_config import ConfigLoader
-
-config = ConfigLoader()
+from read_config import config
 
 
 @jsonrpc.method("api.index")

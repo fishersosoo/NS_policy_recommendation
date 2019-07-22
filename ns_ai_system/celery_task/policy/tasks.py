@@ -9,6 +9,7 @@ from celery.result import allow_join_result
 from flask_jsonrpc.proxy import ServiceProxy
 
 from celery_task import celery_app, log, config
+from celery_task.policy.base import push_message
 from data_management.config import dataService, py_client
 from data_management.models.guide import Guide
 from data_management.models.word import Word
@@ -26,6 +27,17 @@ class MatchResult(Enum):
     UNRECOGNIZED = 2
 
 
+@celery_app.task
+def status_check():
+    """
+    检查状态
+
+    Returns:
+
+    """
+    pass
+
+
 # @celery_app.task(rate_limit="2/h")
 @celery_app.task
 def understand_guide_task(guide_id, text):
@@ -37,8 +49,28 @@ def understand_guide_task(guide_id, text):
     understand_guide(guide_id, text)
 
 
-@celery_app.task(soft_time_limit=60)
-def check_single_guide(company_id, guide_id, threshold=.0):
+@celery_app.task
+def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
+    """
+
+    Args:
+        company_id:
+        guide_id:
+        routing_key:
+        threshold:
+
+    Returns:
+
+    """
+    record = _check_single_guide(company_id, guide_id, threshold=threshold)
+    if record is None:
+        push_message(routing_key, {"company_id": company_id, "guide_id": guide_id, "score": None})
+    else:
+        push_message(routing_key, {"company_id": company_id, "guide_id": guide_id, "score": record["score"]})
+    return record
+
+
+def _check_single_guide(company_id, guide_id, threshold=.0):
     """
     检查单个指南和企业的匹配信息，如果存在匹配则存放到数据库中
     :param company_id:企业id
@@ -234,7 +266,7 @@ def recommend_task(company_id, guide_id, threshold=.0):
     # guides = list(Guide.list_valid_guides())
     # results = []
     # for guide in guides:
-    result = check_single_guide(company_id, guide_id)
+    result = _check_single_guide(company_id, guide_id)
     # if result is not None:
     # results.append(result)
     # task_group = group([check_single_guide.s(company_id, guide) for guide in guides])
@@ -264,7 +296,7 @@ def check_single_guide_batch_companies(self, companies, threshold, guide_id, url
     """
     results = []
     for company in companies:
-        results.append(check_single_guide.delay(company, guide_id))
+        results.append(_check_single_guide.delay(company, guide_id))
     group_result = []
     with allow_join_result():
         for result in results:

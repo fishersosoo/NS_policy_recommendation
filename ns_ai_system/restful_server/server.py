@@ -3,9 +3,7 @@
 from flask import Flask
 from flask_pymongo import PyMongo
 
-from read_config import ConfigLoader
-
-config = ConfigLoader()
+from read_config import config
 
 from restful_server.func import CustomJSONEncoder
 from my_log import Loggers
@@ -14,11 +12,11 @@ import logging
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
 app.logger.setLevel(logging.DEBUG)
-Loggers.init_app('restful',app.logger)
+Loggers.init_app('restful', app.logger)
 app.config["MONGO_URI"] = f"mongodb://{config.get('mongoDB','host')}:{config.get('mongoDB','port')}/ai_system"
 mongo = PyMongo(app)
 from restful_server.policy import policy_service
-from restful_server.init_setup import init_mq
+from service.rabbitmq.__init__ import init_mq
 
 init_mq()
 

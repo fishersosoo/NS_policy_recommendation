@@ -3,9 +3,8 @@
 from bert_serving.client import BertClient as _BertClient
 
 from data_management.config import redis_cache
-from read_config import ConfigLoader
+from read_config import config
 
-config = ConfigLoader()
 
 
 def _check_NONE(vectors):

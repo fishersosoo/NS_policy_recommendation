@@ -1,16 +1,17 @@
 # coding=utf-8
 from celery import Celery
-from celery.utils.log import get_task_logger
 from celery.signals import after_setup_logger
+from celery.utils.log import get_task_logger
+
+from celery_task.comsumer import create_consum_process
 from my_log import Loggers
 import logging
-import socket
 
-from read_config import ConfigLoader
+from read_config import config
 from kombu import Queue
 
-config = ConfigLoader()
-socket.setdefaulttimeout(30)
+from service import connect_channel
+
 celery_app = Celery('ns_ai_system',
                     broker=config.get('celery', 'broker'))
 celery_app.conf.update(
@@ -43,11 +44,16 @@ celery_app.conf.CELERY_ROUTES = {
     'celery_task.policy.tasks.recommend_task': {'queue': 'recommend_task'},
 }
 
+channel = connect_channel()
+
+create_consum_process()
 log = get_task_logger(__name__)
+
 
 @after_setup_logger.connect
 def setup_loggers(logger, *args, **kwargs):
     Loggers.init_app('celery', logger)
     logger.setLevel(logging.INFO)
+
 
 from celery_task.policy import *
