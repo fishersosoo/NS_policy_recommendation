@@ -11,29 +11,15 @@
 | 2019-7-12 | 增加/policy/guides/接口                                      |
 | 2019-7-19 | 修改推荐记录返回                                             |
 | 2019-7-21 | 使用任务队列取代推送接口                                     |
+| 2019-7-24 | 删除政策推送接口、上传政策文件接口                           |
 
+## 说明
 
+政策推送的接口用`rabbitmq`取代了。不同的队列对应不同的功能。`routing_key`为`task.single.input`的队列是用于政策推送的；`routing_key`为`task.multi.input`的队列是用于新企业注册之后的预计算。后者计算量是前者的几百倍，所以**不要把`task.multi.input`用作政策推送！！！**
 
-## /policy/upload_policy/
+政策推送的返回结果只有匹配度，需要根据匹配度过滤结果，使用`/policy/single_recommend/`来获取具体的条件。
 
-上传政策文件
-
-### POST
-
-form-data
-
-| key       | value    |
-| --------- | -------- |
-| file      | 政策文件 |
-| policy_id | 政策id   |
-
-政策文件格式需求：
-
-目前可支持的格式如下
-
-txt:要求以UTF-8编码txt
-
-doc:要求以UTF-8编码doc（仅doc中的文字内容会被识别）
+`/policy/recommend/`接口适用于前端触发展示匹配结果时候使用
 
 ## /policy/upload_guide/
 
@@ -106,120 +92,6 @@ doc:要求以UTF-8编码doc
 }
 ```
 
-
-
-## （准备删除）/policy/check_recommend/
-
-### POST
-
-计算多个企业和单个政策的匹配情况。此接口针对政策推送功能。当一个新政策发布之后，平台在上传政策文档之后，调用此接口批量获取新政策与目标企业的匹配情况。匹配情况异步计算，需要提供回调函数url以接受异步任务执行情况。
-
-输入：
-
-json格式
-
-```json
-{
-    "companies": ["企业id1","企业id2",...,"企业idn"],
-    "guide_id": "指南id",
-    "threshold":"匹配度阈值，只有大于该匹配度的结果才会再callback中返回",
-    "callback": "回调函数url"
-}
-```
-
-输出：
-
-```json
-{
-    "task_id": "异步任务id",
-    "message":
-    {
-        "status":"SUCCESS",
-        "traceback":"错误消息"
-    }
-}
-```
-
-如果指南id不存在或理解尚未完成则返回如下消息
-
-```json
-{
-    "task_id": "",
-    "message":
-    {
-        "status":"NOT_FOUND",
-        "traceback":"指南id"
-    }
-}
-```
-
-
-
-由于计算资源限制，对每个企业计算匹配度的任务会放在任务队列中进行调度，队列长度限制为100。也就是每次最多通过此接口传入100个企业id，等任务完成回调后再次传入下一批企业id。
-
-如果传入企业id数量大于队列剩余长度，则会尽可能放入将企业id放入队列中，剩下未能放入的企业id将会返回到`traceback`字段中。例子如下
-
-```json
-{
-    "task_id": "任务id", # 如果所有企业都不能放进去则任务id为空
-    "message":
-    {
-        "status":"FULL",
-        "traceback":["未能放入的企业id1","未能放入的企业id2","未能放入的企业id3"]
-    }
-}
-```
-
-### callback定义
-
-`callback`应为完整的url，如`https://test.com/callback`
-
-callback接口接受POST请求，请求数据为json格式
-
-输入：
-
-```json
-{
-    "task_id":"任务id"
-    "guide_id":"指南id",
-    "result":{
-    	"企业id1":{"matching":0.7, "status":"状态，如果计算失败则为FAIL否则为SUCCESS"},
-        "企业id2":{"matching":0.7, "status":"状态，如果计算失败则为FAIL否则为SUCCESS"},
-        "...":{...}
-    }
-}
-```
-
-### callback测试
-
-在系统接到`/policy/check_recommend/`的请求后，会对callback的url进行测试，测试时候会发送如下消息
-
-```json
-{
-    "guide_id":"指南id",
-    "task_id":"test",
-    "result":{
-    	"test":{"matching":一个1到0之间的随机数, "status":"TEST"}
-    }
-}
-```
-
-callback应该返回该随机数，以确保callback接口能够正确读取结果。
-
-测试不通过则不会将企业id加入队列中，并返回如下消息
-
-```json
-{
-    "task_id": "", 
-    "message":
-    {
-        "status":"CALLBACK_FAIL"
-    }
-}
-```
-
-
-
 ## /policy/single_recommend/
 
 ### GET
@@ -239,12 +111,26 @@ callback应该返回该随机数，以确保callback接口能够正确读取结�
 json格式
 
 ```json
-        {
-            "guide_id": "推荐事项的id",
-            "reason": "推荐原因，可用于展示",
-            "matching" : 0.90, 
-            "time": "推荐时间，fmt:YYYY-MM-DD HH:mm:ss"
-        }
+{
+            "_id": "5d302f84cbd02966d9a23a0e",
+            "company_id": "91440101668125196C",
+            "guide_id": "220",
+            "latest": true,
+            "match": [
+                { "sentence": "满足条件1" },
+                { "sentence": "满足条件2" }
+            ],
+            "mismatch": [
+                "不满足条件1",
+                "不满足条件2"
+            ],
+            "score": 0.5,
+            "time": "Thu, 18 Jul 2019 08:36:20 GMT",
+            "unrecognized": [
+                "未识别条件1",
+                "未识别条件2"
+            ]
+}
 ```
 
 ## /policy/set_guide/
@@ -371,13 +257,7 @@ if __name__ == '__main__':
 如果进行单个企业和多个政策的匹配，则结果队列为`multi_guide_result`，队列的信息如下的序列化json。
 
 ```json
-{
-    "company_id": company_id,
-    "results":[
-        {"guide_id": "100", "score": 0.1},
-        {"guide_id": "101", "score": 0.2}
-    ]
-}
+{"guide_id": guide_id, "company_id": company_id,"score":0.1}
 ```
 
 

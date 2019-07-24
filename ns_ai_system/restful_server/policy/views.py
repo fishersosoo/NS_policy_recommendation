@@ -6,35 +6,16 @@ import tempfile
 from flask import request, jsonify, abort
 from flask_restful import Api
 
-from celery_task.policy.tasks import understand_guide_task, recommend_task, create_chain_for_check_recommend, \
-    is_above_threshold
+from celery_task.policy.tasks import understand_guide_task, recommend_task, is_above_threshold
 from condition_identification.api.text_parsing import paragraph_extract
+from data_management.api.rpc_proxy import rpc_server
 from data_management.models.guide import Guide
-from data_management.models.policy import Policy
 from restful_server.policy import policy_service
 from service.base_func import need_to_update_guides
 from restful_server.server import mongo, app
 from service.file_processing import get_text_from_doc_bytes
-from service.rabbitmq.rabbit_mq import file_event
 
 policy_api = Api(policy_service)
-
-
-@policy_service.route("upload_policy/", methods=["POST"])
-def upload_policy():
-    """
-    上传政策文件
-    :return:
-    """
-    policy_file = request.files['file']
-    policy_id = request.args.get("policy_id")
-    # save file
-    mongo.save_file(filename=policy_file.filename,
-                    fileobj=policy_file, base="policy_file")
-    Policy.create(policy_id=policy_id, file_name=policy_file.filename)
-    return jsonify({
-        "status": "success"
-    })
 
 
 @policy_service.route("re_understand/", methods=["POST"])
@@ -82,7 +63,7 @@ def upload_guide():
         return jsonify({"status": "ERROR", "message": e})
     with open(doc_temp_file.name, "rb") as f:
         Guide.create(guide_id, guide_file.filename, f, effective=effective)
-    file_event(message=json.dumps({"guide_id": guide_id, "event": "add"}), routing_key="event.file.add")
+    rpc_server.rabbitmq.push_message("event.file", "event.file.add", {"guide_id": guide_id, "event": "add"})
     task = understand_guide_task.delay(guide_id, text)
     os.remove(doc_temp_file.name)
     return jsonify({

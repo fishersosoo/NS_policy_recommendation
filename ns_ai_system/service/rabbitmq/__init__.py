@@ -51,10 +51,14 @@ def create_exchange(channel, name, exchange_type, check_exist=True):
 
 def create_queue_bind(channel, queue_name, exchange_name, routing_key):
     new_queue = create_queue(channel, queue_name)
-    print(new_queue)
     if new_queue is not None:
+        print(f"create queue {new_queue} ")
         new_exchange = create_exchange(channel, exchange_name, exchange_type="topic")
         channel.queue_bind(exchange=exchange_name, queue=new_queue, routing_key=routing_key)
+    else:
+        print(f"exist queue {queue_name} ")
+
+
 
 
 def init_mq():

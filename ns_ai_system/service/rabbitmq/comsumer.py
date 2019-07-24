@@ -1,46 +1,16 @@
 # coding=utf-8
 import json
 import multiprocessing
-
 import time
+
 import pika
 import pika.exceptions
 
-from celery_task.policy.tasks import _check_single_guide, check_single_guide
+from celery_task.policy.tasks import check_single_guide
+from data_management.api.rpc_proxy import rpc_server
 from data_management.config import py_client
-from read_config import config
-from service import connect_channel
 from service.base_func import is_expired, need_to_update_guides
-
-
-def get_message_count(ch, queue):
-    """
-    检查队列里面的消息
-    Args:
-        queue: 队列名称
-        ch:
-
-    Returns:
-
-    """
-    while True:
-        try:
-            queue = ch.queue_declare(
-                queue=queue, passive=True
-            )
-            return queue.method.message_count
-        except pika.exceptions.ConnectionClosedByBroker:
-            ch = connect_channel()
-            continue
-            # Do not recover on channel errors
-        except pika.exceptions.AMQPChannelError as err:
-            print("Caught a channel error: {}, stopping...".format(err))
-            break
-            # Recover on all other connection errors
-        except pika.exceptions.AMQPConnectionError:
-            ch = connect_channel()
-            print("Connection was closed, retrying...")
-            continue
+from service.rabbitmq.rabbit_mq import connect_channel
 
 
 def create_task(ch, company_id, guide_id, routing_key):
@@ -58,7 +28,7 @@ def create_task(ch, company_id, guide_id, routing_key):
     RETRY_AFTER = 0.1
     MAX_RETRY_TIME = 5
     while True:
-        if get_message_count(ch, "check_single_guide") <= MAX_LEN:
+        if rpc_server.rabbit.get_message_count("check_single_guide") <= MAX_LEN:
             check_single_guide.delay(company_id, guide_id, routing_key)
             return
         else:
@@ -73,12 +43,27 @@ def single_guide_callback(ch, method, properties, body):
     # 检查是否过期
     recommend_record = py_client.ai_system["recommend_record"].find_one(
         {"company_id": input["company_id"], "guide_id": input["guide_id"]})
-    if is_expired(recommend_record):
+    if recommend_record is None or is_expired(recommend_record):
         # 阻塞直到任务队列有空位
         create_task(ch, input["company_id"], input["guide_id"], routing_key="task.single.output")
+    else:
+        rpc_server.rabbitmq.push_message("task", "task.single.output",
+                                         {"company_id": input["company_id"], "guide_id": input["guide_id"],
+                                          "score": recommend_record["score"]}, channel=ch)
 
 
 def multi_guide_callback(ch, method, properties, body):
+    """
+    注意，只有经过计算的结果才会放到结果队列中，对于那些没有过期的任务将不会放到结果队列
+    Args:
+        ch:
+        method:
+        properties:
+        body:
+
+    Returns:
+
+    """
     # 获取需要计算的企业id
     input = json.loads(body)
     for guide_id in need_to_update_guides(input["company_id"]):
@@ -95,17 +80,13 @@ def start_consuming(callback, queue):
     Returns:
 
     """
+    channel, connect = None, None
     while True:
-        channel = connect_channel()
-        channel.basic_consume(queue, callback)
+        connect, channel = connect_channel(connect, channel)
+        channel.basic_consume(queue, callback, auto_ack=True)
         try:
             channel.start_consuming()
         except pika.exceptions.ConnectionClosedByBroker:
-            # Uncomment this to make the example not attempt recovery
-            # from server-initiated connection closure, including
-            # when the node is stopped cleanly
-            #
-            # break
             continue
             # Do not recover on channel errors
         except pika.exceptions.AMQPChannelError as err:
@@ -115,6 +96,13 @@ def start_consuming(callback, queue):
         except pika.exceptions.AMQPConnectionError:
             print("Connection was closed, retrying...")
             continue
+
+
+def kill_processes(processes):
+    print("stop_consuming")
+
+    for p in processes:
+        p.terminate()
 
 
 def create_consum_process():
@@ -128,3 +116,7 @@ def create_consum_process():
                  multiprocessing.Process(target=start_consuming, args=(multi_guide_callback, "multi_guide_task"))]
     for p in processes:
         p.start()
+    import atexit
+
+    print("start_consuming")
+    atexit.register(kill_processes, processes)

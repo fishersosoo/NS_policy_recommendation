@@ -1,18 +1,14 @@
 # coding=utf-8
-import datetime
 from collections import defaultdict
 from mimetypes import guess_type
 
 import gridfs
-from bson import ObjectId
-from py2neo import Node, Relationship, NodeMatcher, Subgraph
+from py2neo import Node
 
 from data_management.config import py_client
-from data_management.models import BaseInterface, UUID, graph_
-from data_management.models.policy import Policy
 
 
-class Guide(BaseInterface):
+class Guide():
     @classmethod
     def parsing_info(self, guide_id):
         ret = py_client.ai_system["parsing_result"].find_one({"guide_id": guide_id})

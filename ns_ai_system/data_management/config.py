@@ -2,6 +2,7 @@
 """
 数据库访问配置
 """
+import datetime
 
 import pymongo
 import pytz
@@ -20,5 +21,7 @@ py_client = pymongo.MongoClient(host=config.get('mongoDB', 'host'), port=int(con
 dataService = DataService(url=f"http://{config.get('data_server','host')}:{config.get('data_server','port')}/data")
 
 if __name__ == '__main__':
-    value = dataService.sendRequest("getEntByKeyword", {"keyword": "91110108740053589U", "type": 1})
-    print(value)
+    t1= py_client.ai_system["recommend_record"].find_one({"company_id": "91440101668125196C", "guide_id": "220"})["time"]
+    print(datetime.datetime.now(datetime.timezone.utc))
+    print(t1)
+    print(datetime.datetime.now(datetime.timezone.utc) -   t1       )

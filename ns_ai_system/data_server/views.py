@@ -3,14 +3,12 @@ import json
 import time
 
 from bson import ObjectId
-
+import pika.exceptions
 from data_management.config import py_client
 from data_management.models.guide import Guide
-from data_management.models.policy import Policy
-from data_server.server import jsonrpc, mongo, client, uid
+from data_server.server import jsonrpc, mongo, client, uid, channel, connection
 from service.file_processing import get_text_from_doc_bytes
-from service.rabbitmq.rabbit_mq import file_event
-
+from service.rabbitmq.rabbit_mq import connect_channel
 from bert_serving.client import BertClient
 
 from read_config import config
@@ -113,3 +111,41 @@ def bert_word2vec(strs):
     start_time = time.time()
     bc = BertClient(ip=config.get('bert', 'ip'))
     return bc.encode(strs).tolist()
+
+
+
+@jsonrpc.method("rabbitmq.push_message")
+def push_message(exchange,routing_key, message):
+    global channel, connection
+    while True:
+        try:
+            channel.basic_publish(exchange=exchange, routing_key=routing_key, body=json.dumps(message))
+            return "OK"
+        except pika.exceptions.ConnectionClosedByBroker:
+            connection,channel = connect_channel(connection=connection, channel=channel)
+            continue
+        except pika.exceptions.AMQPChannelError as err:
+            return "Caught a channel error: {}, stopping...".format(err)
+        except pika.exceptions.AMQPConnectionError:
+            connection, channel = connect_channel(connection=connection, channel=channel)
+            print("Connection was closed, retrying...")
+            continue
+
+@jsonrpc.method("rabbitmq.get_message_count")
+def get_message_count(queue):
+    global channel, connection
+    while True:
+        try:
+            _queue = channel.queue_declare(
+                queue=queue, passive=True
+            )
+            return queue.method.message_count
+        except pika.exceptions.ConnectionClosedByBroker:
+            connection, channel = connect_channel(connection=connection, channel=channel)
+            continue
+        except pika.exceptions.AMQPChannelError as err:
+            raise  err
+        except pika.exceptions.AMQPConnectionError:
+            connection, channel = connect_channel(connection=connection, channel=channel)
+            print("Connection was closed, retrying...")
+            continue
