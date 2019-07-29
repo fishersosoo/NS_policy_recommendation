@@ -28,7 +28,7 @@ def create_task(ch, company_id, guide_id, routing_key):
     RETRY_AFTER = 0.1
     MAX_RETRY_TIME = 5
     while True:
-        if rpc_server.rabbit.get_message_count("check_single_guide") <= MAX_LEN:
+        if rpc_server.rabbitmq.get_message_count("check_single_guide").get("result",0) <= MAX_LEN:
             check_single_guide.delay(company_id, guide_id, routing_key)
             return
         else:
@@ -80,6 +80,8 @@ def start_consuming(callback, queue):
     Returns:
 
     """
+    print("start_consuming")
+    time.sleep(3)
     channel, connect = None, None
     while True:
         connect, channel = connect_channel(connect, channel)
@@ -118,5 +120,4 @@ def create_consum_process():
         p.start()
     import atexit
 
-    print("start_consuming")
     atexit.register(kill_processes, processes)

@@ -58,9 +58,9 @@ def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
     """
     record = _check_single_guide(company_id, guide_id, threshold=threshold)
     if record is None:
-        rpc_server.rabbit.push_message("task", routing_key, {"company_id": company_id, "guide_id": guide_id, "score": None})
+        rpc_server.rabbitmq.push_message("task", routing_key, {"company_id": company_id, "guide_id": guide_id, "score": None})
     else:
-        rpc_server.rabbit.push_message("task", routing_key, {"company_id": company_id, "guide_id": guide_id, "score": record["score"]})
+        rpc_server.rabbitmq.push_message("task", routing_key, {"company_id": company_id, "guide_id": guide_id, "score": record["score"]})
     return record
 
 
