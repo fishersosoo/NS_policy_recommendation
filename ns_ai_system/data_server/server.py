@@ -13,8 +13,8 @@ import logging
 
 from service.rabbitmq.rabbit_mq import connect_channel
 
-url = "http://47.106.70.192/webService/services/ws?wsdl"
-uid = "F30FD00E373FD16544C308A6BD5CFDE2"
+url = f"http://{ config.get('data_server','ip') }/webService/services/ws?wsdl"
+uid = f"{config.get('data_server','uid')}"
 client = Client(url)
 
 app = Flask("data_server", )

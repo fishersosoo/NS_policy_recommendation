@@ -42,7 +42,7 @@ celery_app.conf.CELERY_ROUTES = {
     'celery_task.policy.tasks.recommend_task': {'queue': 'recommend_task'},
 }
 
-log = get_task_logger(__name__)
+log = logging.getLogger(__name__)
 
 from data_management.api.rpc_proxy import rpc_server
 from celery_task.policy.tasks import *
