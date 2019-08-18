@@ -1,21 +1,18 @@
 from condition_identification.name_entity_recognition.extract_name_entity import get_field_value
 from condition_identification.relation_predict.extract_relation import get_relation
 from condition_identification.rdf_triple.triple import Triple
-from condition_identification.bonus_identify.DocTree import *
+from condition_identification.doctree_contruction.DocTree import *
 from condition_identification.util.search import search_field_sameword
 from condition_identification.rule.adjust_triple import adjust_byrule
 from condition_identification.rule.adjust_number import extract_num
-from treelib.exceptions import DuplicatedNodeIdError
+from condition_identification.content_filter.wordFilter import promiseFilter,tiaojianFilter
 from condition_identification.util.sentence_preprocess import filter_punctuation_include_content
+from condition_identification.content_filter.talentFilter import talentFilter
 import uuid
 
 
-def construct_tripletree(tree):
-    """提取条件树
-
-    根据传入的指南树进行filed,value,relation的拆分
-    并且组装成and/or关系
-    其主要关系图查看uml.jpg
+def constructTriple(tree):
+    """构建三元组树
 
     Args:
         tree: Tree 指南拆解后的树
@@ -27,56 +24,68 @@ def construct_tripletree(tree):
                 triples: [{'fields': ['地址'], 'relation': '位于', 'value': '南沙',
                            'sentence': '工商注册地、税务征管关系及统计关系在南沙新区范围内'}]
     """
-    alltriples = []
-    all_sentence = {}
-    triple_tree = DocTree.copy_tree(tree, '')
+
+    sentences = getSentencesByLeave(tree)
+
+    sentenceWithID = contructSentenceWithID(sentences)
+
+    alltriples = constructTripleBySentence(sentenceWithID)
+
+    return alltriples, sentenceWithID
+
+def getSentencesByLeave(tree):
+    sentences = []
     for node in tree.expand_tree(mode=Tree.DEPTH):
-        sentence = "。".join(tree[node].data)
-        # 判断'or'/'and'关系
-        if tree[node].is_leaf():
-            triples = construct_sentence_triple(sentence, all_sentence)
-            triple_tree[node].tag = 'and'
-            triple_tree = split_node(triple_tree, node, triples)
-            alltriples.extend(triples)
-        else:
-            if "之一" in sentence or '其二' in sentence:
-                triple_tree[node].tag = 'or'
-            else:
-                triple_tree[node].tag = 'and'
-        # tree[node].data = triples
-    return alltriples, triple_tree, all_sentence
+        sentences.extend(tree[node].data)
+    return sentences
 
-
-def construct_sentence_triple(sentence, all_sentence):
+def constructTripleBySentence(sentenceWithID):
     """构建满足条件的句子以及全部句子的集合
 
     根据传入的sentence，组装{id:sentence},如果该句子构建出三元组，则该三元组会储存当前句子的id
 
     Args：
-        sentence：str 结构树中叶子节点的内容
-        all_sentence：dict 储存所有句子
+        sentenceWithID：dict 储存所有句子
 
     Returns:
         triples:list 构建的三元组列表，一个句子可能会有多个三元组
     """
     triples = []
-    sentence = filter_punctuation_include_content(sentence)
-    # 切分句子粒度
-    sentence = sentence.replace('，', "。")
-    sentence = sentence.replace('；', "。")
-    sentences = sentence.split("。")
-    for sentence in sentences:
-        unique_id = str(uuid.uuid1())
-        # 排除掉符合以下全部申请条件的这些句子。
-        if sentence and not ("：" in sentence and '条件' in sentence):
-            triple = construct_triples(sentence, unique_id)
-            if len(triple)>0 or len(sentence)>11:
-                all_sentence[unique_id] = sentence
+    for uid in sentenceWithID:
+        sentence = sentenceWithID[uid]
+        sentences = sentenceFilter([sentence])
+        for sentence in sentences:
+            if sentence:
+                triple = constructTriples(sentence, uid)
                 triples.extend(triple)
     return triples
 
+def contructSentenceWithID(sentences):
+    sentenceWithID = {}
+    for sentence in sentences:
+        unique_id = str(uuid.uuid1())
+        sentenceWithID[unique_id] = sentence
+    return sentenceWithID
 
-def construct_triples(sentence, unique_id):
+def sentenceFilter(sentences):
+    # 1.人才的句子过滤
+    result = []
+    sentences = talentFilter(sentences)
+    if len(sentences) == 0:
+        return result
+
+    sentence = "。".join(sentences)
+    # 2.句子粒度切分
+    sentence = filter_punctuation_include_content(sentence)
+    sentence = sentence.replace('；', "。")
+    sentences = sentence.split("。")
+
+    # 3.“承诺”和“条件”句子过滤
+    result = [s for s in sentences if promiseFilter(s) and tiaojianFilter(s)]
+
+    return result
+
+def constructTriples(sentence, unique_id):
     """提取三元组
 
     Args:
@@ -105,18 +114,4 @@ def construct_triples(sentence, unique_id):
         if triple.field:
             triple = extract_num(triple)
             triples.append(triple.to_dict())
-            print(sentence)
-            print(triple)
     return triples
-
-
-def split_node(tree,node,triples):
-    unique=0
-    for triple in triples:
-        try:
-            tree.create_node(identifier=tree[node].identifier+'_'+triple['value'],data=triple, tag=[], parent=tree[node].identifier)
-        except DuplicatedNodeIdError:
-            tree.create_node(identifier=str(unique)+tree[node].identifier + '_' + triple['value'], data=triple, tag=[],
-                             parent=tree[node].identifier)
-            unique += 1
-    return tree
