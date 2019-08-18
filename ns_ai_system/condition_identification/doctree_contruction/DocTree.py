@@ -4,8 +4,8 @@ import queue
 import re
 import traceback
 from treelib import Tree
-from condition_identification.bonus_identify.util import str_to_list
-from condition_identification.bonus_identify.util import file_to_list
+from condition_identification.doctree_contruction.util import str_to_list
+from condition_identification.doctree_contruction.util import file_to_list
 
 """
 注意事项：
@@ -104,7 +104,7 @@ class DocTree(object):
         id_key = None
         now_level = 0  # 记录当前所在的层级
         tree = Tree()
-        tree.create_node('root', 'root', data=['partition'])
+        tree.create_node('root', 'root', data=[])
         for i in range(0, len(html_list)):
             word = html_list[i]
             if word == '':

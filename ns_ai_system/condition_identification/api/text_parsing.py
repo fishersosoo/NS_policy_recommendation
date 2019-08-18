@@ -1,8 +1,8 @@
 # coding=utf-8
 import json
 
-from condition_identification.bonus_identify.DocTree import *
-from condition_identification.rdf_triple.triple_tree import construct_tripletree
+from condition_identification.doctree_contruction.DocTree import *
+from condition_identification.rdf_triple.triple_tree import constructTriple
 
 
 def paragraph_extract(text):
@@ -38,9 +38,8 @@ def triple_extract(tree):
         tree: Tree 对输入的tree的node内容进行改写结果
         all_sentence: dict {id:sentence} 所有政策条件句子
     """
-    triples, tree, all_sentence = construct_tripletree(tree)
-    tree.show()
-    return triples, tree,all_sentence
+    triples, all_sentence = constructTriple(tree)
+    return triples,all_sentence
 
 
 

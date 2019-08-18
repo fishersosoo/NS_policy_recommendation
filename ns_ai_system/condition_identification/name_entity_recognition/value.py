@@ -42,7 +42,6 @@ class Value(object):
                      {'广州市南沙区范围内': ['地址']}
 
         """
-        print(__name__)
         for line in regs:
             # 先判断是否是 地址或者数字
             if idf_quantifiers(line):

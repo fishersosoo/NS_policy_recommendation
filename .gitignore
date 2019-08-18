@@ -1,8 +1,8 @@
 .idea/
 condition_identification/__pycache__
 condition_identification/word_segmentation/__pycache__
-condition_identification/bonus_identify/__pycache__
-condition_identification/bonus_identify/.idea
+condition_identification/doctree_contruction/__pycache__
+condition_identification/doctree_contruction/.idea
 venv/
 docs/build/
 docs/make.bat

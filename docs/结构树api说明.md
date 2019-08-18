@@ -2,7 +2,7 @@
 
 最后更新：2018年12月15日
 
-具体调用可见 ns_ai_system\condition_identification\bonus_identify\main.py
+具体调用可见 ns_ai_system\condition_identification\doctree_contruction\main.py
 
 
 ## 条件政策关系树生成接口（DocTree.py）
