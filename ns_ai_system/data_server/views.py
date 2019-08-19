@@ -48,34 +48,34 @@ def register(url, use, id=None):
                                           {"$set": func}, upsert=False, multi=True)
         return str(result['nModified'] == 1)
 
+#
+# @jsonrpc.method("file.get_policy_text")
+# def get_policy_text(policy_id):
+#     """
+#     获取政策文本\n
+#     :param policy_id: 平台政策id\n
+#     :return:
+#     """
+#     _, _, policy_node = Policy.find_by_policy_id(policy_id)
+#     text = get_text_from_doc_bytes(Policy.get_file(policy_node["file_name"]).read())
+#     return text
 
-@jsonrpc.method("file.get_policy_text")
-def get_policy_text(policy_id):
-    """
-    获取政策文本\n
-    :param policy_id: 平台政策id\n
-    :return:
-    """
-    _, _, policy_node = Policy.find_by_policy_id(policy_id)
-    text = get_text_from_doc_bytes(Policy.get_file(policy_node["file_name"]).read())
-    return text
-
-
-@jsonrpc.method("file.get_guide_text")
-def get_guide_text(guide_id):
-    """
-    获取指南文本
-    :param guide_id:
-    :return:
-    """
-    _, _, guide_node = Guide.find_by_guide_id(guide_id)
-    text = get_text_from_doc_bytes(Guide.get_file(guide_node["file_name"]).read())
-    return text
-
-
-@jsonrpc.method('test.upload_guide')
-def test_upload_guide(guide_id):
-    file_event(message=json.dumps({"guide_id": guide_id, "event": "add"}), routing_key="event.file.add")
+#
+# @jsonrpc.method("file.get_guide_text")
+# def get_guide_text(guide_id):
+#     """
+#     获取指南文本
+#     :param guide_id:
+#     :return:
+#     """
+#     _, _, guide_node = Guide.find_by_guide_id(guide_id)
+#     text = get_text_from_doc_bytes(Guide.get_file(guide_node["file_name"]).read())
+#     return text
+#
+#
+# @jsonrpc.method('test.upload_guide')
+# def test_upload_guide(guide_id):
+#     file_event(message=json.dumps({"guide_id": guide_id, "event": "add"}), routing_key="event.file.add")
 
 
 @jsonrpc.method('data.sendRequest')
@@ -139,7 +139,7 @@ def get_message_count(queue):
             _queue = channel.queue_declare(
                 queue=queue, passive=True
             )
-            return queue.method.message_count
+            return _queue.method.message_count
         except pika.exceptions.ConnectionClosedByBroker:
             connection, channel = connect_channel(connection=connection, channel=channel)
             continue

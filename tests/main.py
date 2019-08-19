@@ -2,6 +2,7 @@
 import sys
 import re
 sys.path.append("..")
+from pyhanlp import *
 from bonus_identify.Tree import DocTree
 from treelib import Node,Tree
 if __name__ == '__main__':

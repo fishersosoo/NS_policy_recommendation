@@ -3,14 +3,34 @@ from collections import defaultdict
 from mimetypes import guess_type
 
 import gridfs
+from bson import ObjectId
 from py2neo import Node
 
 from data_management.config import py_client
+from service.file_processing import get_text_from_doc_bytes
 
 
 class Guide():
     @classmethod
-    def parsing_info(self, guide_id):
+    def delete_guide(cls,guide_id):
+        ret = py_client.ai_system["guide_file"].find_one({"guide_id": guide_id})
+        if ret is None:
+            return {"match":0}
+        storage = gridfs.GridFS(py_client.ai_system, "guide_file")
+        grid_out = storage.delete({"_id": ret["file_id"]})
+        py_client.ai_system["parsing_result"].delete_one({"guide_id": guide_id})
+        py_client.ai_system["guide_file"].delete_one({"guide_id": guide_id})
+        py_client.ai_system["guide_data"].delete_one({"guide_id": guide_id})
+
+
+
+    @classmethod
+    def get_text(cls, guide_id):
+        text = get_text_from_doc_bytes(Guide.get_file(guide_id).read())
+        return text
+
+    @classmethod
+    def parsing_info(cls, guide_id):
         ret = py_client.ai_system["parsing_result"].find_one({"guide_id": guide_id})
         if ret is not None:
             return ret
