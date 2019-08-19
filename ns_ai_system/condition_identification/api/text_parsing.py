@@ -62,6 +62,9 @@ class Clause():
         self.relation = None
         self.value = None
 
+    def to_dict(self):
+        return dict(fields=self.fields, text=self.text, relation=self.relation, value=self.value)
+
 
 class Sentence():
     """
@@ -77,6 +80,9 @@ class Sentence():
         self.text = text
         if clauses is None:
             self.clauses = list()
+
+    def to_dict(self):
+        return dict(text=self.text, clauses=[one.to_dict() for one in self.clauses])
 
 
 class Document:
@@ -104,7 +110,7 @@ class Document:
         tree = doc_tree.get_tree()
         document = Document()
         document._tree = tree
-        #TODO: 从原文中提取标题和条件并设置document对象对应属性
+        # TODO: 从原文中提取标题和条件并设置document对象对应属性
         if document.title is None:
             raise NotImplementedError()
         return document
@@ -125,3 +131,6 @@ class Document:
         if self._tree is not None:
             # TODO:解析sentences中的条件，拆分出子句并填充三元组信息
             raise NotImplementedError()
+
+    def to_dict(self):
+        return dict(title=self.title, sentences=[one.to_dict() for one in self.sentences])

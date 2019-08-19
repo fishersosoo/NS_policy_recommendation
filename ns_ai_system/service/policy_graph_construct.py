@@ -2,7 +2,7 @@
 import datetime
 
 from celery_task import log
-from condition_identification.api.text_parsing import triple_extract, paragraph_extract
+from condition_identification.api.text_parsing import triple_extract, paragraph_extract, Document
 from data_management.config import py_client
 from data_management.models.guide import Guide
 from service.file_processing import get_text_from_doc_bytes
@@ -30,9 +30,10 @@ def understand_guide(guide_id, text):
     :return:
     """
     history = list(py_client.ai_system["parsing_result"].find({"guide_id": guide_id}))
-    triples, _, sentences = triple_extract(paragraph_extract(text))
+    document = Document.paragraph_extract(text)
+    document.triple_extract()
     py_client.ai_system["parsing_result"].insert_one(
-        {"guide_id": guide_id, "triples": triples, "sentences": filter_sentences(sentences),
+        {"guide_id": guide_id, "document": document.to_dict(),
          "doneTime": datetime.datetime.utcnow()})
     for one in history:
         py_client.ai_system["parsing_result"].delete_one({"_id": one["_id"]})
