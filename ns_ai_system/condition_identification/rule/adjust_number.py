@@ -65,7 +65,7 @@ def get_num(word):
 
 def extract_num(triple):
     from pyhanlp import HanLP
-    if triple.field[0] in NUMS:
+    if triple.fields[0] in NUMS:
         line=triple.value
         number=''
         i=0

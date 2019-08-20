@@ -2,22 +2,22 @@ import pickle
 import re
 from pyhanlp import *
 from sklearn.feature_extraction.text import CountVectorizer
-def talentFilter(sentences):
-    result = []
+def talentFilter(sentence):
     basepath = os.path.abspath(__file__)
     folder = os.path.dirname(basepath)
     data_path = os.path.join(folder, 'logisticClassify')
     clf = pickle.load(open(data_path, 'rb'))
 
     # 1.句子清洗
-    sentencesPre = map(preprocess,sentences)
+    sentencePre = preprocess(sentence)
     # 2.Count特征构造
-    sentenceFeature = countFeature(sentencesPre)
-    for i,sf in enumerate(sentenceFeature):
+    sentenceFeature = countFeature([sentencePre])
+    for sf in sentenceFeature:
         predictions = clf.predict(sf)
         if predictions == 0:
-            result.append(sentences[i])
-    return result
+            return False
+        else:
+            return True
 
 def preprocess(sentence):
         sentence = sentence.strip()

@@ -1,6 +1,6 @@
 import datetime
 import re
-
+from condition_identification.doctree_contruction.util import file_to_list
 
 def get_doctime(docTree):
     doc_tree = docTree.get_tree()
@@ -90,3 +90,12 @@ def get_condition_content(DocTree):
         print('请先构造篇章树')
         return None
     return content
+def getTitle(ftext):
+    result = ""
+    ftexts = ftext.split('\n')
+    for ft in ftexts:
+        if len(ft.strip())>0:
+            print(ft)
+            result = ft
+            break
+    return result

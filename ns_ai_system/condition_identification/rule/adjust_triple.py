@@ -4,6 +4,6 @@ error_cases = ['办公地址', '其他违法记录', '申报企业','统计关�
 def adjust_byrule(triple):
     for error_case in error_cases:
         if error_case in triple.value:
-            triple.field = None
+            triple.fields = None
             break
     return triple
