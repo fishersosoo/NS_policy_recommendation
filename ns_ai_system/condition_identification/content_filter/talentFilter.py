@@ -1,6 +1,6 @@
 import pickle
 import re
-from pyhanlp import *
+import os
 from sklearn.feature_extraction.text import CountVectorizer
 def talentFilter(sentence):
     basepath = os.path.abspath(__file__)
@@ -20,6 +20,7 @@ def talentFilter(sentence):
             return True
 
 def preprocess(sentence):
+        from pyhanlp import HanLP
         sentence = sentence.strip()
         # 正则表达式操作把标点符号去掉，换成空字符
         sentence = re.sub(u"[1-9]\.", "", sentence)
