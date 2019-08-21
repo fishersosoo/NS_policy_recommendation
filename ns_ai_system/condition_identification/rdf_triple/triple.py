@@ -18,6 +18,9 @@ class Clause:
         self.relation = None
         self.value = None
 
+    def to_dict(self):
+        return dict(fields=self.fields, text=self.text, relation=self.relation, value=self.value)
+
     def __repr__(self):
         """打印三元组
         """
@@ -39,3 +42,6 @@ class OriginSentenceByPolicyLine:
         self.type = []
         if clauses is None:
             self.clauses = list()
+
+    def to_dict(self):
+        return dict(text=self.text,type=self.type, clauses=[one.to_dict() for one in self.clauses])

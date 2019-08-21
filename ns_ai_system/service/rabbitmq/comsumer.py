@@ -28,7 +28,7 @@ def create_task(ch, company_id, guide_id, routing_key):
     RETRY_AFTER = 0.1
     MAX_RETRY_TIME = 5
     while True:
-        if rpc_server.rabbitmq.get_message_count("check_single_guide").get("result",0) <= MAX_LEN:
+        if rpc_server().rabbitmq.get_message_count("check_single_guide").get("result",0) <= MAX_LEN:
             check_single_guide.delay(company_id, guide_id, routing_key)
             return
         else:
@@ -47,7 +47,7 @@ def single_guide_callback(ch, method, properties, body):
         # 阻塞直到任务队列有空位
         create_task(ch, input["company_id"], input["guide_id"], routing_key="task.single.output")
     else:
-        rpc_server.rabbitmq.push_message("task", "task.single.output",
+        rpc_server().rabbitmq.push_message("task", "task.single.output",
                                          {"company_id": input["company_id"], "guide_id": input["guide_id"],
                                           "score": recommend_record["score"]}, channel=ch)
 

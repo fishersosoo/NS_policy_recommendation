@@ -1,8 +1,7 @@
 # coding=utf-8
 import datetime
 
-from celery_task import log
-from condition_identification.api.text_parsing import triple_extract, paragraph_extract, Document
+from condition_identification.api.text_parsing import Document
 from data_management.config import py_client
 from data_management.models.guide import Guide
 from service.file_processing import get_text_from_doc_bytes
@@ -37,4 +36,3 @@ def understand_guide(guide_id, text):
          "doneTime": datetime.datetime.utcnow()})
     for one in history:
         py_client.ai_system["parsing_result"].delete_one({"_id": one["_id"]})
-    log.info(f"{guide_id}:done!")

@@ -6,10 +6,6 @@ from condition_identification.rdf_triple.triple_tree import constructTriple
 from condition_identification.doctree_contruction.DocTreeOp import getTitle
 
 
-
-
-
-
 class Document:
     """
     表示一个指南文档，指南文档包括了多个条件语句和一个标题。
@@ -29,16 +25,17 @@ class Document:
 
 
         """
-
-        doc_tree = DocTree()
-        doc_tree.construct(text)
-        tree = doc_tree.get_tree()
-        document = Document()
-        document._tree = tree
-        #TODO: 从原文中提取标题和条件并设置document对象对应属性
-        if document.title is None:
-            document.title = getTitle(text)
-        return document
+        try:
+            doc_tree = DocTree()
+            doc_tree.construct(text)
+            tree = doc_tree.get_tree()
+            document = Document()
+            document._tree = tree
+            if document.title is None:
+                document.title = getTitle(text)
+            return document
+        except:
+            return None
 
     def __init__(self, title=None, sentences=None):
         """
@@ -52,8 +49,9 @@ class Document:
         if sentences is None:
             self.sentences = list()
 
+    def to_dict(self):
+        return dict(title=self.title, sentences=[one.to_dict() for one in self.sentences])
+
     def triple_extract(self):
         if self._tree is not None:
-            # TODO:解析sentences中的条件，拆分出子句并填充三元组信息
-            self.OriginSentenceByPolicyLine = constructTriple(self._tree)
-            return self.OriginSentenceByPolicyLine
+            self.sentences = constructTriple(self._tree)

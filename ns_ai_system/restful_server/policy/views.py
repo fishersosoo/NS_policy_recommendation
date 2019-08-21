@@ -7,7 +7,7 @@ from flask import request, jsonify, abort
 from flask_restful import Api
 
 from celery_task.policy.tasks import understand_guide_task, recommend_task, is_above_threshold
-from condition_identification.api.text_parsing import paragraph_extract
+from condition_identification.api.text_parsing import Document
 from data_management.api.rpc_proxy import rpc_server
 from data_management.models.guide import Guide
 from restful_server.policy import policy_service
@@ -55,15 +55,15 @@ def upload_guide():
     info = None
     try:
         text = get_text_from_doc_bytes(doc_temp_file, remove_file=False)
-        info = paragraph_extract(text)
-        if info is None:
+        document = Document.paragraph_extract(text)
+        if document is None:
             raise Exception("指南内容格式不正确，无法进行理解")
     except Exception as e:
         os.remove(doc_temp_file.name)
         return jsonify({"status": "ERROR", "message": e})
     with open(doc_temp_file.name, "rb") as f:
         Guide.create(guide_id, guide_file.filename, f, effective=effective)
-    rpc_server.rabbitmq.push_message("event.file", "event.file.add", {"guide_id": guide_id, "event": "add"})
+    rpc_server().rabbitmq.push_message("event.file", "event.file.add", {"guide_id": guide_id, "event": "add"})
     task = understand_guide_task.delay(guide_id, text)
     os.remove(doc_temp_file.name)
     return jsonify({
