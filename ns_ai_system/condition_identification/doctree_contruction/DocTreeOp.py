@@ -95,7 +95,6 @@ def getTitle(ftext):
     ftexts = ftext.split('\n')
     for ft in ftexts:
         if len(ft.strip())>0:
-            print(ft)
             result = ft
             break
     return result

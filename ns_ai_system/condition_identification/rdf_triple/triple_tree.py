@@ -13,7 +13,7 @@ from condition_identification.rdf_triple.triple import Clause
 
 
 def constructTriple(tree):
-    """构建三元组树
+    """构建三元组
 
     Args:
         tree: Tree 指南拆解后的树
@@ -67,12 +67,6 @@ def constructTripleBySentence(originSentenceByPolicyLines):
         originSentence.clauses = triples
     return originSentenceByPolicyLines
 
-# def contructSentenceWithID(sentences):
-#     sentenceWithID = {}
-#     for sentence in sentences:
-#         unique_id = str(uuid.uuid1())
-#         sentenceWithID[unique_id] = sentence
-#     return sentenceWithID
 
 def sentenceFilter(originSentence):
     # 1.人才的句子过滤

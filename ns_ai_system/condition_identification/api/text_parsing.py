@@ -4,6 +4,10 @@ import json
 from condition_identification.doctree_contruction.DocTree import *
 from condition_identification.rdf_triple.triple_tree import constructTriple
 from condition_identification.doctree_contruction.DocTreeOp import getTitle
+from condition_identification.doctree_contruction.util import str_to_list
+from condition_identification.industry_filter.industryFilter import industryFilter
+
+
 
 
 class Document:
@@ -55,3 +59,11 @@ class Document:
     def triple_extract(self):
         if self._tree is not None:
             self.sentences = constructTriple(self._tree)
+
+    def get_industry(self,text):
+        text = ''.join(str_to_list(text))
+        if self.title:
+            raise RuntimeError('请获取标题')
+        text += self.title
+        self.industry = industryFilter(text)
+        return self.industry
