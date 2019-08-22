@@ -49,7 +49,7 @@ def single_guide_callback(ch, method, properties, body):
     else:
         rpc_server().rabbitmq.push_message("task", "task.single.output",
                                          {"company_id": input["company_id"], "guide_id": input["guide_id"],
-                                          "score": recommend_record["score"]}, channel=ch)
+                                          "score": recommend_record["score"]})
 
 
 def multi_guide_callback(ch, method, properties, body):
@@ -106,7 +106,6 @@ def kill_processes(processes):
     for p in processes:
         p.terminate()
 
-
 def create_consum_process():
     """
     创建进程
@@ -118,6 +117,6 @@ def create_consum_process():
                  multiprocessing.Process(target=start_consuming, args=(multi_guide_callback, "multi_guide_task"))]
     for p in processes:
         p.start()
-    import atexit
 
+    import atexit
     atexit.register(kill_processes, processes)
