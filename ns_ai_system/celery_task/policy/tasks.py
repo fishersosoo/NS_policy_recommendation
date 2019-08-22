@@ -4,8 +4,7 @@ import datetime
 import traceback
 from enum import Enum, unique
 
-
-from celery_task import celery_app, log, config,rpc_server
+from celery_task import celery_app, log, config, rpc_server
 from data_management.config import py_client
 from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
@@ -32,7 +31,6 @@ def status_check():
     pass
 
 
-# @celery_app.task(rate_limit="2/h")
 @celery_app.task
 def understand_guide_task(guide_id, text):
     """
@@ -58,9 +56,11 @@ def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
     """
     record = _check_single_guide(company_id, guide_id, threshold=threshold)
     if record is None:
-        rpc_server.rabbitmq.push_message("task", routing_key, {"company_id": company_id, "guide_id": guide_id, "score": None})
+        rpc_server().rabbitmq.push_message("task", routing_key,
+                                           {"company_id": company_id, "guide_id": guide_id, "score": None})
     else:
-        rpc_server.rabbitmq.push_message("task", routing_key, {"company_id": company_id, "guide_id": guide_id, "score": record["score"]})
+        rpc_server().rabbitmq.push_message("task", routing_key,
+                                           {"company_id": company_id, "guide_id": guide_id, "score": record["score"]})
     return record
 
 
@@ -72,43 +72,54 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
     :return:
     """
     record = {"mismatch": [], "match": [], "unrecognized": []}
+    clause_sentence = dict()
     cached_data = dict()
-    mismatched_sentence_id = set()
-    matched_sentence_id = set()
     ret = py_client.ai_system["parsing_result"].find_one({"guide_id": str(guide_id)})
     if ret is None:
         log.info(f"guide_id:{guide_id} not found or have not been processed.")
         return None
-    sentences = ret.get("sentences", None)
-    triples = ret["triples"]
-    for triple in triples:
-        if len(triple["fields"]) == 0:
+    document = ret.get("document", None)
+    for sentence in document["sentences"]:
+        if sentence["type"] != "正常" and len(sentence["clauses"]) != 0:
+            record["unrecognized"].append(sentence['text'])
             continue
-        match, data, cached_data = check_single_requirement(company_id, triple, cached_data)
-        if match == MatchResult.MISMATCH:
-            if triple["sentence_id"] not in matched_sentence_id:
-                mismatched_sentence_id.add(triple["sentence_id"])
-        if match == MatchResult.MATCH:
-            if triple["sentence_id"] not in matched_sentence_id:
+        for clause in sentence["clauses"]:
+            if clause["text"] not in clause_sentence:
+                clause_sentence[clause["text"]] = {"mismatch": 0, "match": 0, "unrecognized": 0}
+            triple = clause
+            if len(triple["fields"]) == 0:
+                continue
+            match, data, cached_data = check_single_requirement(company_id, triple, cached_data)
+            if match == MatchResult.MISMATCH:
+                clause_sentence[clause["text"]]["mismatch"] += 1
+            if match == MatchResult.MATCH:
+                clause_sentence[clause["text"]]["match"] += 1
+
+            if match == MatchResult.UNRECOGNIZED:
+                clause_sentence[clause["text"]]["unrecognized"] += 1
+
+    match = 0
+    mismatch = 0
+    for sentence, result in clause_sentence.items():
+        match += result["match"]
+        mismatch += result["mismatch"]
+        if result["match"] != 0:
+            if result["mismatch"] != 0:
                 record["match"].append(
-                    {"sentence": triple["sentence"]})
-            # record["match"].append(
-            #     {"sentence": triple["sentence"], "data": {"field": triple["fields"][0], "value": data}})
-            matched_sentence_id.add(triple["sentence_id"])
-            if triple["sentence_id"] in mismatched_sentence_id:
-                mismatched_sentence_id.remove(triple["sentence_id"])
-    unrecognized_sentence_id = set(sentences.keys()) - matched_sentence_id - mismatched_sentence_id
-    for one in unrecognized_sentence_id:
-        record["unrecognized"].append(sentences[one])
-    for one in mismatched_sentence_id:
-        record["mismatch"].append(sentences[one])
+                    {"sentence": sentence, "score": result["match"] / (result["match"] + result["mismatch"])})
+            else:
+                record["match"].append({"sentence": sentence})
+        elif result["mismatch"] != 0:
+            record["mismatch"].append({"sentence": sentence})
+        else:
+            record["unrecognized"].append({"sentence": sentence})
     record["company_id"] = company_id
     record["guide_id"] = guide_id
     record["time"] = datetime.datetime.utcnow()
-    if (len(record["mismatch"]) + len(record["match"])) == 0:
+    if (match + mismatch) == 0:
         record["score"] = 0
     else:
-        record["score"] = len(record["match"]) / (len(record["mismatch"]) + len(record["match"]))
+        record["score"] = match / (mismatch + match)
     record["latest"] = True
     py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
                                                          "guide_id": guide_id})
@@ -141,8 +152,7 @@ def check_single_requirement(company_id, triple, cached_data):
     data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
     if data is None:
         # query_data
-        start_t = datetime.datetime.utcnow()
-        return_data = rpc_server.data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
+        return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
         data = return_data.get("result", None)
     if data is None:
         log.info(f"{return_data}")
