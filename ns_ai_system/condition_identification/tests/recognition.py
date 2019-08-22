@@ -1,5 +1,4 @@
-from condition_identification.api.text_parsing import paragraph_extract
-from condition_identification.api.text_parsing import triple_extract
+from condition_identification.api.text_parsing import Document
 from condition_identification.util.string_process import getNumofCommonSubstr
 import os
 import pandas as pd
@@ -55,98 +54,72 @@ if __name__ == '__main__':
     policy_file_list = os.listdir(policy_file_dir) #列出文件夹下所有的目录与文件
     true_file = r'/data/政策标注.csv'
     score_file = 'score0603.txt'
+    fields = []
+    relation = []
+    value = []
+    sentence = []
 
-    with open(os.path.join(policy_file_dir,"关于申报2017年度科技企业孵化器、科技园区"), encoding="utf8") as f:
-        text = f.read()
-    paragraph_extract_output = paragraph_extract(text)
-    triples, tree, all_sentence = triple_extract(paragraph_extract_output)
-    print(triples)
-    print(all_sentence)
-
-
-    # true_df = pd.read_csv(true_file,encoding = 'gbk')
-    # score_record = open(score_file, 'a')
-    #
-    # # 计算
-    # a1=[]
-    # a2=[]
-    # a3=[]
-    # a4=[]
-    # a5=[]
-    # a6=[]
-    # acc_result = []
-    # rec_result = []
-    # all_acctrue = 0
-    # all_rectrue = 0
-    # all_count = 0
-    # all_precount=0
-    #
-    # for j in range(0,2):
-    #     true_df_txt = true_df[true_df['序号'] == j]
-    #     if true_df_txt.shape[0] == 0:
-    #         continue
+    # # 多个跑
+    # for j in range(1, 10):
+    #     print(j)
     #     with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
     #         text = f.read()
-    #
     #     paragraph_extract_output = paragraph_extract(text)
     #     triples, tree, all_sentence = triple_extract(paragraph_extract_output)
-    #     true_df_txt_len = true_df_txt.shape[0]
-    #     print(triples)
+    #     fields.extend([x['fields'] for x in triples])
+    #     relation.extend([x['relation'] for x in triples])
+    #     value.extend([x['value'] for x in triples])
+    #     sentence.extend([x['sentence'] for x in triples])
+    #
+    # pd.DataFrame({"fields": fields, "relation": relation,'value':value,'sentence':sentence}).to_csv("输出结果.csv", index=False)
+    # pd.DataFrame({"sentence":sentences,"length":[len(x) for x in sentences]}).to_csv("输出句子.csv",index=False)
+
+
+
+# 单个跑
+#     with open(os.path.join(policy_file_dir,"申请高管人才奖办事指南"), encoding="utf8") as f:
+#         text = f.read()
+#     paragraph_extract_output = paragraph_extract(text)
+#     triples, all_sentence = triple_extract(paragraph_extract_output)
+#     print(triples)
+#     print(all_sentence)
+
+    # 多个跑分数
+    true_df = pd.read_csv(true_file,encoding = 'gbk')
+    score_record = open(score_file, 'a')
+    #
+    # 计算
+    # a = []
+    # b = []
+    # for j in range(0,len(policy_file_list)):
+    #     print(j)
+    #     a.append(policy_file_list[j])
+    #     with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
+    #         text = f.read()
+    #     doc = Document.paragraph_extract(text)
+    #     b.append(doc.title)
+    #
+    # pd.DataFrame({'文件':a,'标题':b}).to_csv("测试标题.csv",index=False)
+
+    for j in range(0, len(policy_file_list)):
+        print(policy_file_list[j])
+        with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
+            text = f.read()
+        doc = Document.paragraph_extract(text)
+        print(doc.get_industry(text))
+
+    # print('------------')
+    # for j in range(0, len(policy_file_list)):
+    #     print(policy_file_list[j])
+    #     with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
+    #         text = f.read()
+    #     doc = Document.paragraph_extract(text)
+    #     print(doc.title)
+    #     triples = doc.triple_extract()
     #     for triple in triples:
-    #         print(triple)
-    #     txt_tr, triple_tr, predict_len = get_acc_pre(true_df_txt, triples)
-    #
-    #
-    #
-    #
-    #
-    #     acc = txt_tr/true_df_txt_len
-    #     acc_result.append(acc)
-    #
-    #     if predict_len==0:
-    #         recall=1
-    #     else:
-    #         recall=triple_tr/predict_len
-    #     rec_result.append(recall)
-    #
-    #     all_acctrue += txt_tr
-    #     all_rectrue += triple_tr
-    #     all_count += true_df_txt_len
-    #     all_precount += predict_len
-    #
-    #
-    #
-    #     a1.append(acc)
-    #     a2.append(recall)
-    #     a3.append(np.mean(np.array(acc_result)))
-    #     a4.append(np.mean(np.array(rec_result)))
-    #     a5.append(all_acctrue/all_count)
-    #     a6.append(all_rectrue/all_precount)
-    #
-    #
-    #     print("%s 文件准确率 %f" % (str(j), acc))
-    #     print("%s 文件召回率 %f" % (str(j), recall))
-    #
-    #     score_record.write("%s 文件准确率 %f" % (str(j), acc))
-    #     score_record.write('\n')
-    #     score_record.write("%s 文件召回率 %f" % (str(j), recall))
-    #     score_record.write('\n')
-    #
-    #     print("总文件准确率 %f"%np.mean(np.array(acc_result)))
-    #     score_record.write("总文件准确率 %f" % np.mean(np.array(acc_result)))
-    #     score_record.write('\n')
-    #
-    #     print("总文件召回率 %f"%np.mean(np.array(rec_result)))
-    #     score_record.write("总文件召回率 %f" % np.mean(np.array(rec_result)))
-    #     score_record.write('\n')
-    #
-    #     print("all_count:%s\tall_true:%s\tprecision %f" % (all_count, all_acctrue,all_acctrue/all_count))
-    #     score_record.write("all_count:%s\tall_true:%s\tprecision %f" % (all_count, all_acctrue, all_acctrue/all_count))
-    #     score_record.write('\n')
-    #
-    #     print("all_precount:%s\tall_true:%s\trecall %f" % (all_precount, all_rectrue,all_rectrue/all_precount))
-    #     score_record.write("all_precount:%s\tall_true:%s\trecall %f" % (all_precount, all_rectrue, all_rectrue/all_precount))
-    #     score_record.write('\n')
-    #
-    # score_record.close()
-    # pd.DataFrame({'文件准确率':a1,'文件召回率':a2,'总文件准确率':a3,'总文件召回率':a4,'allprecision':a5,'allprecount':a6}).to_csv('paperdata.csv')
+    #         print(triple.text)
+    #         print(triple.type)
+    #         print('\n')
+    #         for t in triple.clauses:
+    #             print(t)
+    #             print('\n')
