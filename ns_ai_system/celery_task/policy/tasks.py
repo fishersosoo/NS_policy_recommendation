@@ -64,6 +64,28 @@ def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
     return record
 
 
+def filter_industry(company_id, industries):
+    """
+    判断企业是否在指定行业内
+    Args:
+        company_id: 企业id
+    Returns:
+        (bool)是否在指定行业内
+    """
+
+    if industries is None or "Empty" in industries or len(industries) == 0:
+        return True
+    else:
+        return_data = rpc_server().data.sendRequest(company_id, f"DR1.INDUSTRY")
+        data = return_data.get("result", None)
+        if data is None:
+            return True
+        for one in data:
+            if one in industries:
+                return True
+        return False
+
+
 def _check_single_guide(company_id, guide_id, threshold=.0):
     """
     检查单个指南和企业的匹配信息，如果存在匹配则存放到数据库中
@@ -79,6 +101,10 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
         log.info(f"guide_id:{guide_id} not found or have not been processed.")
         return None
     document = ret.get("document", None)
+    if document is None:
+        return None
+    if not filter_industry(company_id, document.get("industries", None)):
+        return None
     for sentence in document["sentences"]:
         if sentence["type"] != "正常" and len(sentence["clauses"]) != 0:
             record["unrecognized"].append(sentence['text'])
@@ -119,7 +145,7 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
     if (match + mismatch) == 0:
         record["score"] = 0
     else:
-        record["score"] = match / (mismatch + match)
+        record["score"] = match / (mismatch + match + len(record["unrecognized"]))
     record["latest"] = True
     py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
                                                          "guide_id": guide_id})
