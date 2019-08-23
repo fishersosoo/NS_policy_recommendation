@@ -62,7 +62,7 @@ class Document:
 
     def get_industry(self,text):
         text = ''.join(str_to_list(text))
-        if self.title:
+        if self.title is None:
             raise RuntimeError('请获取标题')
         text += self.title
         self.industry = industryFilter(text)
