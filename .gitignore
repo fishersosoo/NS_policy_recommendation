@@ -19,3 +19,4 @@ condition_identification/entity_link/__pycache__/__init__.cpython-36.pyc
 condition_identification/word_segmentation/__pycache__/__init__.cpython-36.pyc
 ns_ai_system/logs
 ns_ai_system/pid
+.DS_Store
