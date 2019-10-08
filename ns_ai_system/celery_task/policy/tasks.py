@@ -5,7 +5,7 @@ import traceback
 from enum import Enum, unique
 
 from celery_task import celery_app, log, config, rpc_server
-from data_management.config import py_client
+from data_management.config import py_client, redis_cache
 from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
 
@@ -175,7 +175,8 @@ def check_single_requirement(company_id, triple, cached_data):
     if field_info is None:
         log.info(f"no field {field}")
         return MatchResult.UNRECOGNIZED, "", cached_data
-    data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
+    #data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
+    data = redis_cache.get(f"{field_info['resource_id']}.{field_info['item_id']}")
     if data is None:
         # query_data
         return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
@@ -184,6 +185,7 @@ def check_single_requirement(company_id, triple, cached_data):
         log.info(f"{return_data}")
         return MatchResult.UNRECOGNIZED, "", cached_data
     else:
+        redis_cache.set(f"{field_info['resource_id']}.{field_info['item_id']}", data, ex=600)
         cached_data[f"{field_info['resource_id']}.{field_info['item_id']}"] = data
     if triple["relation"] in ["大于", "小于"]:
         match, data = compare_literal(data, triple)
