@@ -2,6 +2,7 @@
 import copy
 import datetime
 import traceback
+import time
 from enum import Enum, unique
 
 from celery_task import celery_app, log, config, rpc_server
@@ -54,7 +55,11 @@ def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
     Returns:
 
     """
+    start = time.time()
     record = _check_single_guide(company_id, guide_id, threshold=threshold)
+    end=time.time()
+    log.info(f"{company_id}-{guide_id} check_single_guide time:{end-start} seconds")
+    log.info(f"{company_id}-{guide_id} check_single_guide record:{record}")
     if record is None:
         rpc_server().rabbitmq.push_message("task", routing_key,
                                            {"company_id": company_id, "guide_id": guide_id, "score": None})
@@ -93,6 +98,7 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
     :param guide_id:指南的平台id
     :return:
     """
+    start=time.time()
     record = {"mismatch": [], "match": [], "unrecognized": []}
     clause_sentence = dict()
     cached_data = dict()
@@ -105,6 +111,8 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
         return None
     if not filter_industry(company_id, document.get("industries", None)):
         return None
+    end=time.time()
+    log.info(f"{company_id}-{guide_id} before check_single_requirement time:{end-start} seconds")
     for sentence in document["sentences"]:
         if sentence["type"] != "正常" and len(sentence["clauses"]) != 0:
             record["unrecognized"].append(sentence['text'])
@@ -115,7 +123,10 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
             triple = clause
             if len(triple["fields"]) == 0:
                 continue
-            match, data, cached_data = check_single_requirement(company_id, triple, cached_data)
+            start=time.time()
+            match, data, cached_data = check_single_requirement(company_id, triple, cached_data,guide_id)
+            end=time.time()
+            log.info(f"{company_id}-{guide_id} during check_single_requirement time:{end-start} seconds")
             if match == MatchResult.MISMATCH:
                 clause_sentence[clause["text"]]["mismatch"] += 1
             if match == MatchResult.MATCH:
@@ -124,6 +135,7 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
             if match == MatchResult.UNRECOGNIZED:
                 clause_sentence[clause["text"]]["unrecognized"] += 1
 
+    start=time.time()
     match = 0
     mismatch = 0
     for sentence, result in clause_sentence.items():
@@ -150,10 +162,12 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
     py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
                                                          "guide_id": guide_id})
     py_client.ai_system["recommend_record"].insert_one(copy.deepcopy(record))
+    end=time.time()
+    log.info(f"{company_id}-{guide_id} end check_single_requirement time:{end-start} seconds")
     return record
 
 
-def check_single_requirement(company_id, triple, cached_data):
+def check_single_requirement(company_id, triple, cached_data,guide_id):
     """
     检查企业是否满足单一条件
 
@@ -175,11 +189,14 @@ def check_single_requirement(company_id, triple, cached_data):
     if field_info is None:
         log.info(f"no field {field}")
         return MatchResult.UNRECOGNIZED, "", cached_data
+    log.info(f"item: {field_info['resource_id']}.{field_info['item_id']}")
     #data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
     data = redis_cache.get(f"{field_info['resource_id']}.{field_info['item_id']}")
     if data is None:
         # query_data
+        start=time.time()
         return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
+        end=time.time()
         data = return_data.get("result", None)
     if data is None:
         log.info(f"{return_data}")
