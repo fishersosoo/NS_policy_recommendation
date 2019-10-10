@@ -20,7 +20,7 @@ def is_expired(recommend_record, expired=None):
             "recommend_expired_hours"]
         expired = float(expired)
         expired = datetime.timedelta(hours=expired)
-    print(recommend_record['time'])
+    # print(recommend_record['time'])
     if expired < datetime.datetime.now(datetime.timezone.utc)- recommend_record['time']:
         return True
     else:

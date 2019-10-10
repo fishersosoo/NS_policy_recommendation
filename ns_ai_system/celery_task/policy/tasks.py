@@ -110,6 +110,16 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
     if document is None:
         return None
     if not filter_industry(company_id, document.get("industries", None)):
+        # 不匹配行业时，还是插入数据，但加多一个mismatch_industry的标记
+        record["company_id"] = company_id
+        record["guide_id"] = guide_id
+        record["time"] = datetime.datetime.utcnow()
+        record["score"] = -1
+        record["latest"] = True
+        record["mismatch_industry"] = True
+        py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
+                                                             "guide_id": guide_id})
+        py_client.ai_system["recommend_record"].insert_one(copy.deepcopy(record))
         return None
     end=time.time()
     log.info(f"{company_id}-{guide_id} before check_single_requirement time:{end-start} seconds")
