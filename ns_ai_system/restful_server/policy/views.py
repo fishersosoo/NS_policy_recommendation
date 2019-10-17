@@ -128,6 +128,20 @@ def recommend():
         response_dict["result"] = records
         return jsonify(response_dict)
 
+@policy_service.route("check_recommend/", methods=["GET"])
+def check_recommend():
+  response_dict = dict()
+  company_id = request.args.get("company_id")
+  valid_guides = [one["guide_id"] for one in Guide.list_valid_guides()]
+  recommend_records = [one for one in mongo.db.recommend_record.find(
+     {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True})]
+  records = []
+  for one in recommend_records:
+    if not one.get("mismatch_industry",None):
+      records.append(one)
+  records = sorted(records, key=lambda e:e["score"], reverse=True)
+  response_dict["result"] = records
+  return jsonify(response_dict)
 
 @policy_service.route("single_recommend/", methods=["GET"])
 def single_recommend():
