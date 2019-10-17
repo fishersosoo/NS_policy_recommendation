@@ -124,6 +124,7 @@ def recommend():
         for one in recommend_records:
             if is_above_threshold(one, threshold) and not one.get("mismatch_industry",None):
                 records.append(one)
+        records = sorted(records, key=lambda e:e["score"], reverse=True)
         response_dict["result"] = records
         return jsonify(response_dict)
 
