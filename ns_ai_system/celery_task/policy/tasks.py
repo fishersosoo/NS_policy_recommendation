@@ -3,6 +3,7 @@ import copy
 import datetime
 import traceback
 import time
+import json
 from enum import Enum, unique
 
 from celery_task import celery_app, log, config, rpc_server
@@ -201,18 +202,24 @@ def check_single_requirement(company_id, triple, cached_data,guide_id):
         return MatchResult.UNRECOGNIZED, "", cached_data
     log.info(f"item: {field_info['resource_id']}.{field_info['item_id']}")
     #data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
-    data = redis_cache.get(f"{field_info['resource_id']}.{field_info['item_id']}")
+    data = redis_cache.get(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}")
     if data is None:
         # query_data
         start=time.time()
         return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
         end=time.time()
+        log.info(f"request time: {end-start} seconds")
         data = return_data.get("result", None)
-    if data is None:
+        # 用"null"来代表请求回来仍为空的字段，缓存起来，不再重复请求
+        if data is None:
+          redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", 'null', ex=600)
+    elif data != 'null':
+        data = json.loads(data)
+    if data is None or data == 'null':
         log.info(f"{return_data}")
         return MatchResult.UNRECOGNIZED, "", cached_data
     else:
-        redis_cache.set(f"{field_info['resource_id']}.{field_info['item_id']}", data, ex=600)
+        redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", json.dumps(data), ex=600)
         cached_data[f"{field_info['resource_id']}.{field_info['item_id']}"] = data
     if triple["relation"] in ["大于", "小于"]:
         match, data = compare_literal(data, triple)

@@ -10,13 +10,14 @@ from celery_task.policy.tasks import understand_guide_task, recommend_task, is_a
 from condition_identification.api.text_parsing import Document
 from data_management.api.rpc_proxy import rpc_server
 from data_management.models.guide import Guide
+from data_management.config import redis_cache
 from restful_server.policy import policy_service
 from service.base_func import need_to_update_guides
 from restful_server.server import mongo, app
 from service.file_processing import get_text_from_doc_bytes
 
 policy_api = Api(policy_service)
-
+# redis_cache.set("test", ['123'], ex=1)
 
 @policy_service.route("re_understand/", methods=["POST"])
 def re_understand():
@@ -118,8 +119,19 @@ def recommend():
         recommend_records = [one for one in mongo.db.recommend_record.find(
             {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True})]
         guide_ids = need_to_update_guides(company_id, expired, recommend_records)
-        for guide_id in guide_ids:
+        # 用redis缓存当前正在执行任务的企业，如果发现该企业正在执行任务，就不再插入队列中
+        executing_ids = redis_cache.get("executing_ids")
+        if executing_ids is None:
+          redis_cache.set('executing_ids', company_id, ex=900)
+          for guide_id in guide_ids:
             recommend_task.delay(company_id, guide_id)
+        else:
+          executing_ids_list = executing_ids.split(",")
+          if company_id not in executing_ids_list:
+            executing_ids = f"{executing_ids},{company_id}"
+            redis_cache.set('executing_ids', executing_ids, ex=900)
+            for guide_id in guide_ids:
+              recommend_task.delay(company_id, guide_id)
         records = []
         for one in recommend_records:
             if is_above_threshold(one, threshold) and not one.get("mismatch_industry",None):
