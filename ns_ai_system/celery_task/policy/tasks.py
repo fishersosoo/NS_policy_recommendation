@@ -11,7 +11,6 @@ from data_management.config import py_client, redis_cache
 from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
 
-
 @unique
 class MatchResult(Enum):
     """
@@ -216,7 +215,6 @@ def check_single_requirement(company_id, triple, cached_data,guide_id):
     elif data != 'null':
         data = json.loads(data)
     if data is None or data == 'null':
-        log.info(f"{return_data}")
         return MatchResult.UNRECOGNIZED, "", cached_data
     else:
         redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", json.dumps(data), ex=600)
