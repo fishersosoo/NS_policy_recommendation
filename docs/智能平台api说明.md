@@ -54,43 +54,84 @@ doc:要求以UTF-8编码doc
 
 ## /policy/recommend/
 
-### GET
+### POST
 
 获取给该企业推荐的事项。
 
-/policy/recommend/?company_id=123&threshold=0.3
+数据以json形式提供
 
-使用company_id进行查询的时候，系统首先会将提交一个异步任务到后台。新建异步任务之后，系统会查找是否存在这个企业的历史推荐记录，历史记录会放入到返回内容中的`result`字段中，若不存在历史推荐记录，则`result`为一个空的列表**（只返回匹配度大于阈值的记录）**
+`company_id`字段填入企业id。`label`列表为企业所拥有的标签，标签分为两种：标准标签库中的标签（通过`_id`来提供）、企业自填的标签（通过`text`来提供）。
 
-`score`表示推荐的结果和企业的匹配程度，例如，推荐的指南有10个条件，企业满足9个，则`score`为0.9。
+样例如下：
 
 ```json
 {
-    "result": [
+    "company_id": "企业id",
+    "label": [
         {
-            "_id": "5d302f84cbd02966d9a23a0e",
-            "company_id": "91440101668125196C",
-            "guide_id": "220",
-            "latest": true,
-            "match": [
-                { "sentence": "满足条件1" },
-                { "sentence": "满足条件2" }
-            ],
-            "mismatch": [
-                "不满足条件1",
-                "不满足条件2"
-            ],
-            "score": 0.5,
-            "time": "Thu, 18 Jul 2019 08:36:20 GMT",
-            "unrecognized": [
-                "未识别条件1",
-                "未识别条件2"
-            ]
+            "_id": "id_1"
         },
-        {},{},{}
+        {
+            "_id": "id_2"
+        },
+        {
+            "text": "制药企业"
+        }
     ]
 }
 ```
+
+
+
+返回的json形式的结果
+
+结果返回到`result`字段所保存的列表中
+
+列表中每一项表示一个政策和该企业的匹配情况，形式如下
+
+- `label`字段存放和政策匹配的企业标签列表
+- `match`字段存放部分匹配的条件及各自的匹配度`score`
+- `mismatch`字段存放完全不匹配的条件
+- `unrecognized`字段存放未识别条件
+- `score`字段存放整体政策匹配度，仅用于对返回的多个政策
+
+**注意，在计算条件匹配情况时候已经将企业标签纳入计算中，返回结果中的`label`只是方便前端展示**
+
+```json
+{
+    "_id": "5da989d9cbd02963add9218e",
+    "company_id": "91440101668125196C",
+    "guide_id": "220",
+    "latest": true,
+    "label":["匹配的企业标签1","匹配的企业标签2"],
+    "match": [
+        {
+            "score": 0.5,
+            "sentence": "部分匹配的条件1"
+        },
+        {
+            "score": 0.5,
+            "sentence": "部分匹配的条件2"
+        }
+    ],
+    "mismatch": [
+        {
+            "sentence": "不匹配的条件1"
+        },
+        {
+            "sentence": "不匹配的条件2"
+        }
+    ],
+    "score": 0.5,
+    "time": "Fri, 18 Oct 2019 09:46:01 GMT",
+    "unrecognized": [        
+        {
+            "sentence": "未识别条件1"
+        }]
+}
+```
+
+
 
 ## /policy/single_recommend/
 
@@ -201,6 +242,55 @@ json格式
     }
 ]
 ```
+
+
+
+## 企业标签
+
+### /label/list/
+
+GET
+
+获取标签库所有标签，以json形式返回
+
+```json
+[
+    {"_id":"标签id","text":"标签"},
+    {"_id":"标签id","text":"标签"}
+]
+```
+
+
+
+### /label/edit/
+
+POST
+
+修改标签库某个标签。
+
+以json形式输入参数
+
+以下参数会将标签id对应的标签文本修改为”标签a“。如果没有`_id`字段则会尝试往标签库中添加”标签a“（重复则不添加）。
+
+```json
+{"_id":"标签id","text":"标签a"}
+```
+
+
+
+### /label/delete/
+
+删除标签库某个标签
+
+POST
+
+以json形式输入参数
+
+```json
+{"_id":"标签id"}
+```
+
+
 
 
 
