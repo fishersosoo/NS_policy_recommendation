@@ -16,6 +16,7 @@ Loggers.init_app('restful', app.logger)
 app.config["MONGO_URI"] = f"mongodb://{config.get('mongoDB','host')}:{config.get('mongoDB','port')}/ai_system"
 mongo = PyMongo(app, tz_aware=True, tzinfo=pytz.timezone('Asia/Shanghai'), )
 from data_management.api.rpc_proxy import rpc_server
+from restful_server import error_handlers
 from restful_server.policy import policy_service
 from restful_server.label import label_service
 

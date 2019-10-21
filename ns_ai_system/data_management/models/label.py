@@ -6,6 +6,36 @@ from data_management.config import py_client
 
 class Label:
     @classmethod
+    def convert_texts(cls, labels):
+        """
+        将列表里面的id转为对应的text
+        Args:
+            labels:
+
+        Returns:
+            [{"_id":"id-1","text":"label-1"},{"_id":"id-2","text":"label-2"}]
+        """
+        ret = []
+        for label in labels:
+            if "_id" in label:
+                oid = None
+                try:
+                    oid = ObjectId(label["_id"])
+                except Exception as e:
+                    pass
+                if oid is None:
+                    continue
+                else:
+                    label["text"] = py_client.ai_system["label"].find_one({"_id": oid})
+                    ret.append(label)
+            if "text" in label:
+                oid = py_client.ai_system["label"].find_one({"text": label["text"]})
+                if oid is not None:
+                    label["_id"] = str(oid)
+                ret.append(label)
+        return ret
+
+    @classmethod
     def add_label(cls, text):
         """
         添加标签。如有重复则不会添加
