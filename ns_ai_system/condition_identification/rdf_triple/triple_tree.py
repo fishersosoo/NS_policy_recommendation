@@ -121,5 +121,5 @@ def contructLabelTriples(sentence):
     triple.relation = '是'
     triple.value = [sentence]
     triple.text = sentence
-    triple.fields = "label"
+    triple.fields = []
     return [triple]
