@@ -21,13 +21,13 @@ def is_expired(recommend_record, expired=None):
         expired = float(expired)
         expired = datetime.timedelta(hours=expired)
     # print(recommend_record['time'])
-    if expired < datetime.datetime.now(datetime.timezone.utc)- recommend_record['time']:
+    if expired < datetime.datetime.now(datetime.timezone.utc) - recommend_record['time']:
         return True
     else:
         return False
 
 
-def need_to_update_guides(company_id, expired=None,recommend_records=None):
+def get_needed_check_guides(company_id, expired=None, recommend_records=None):
     """
     获取需要计算的政策id
 
@@ -46,7 +46,7 @@ def need_to_update_guides(company_id, expired=None,recommend_records=None):
     valid_guides = [one["guide_id"] for one in Guide.list_valid_guides()]
     if recommend_records is None:
         recommend_records = [one for one in py_client.ai_system["recommend_record"].find(
-            {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True})]
+            {"company_id": company_id, "has_label": False, "guide_id": {"$in": valid_guides}, "latest": True})]
     needed_update = set(valid_guides) - {one["guide_id"] for one in recommend_records}
     for one in recommend_records:
         if is_expired(one, expired):
