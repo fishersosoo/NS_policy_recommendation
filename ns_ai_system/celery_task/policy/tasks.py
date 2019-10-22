@@ -11,6 +11,7 @@ from data_management.config import py_client, redis_cache
 from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
 
+
 @unique
 class MatchResult(Enum):
     """
@@ -57,7 +58,7 @@ def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
     """
     start = time.time()
     record = _check_single_guide(company_id, guide_id, threshold=threshold)
-    end=time.time()
+    end = time.time()
     log.info(f"{company_id}-{guide_id} check_single_guide time:{end-start} seconds")
     log.info(f"{company_id}-{guide_id} check_single_guide record:{record}")
     if record is None:
@@ -97,9 +98,33 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
     :param company_id:企业id
     :param guide_id:指南的平台id
     :return:
+    {
+        "company_id": "",
+        "guide_id": "",
+        "time": datetime.datetime.utcnow(),
+        "latest": True,
+        "has_label": False,
+        "sentences": [
+            {
+                "text":"",
+                "type": "正常",
+                "result": "",
+                "clauses":[
+                    {
+                        "fields":["专利名称",],
+                        "relation":"是",
+                        "value":"规定航运物流",
+                        "result":"mismatch"
+                    },
+                ]
+            }
+        ]
+    }
     """
-    start=time.time()
-    record = {"mismatch": [], "match": [], "unrecognized": []}
+
+    start = time.time()
+    record = {"has_label": False, "sentences": [], }
+    # record = {"mismatch": [], "match": [], "unrecognized": []}
     clause_sentence = dict()
     cached_data = dict()
     ret = py_client.ai_system["parsing_result"].find_one({"guide_id": str(guide_id)})
@@ -110,74 +135,82 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
     if document is None:
         return None
     if not filter_industry(company_id, document.get("industries", None)):
-        # 不匹配行业时，还是插入数据，但加多一个mismatch_industry的标记
-        record["company_id"] = company_id
-        record["guide_id"] = guide_id
-        record["time"] = datetime.datetime.utcnow()
-        record["score"] = -1
-        record["latest"] = True
-        record["mismatch_industry"] = True
-        py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
-                                                             "guide_id": guide_id})
-        py_client.ai_system["recommend_record"].insert_one(copy.deepcopy(record))
+        insert_industry_mismatch_record(company_id, guide_id, record)
         return None
-    end=time.time()
+    end = time.time()
     log.info(f"{company_id}-{guide_id} before check_single_requirement time:{end-start} seconds")
     for sentence in document["sentences"]:
         if sentence["type"] != "正常" and len(sentence["clauses"]) != 0:
-            record["unrecognized"].append(sentence['text'])
+            # 承诺及描述人的条件，标识为未识别
+            sentence["result"] = "unrecognized"
+            record["sentences"].append(sentence)
             continue
+        if len(sentence["clauses"]) == 0:
+            # 丢弃掉提取不出条件的句子
+            continue
+        recognized = False
+        has_match = False
         for clause in sentence["clauses"]:
-            if clause["text"] not in clause_sentence:
-                clause_sentence[clause["text"]] = {"mismatch": 0, "match": 0, "unrecognized": 0}
+            # 遍历句子中识别出的条件，并给每个条件标记上是否匹配
             triple = clause
             if len(triple["fields"]) == 0:
+                clause["result"] = "unrecognized"
                 continue
-            start=time.time()
-            match, data, cached_data = check_single_requirement(company_id, triple, cached_data,guide_id)
-            end=time.time()
+            start = time.time()
+            match, data, cached_data = check_single_requirement(company_id, triple, cached_data, guide_id)
+            end = time.time()
             log.info(f"{company_id}-{guide_id} during check_single_requirement time:{end-start} seconds")
             if match == MatchResult.MISMATCH:
-                clause_sentence[clause["text"]]["mismatch"] += 1
+                clause["result"] = "mismatch"
+                recognized = True
             if match == MatchResult.MATCH:
-                clause_sentence[clause["text"]]["match"] += 1
-
+                clause["result"] = "match"
+                recognized = True
+                has_match = True
             if match == MatchResult.UNRECOGNIZED:
-                clause_sentence[clause["text"]]["unrecognized"] += 1
+                clause["result"] = "unrecognized"
+        if recognized:
+            sentence["result"] = "mismatch"
+        if has_match:
+            sentence["result"] = "match"
+        record["sentences"].append(sentence)
+        record["company_id"] = company_id
+        record["guide_id"] = guide_id
+        record["time"] = datetime.datetime.utcnow()
+        record["latest"] = True
 
-    start=time.time()
-    match = 0
-    mismatch = 0
-    for sentence, result in clause_sentence.items():
-        match += result["match"]
-        mismatch += result["mismatch"]
-        if result["match"] != 0:
-            if result["mismatch"] != 0:
-                record["match"].append(
-                    {"sentence": sentence, "score": result["match"] / (result["match"] + result["mismatch"])})
-            else:
-                record["match"].append({"sentence": sentence})
-        elif result["mismatch"] != 0:
-            record["mismatch"].append({"sentence": sentence})
-        else:
-            record["unrecognized"].append({"sentence": sentence})
-    record["company_id"] = company_id
-    record["guide_id"] = guide_id
-    record["time"] = datetime.datetime.utcnow()
-    if (match + mismatch) == 0:
-        record["score"] = 0
-    else:
-        record["score"] = match / (mismatch + match + len(record["unrecognized"]))
-    record["latest"] = True
+    start = time.time()
     py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
                                                          "guide_id": guide_id})
     py_client.ai_system["recommend_record"].insert_one(copy.deepcopy(record))
-    end=time.time()
+    end = time.time()
     log.info(f"{company_id}-{guide_id} end check_single_requirement time:{end-start} seconds")
     return record
 
 
-def check_single_requirement(company_id, triple, cached_data,guide_id):
+def insert_industry_mismatch_record(company_id, guide_id, record):
+    """
+     不匹配行业时，还是插入数据，但加多一个mismatch_industry的标记
+    Args:
+        company_id:
+        guide_id:
+        record:
+
+    Returns:
+
+    """
+    record["company_id"] = company_id
+    record["guide_id"] = guide_id
+    record["time"] = datetime.datetime.utcnow()
+    record["score"] = -1
+    record["latest"] = True
+    record["mismatch_industry"] = True
+    py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
+                                                         "guide_id": guide_id})
+    py_client.ai_system["recommend_record"].insert_one(copy.deepcopy(record))
+
+
+def check_single_requirement(company_id, triple, cached_data, guide_id):
     """
     检查企业是否满足单一条件
 
@@ -200,18 +233,18 @@ def check_single_requirement(company_id, triple, cached_data,guide_id):
         log.info(f"no field {field}")
         return MatchResult.UNRECOGNIZED, "", cached_data
     log.info(f"item: {field_info['resource_id']}.{field_info['item_id']}")
-    #data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
+    # data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
     data = redis_cache.get(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}")
     if data is None:
         # query_data
-        start=time.time()
+        start = time.time()
         return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
-        end=time.time()
+        end = time.time()
         log.info(f"request time: {end-start} seconds")
         data = return_data.get("result", None)
         # 用"null"来代表请求回来仍为空的字段，缓存起来，不再重复请求
         if data is None:
-          redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", 'null', ex=600)
+            redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", 'null', ex=600)
     elif data != 'null':
         data = json.loads(data)
     if data is None or data == 'null':

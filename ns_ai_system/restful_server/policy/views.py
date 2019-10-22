@@ -1,4 +1,5 @@
 # coding=utf-8
+import copy
 import os
 import json
 import tempfile
@@ -14,7 +15,7 @@ from data_management.config import redis_cache
 from data_management.models.label import Label
 from restful_server.error_handlers import MissingParam
 from restful_server.policy import policy_service
-from service.base_func import need_to_update_guides
+from service.base_func import get_needed_check_guides
 from restful_server.server import mongo, app
 from service.file_processing import get_text_from_doc_bytes
 
@@ -118,42 +119,80 @@ def recommend():
         raise MissingParam("company_id")
     labels = params.get("label", [])
     labels = Label.convert_texts(labels)
-
     threshold = float(params.get("threshold", 0.))
     expired = params.get("recommend_expired_time", None)  # 记录有效时间，默认为24小时
-
     valid_guides = [one["guide_id"] for one in Guide.list_valid_guides()]  # 有效政策
     # 根据企业id获取推荐，返回结果并异步更新结果
     recommend_records_no_label = [one for one in mongo.db.recommend_record.find(
-        {"company_id": company_id, "guide_id": {"$in": valid_guides}, "latest": True})]
+        {"company_id": company_id, "has_label": False, "guide_id": {"$in": valid_guides}, "latest": True})]
     # TODO: 如mongoDB压力较大这里的in操作改在代码中实现
-    guide_ids = need_to_update_guides(company_id, expired, recommend_records_no_label)
+    guide_ids = get_needed_check_guides(company_id, expired, recommend_records_no_label)
     create_task_if_not_executing(company_id, guide_ids)
-    records = []
+    records = []  # 保存记录返回结果
+    total_labels_match_count = copy.deepcopy(labels)  # 保存label使用情况
+    for label in total_labels_match_count:
+        label["match_count"] = 0
     for one_result_without_label in recommend_records_no_label:
         if not one_result_without_label.get("mismatch_industry", None):
-            one_result_with_label = match_with_labels(one_result_without_label, labels)
-            if is_above_threshold(one_result_with_label, threshold):
-                records.append(one_result_with_label)
-    # 无历史带标签记录，用新带标签结果对比无标记记录
-    # 有历史带标签记录，用新带标签结果对比历史带标签记录
-    # 将新带标签结果入库
-    # TODO:
+            one_result_with_label, labels_with_match_count = match_with_labels(one_result_without_label, labels)
+            labels_match_count_for_validation = label_validation(company_id, one_result_without_label["guide_id"],
+                                                                 labels, labels_with_match_count)
+            update_labels_match_count(total_labels_match_count, labels_match_count_for_validation)
+            # TODO: 将one_result_with_label覆盖带标签的历史纪录（插入数据库）
+            formatted_record = format_record(one_result_with_label)
+            if is_above_threshold(formatted_record, threshold):
+                records.append(formatted_record)
+    # TODO: 检查每个label的match_count将有用标签添加到标签库(使用Label类函数)
     records = sorted(records, key=lambda e: e["score"], reverse=True)
     response_dict["result"] = records
     return jsonify(response_dict)
 
 
-def match_with_labels(recommend_record_no_label, labels):
+def update_labels_match_count(total_labels_match_count, labels_match_count):
     """
-    使用标签对异步计算的结果进行调整
+    更新保存label使用情况
     Args:
-        recommend_record_no_label: 单个异步计算结果
-        labels: 标签列表
+        total_labels_match_count:
+        labels_match_count:
 
     Returns:
-        最终返回的结果
-            {
+
+    """
+    for total_label, one_label in zip(total_labels_match_count, labels_match_count):
+        total_label["match_count"] += one_label.get("match_count", 0)
+    return total_labels_match_count
+
+
+def label_validation(company_id, guide_id, labels, default_labels_with_match_count=None):
+    """
+    检查标签是否有效.
+    查找带标签的历史记录，然后用标签列表检查没匹配的条件，计算出每个标签的匹配数量
+    Args:
+        company_id: 企业id
+        guide_id: 政策id
+        labels: 标签序列
+        default_labels_with_match_count:
+
+    Returns:
+
+    """
+    if default_labels_with_match_count is None:
+        default_labels_with_match_count = dict()
+    old_result_with_label = None  # TODO:从数据库取出带标签的历史记录
+    if old_result_with_label is None:
+        return default_labels_with_match_count
+    _, labels_with_match_count = match_with_labels(old_result_with_label, labels)
+    return labels_with_match_count
+
+
+def format_record(one_result_with_label):
+    """
+    将数据格式化到输出形式
+    Args:
+        one_result_with_label:
+
+    Returns:
+         {
                 "_id": "5da989d9cbd02963add9218e",
                 "company_id": "91440101668125196C",
                 "guide_id": "220",
@@ -185,37 +224,117 @@ def match_with_labels(recommend_record_no_label, labels):
                     }]
             }
     """
-    return {
-        "_id": "5da989d9cbd02963add9218e",
-        "company_id": "91440101668125196C",
-        "guide_id": "220",
+    ret = {
+        "company_id": one_result_with_label["company_id"],
+        "guide_id": one_result_with_label["guide_id"],
         "latest": True,
-        "label": ["匹配的企业标签1", "匹配的企业标签2"],
-        "match": [
-            {
-                "score": 0.5,
-                "sentence": "部分匹配的条件1"
-            },
-            {
-                "score": 0.5,
-                "sentence": "部分匹配的条件2"
-            }
-        ],
-        "mismatch": [
-            {
-                "sentence": "不匹配的条件1"
-            },
-            {
-                "sentence": "不匹配的条件2"
-            }
-        ],
-        "score": 0.5,
-        "time": "Fri, 18 Oct 2019 09:46:01 GMT",
-        "unrecognized": [
-            {
-                "sentence": "未识别条件1"
-            }]
+        "label": one_result_with_label["label"],
+        "match": [],
+        "mismatch": [],
+        "unrecognized": [],
+        "time": one_result_with_label["time"],
     }
+    all_count = {"match": 0,
+                 "mismatch": 0,
+                 "unrecognized": 0}
+    for sentence in one_result_with_label["sentences"]:
+        if sentence["result"] == "unrecognized":
+            ret["unrecognized"].append({"sentence": sentence["text"]})
+        if sentence["result"] == "mismatch":
+            ret["mismatch"].append({"sentence": sentence["text"]})
+            all_count["mismatch"] += len(sentence["clauses"])
+        if sentence["result"] == "match":
+            # 计算条件匹配度
+            count = {"match": 0,
+                     "mismatch": 0,
+                     "unrecognized": 0}
+            for clause in sentence["clauses"]:
+                result = clause.get("result", "unrecognized")
+                count[result] += 1
+                all_count += 1
+            ret["match"].append({
+                "score": count["match"] / (count["mismatch"] + count["unrecognized"]),
+                "sentence": sentence["text"]
+            })
+    ret["score"] = all_count["match"] / (all_count["mismatch"] + all_count["unrecognized"])
+    return ret
+
+
+def is_match_label(value, label):
+    """
+
+    Args:
+        label: {"_id":"","text":""}
+        value: "政策文本"
+
+    Returns:
+        bool. 标签和文本是否匹配
+    """
+    return label["text"] in value
+
+
+def match_with_labels(recommend_record_no_label, labels):
+    """
+    使用标签对异步计算的结果进行调整
+    Args:
+        recommend_record_no_label: 单个异步计算结果
+        labels: 标签列表.[{"_id":"","text":""}]
+
+    Returns:
+       recommend_record_with_label.和recommend_record_no_label结果相似，多了label字段
+
+        {
+        "company_id": "",
+        "label":["",],
+        "guide_id": "",
+        "time": datetime.datetime.utcnow(),
+        "latest": True,
+        "has_label": False,
+        "sentences": [
+            {
+                "text":"",
+                "type": "正常",
+                "result": "",
+                "clauses":[
+                    {
+                        "fields":["专利名称",],
+                        "relation":"是",
+                        "value":"规定航运物流",
+                        "result":"mismatch"
+                    },
+                ]
+            }
+        ]
+    }
+
+       labels.每个label增加了match_count表示匹配了多少个条件
+       [
+       {"_id":"",
+       "text":"",
+       "match_count":0,},
+       ]
+    """
+    recommend_record_with_label = copy.deepcopy(recommend_record_no_label)
+    recommend_record_with_label["has_label"] = True
+    recommend_record_with_label["label"] = []
+    for sentence in recommend_record_with_label["sentences"]:
+        if sentence["type"] != "正常" and len(sentence["clauses"]) != 0:
+            continue
+        for clause in sentence["clauses"]:
+            if clause["result"] != "match" and clause.get("value", None) is not None:
+                for label in labels:
+                    is_match = is_match_label(clause["value"], label)
+                    if is_match:
+                        clause["result"] = "match"
+                        sentence["result"] = "match"
+                        if "match_count" not in label:
+                            label["match_count"] = 1
+                        else:
+                            label["match_count"] += 1
+    for label in labels:
+        if label.get("match_count", 0) != 0:
+            recommend_record_with_label["label"].append(label["text"])
+    return recommend_record_with_label, labels
 
 
 def create_task_if_not_executing(company_id, guide_ids):
