@@ -45,15 +45,8 @@ def getSentencesByLeave(tree):
 
 
 def constructTripleBySentence(originSentenceByPolicyLines):
-    """构建满足条件的句子以及全部句子的集合
+    """
 
-    根据传入的sentence，组装{id:sentence},如果该句子构建出三元组，则该三元组会储存当前句子的id
-
-    Args：
-        sentenceWithID：dict 储存所有句子
-
-    Returns:
-        triples:list 构建的三元组列表，一个句子可能会有多个三元组
     """
 
 
@@ -62,10 +55,12 @@ def constructTripleBySentence(originSentenceByPolicyLines):
         triples = []
         for sentence in sentences:
             if sentence:
-                triple = constructTriples(sentence)
-                triples.extend(triple)
+                triples.extend(constructTriples(sentence))
+        triples.extend(contructLabelTriples(originSentence.text))
         originSentence.clauses = triples
     return originSentenceByPolicyLines
+
+
 
 
 def sentenceFilter(originSentence):
@@ -119,3 +114,12 @@ def constructTriples(sentence):
             triple = extract_num(triple)
             triples.append(triple)
     return triples
+
+def contructLabelTriples(sentence):
+    # label目前采用的是将政策原文句子放回去作全文检索
+    triple = Clause()
+    triple.relation = '是'
+    triple.value = [sentence]
+    triple.text = sentence
+    triple.fields = "label"
+    return [triple]
