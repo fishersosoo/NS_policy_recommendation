@@ -169,6 +169,7 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
                 has_match = True
             if match == MatchResult.UNRECOGNIZED:
                 clause["result"] = "unrecognized"
+        sentence["result"] = "unrecognized"
         if recognized:
             sentence["result"] = "mismatch"
         if has_match:

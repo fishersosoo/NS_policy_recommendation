@@ -11,7 +11,7 @@ from celery_task.policy.tasks import understand_guide_task, recommend_task, is_a
 from condition_identification.api.text_parsing import Document
 from data_management.api.rpc_proxy import rpc_server
 from data_management.models.guide import Guide
-from data_management.config import redis_cache
+from data_management.config import redis_cache, py_client
 from data_management.models.label import Label
 from restful_server.error_handlers import MissingParam
 from restful_server.policy import policy_service
@@ -21,8 +21,6 @@ from service.file_processing import get_text_from_doc_bytes
 
 policy_api = Api(policy_service)
 
-
-# redis_cache.set("test", ['123'], ex=1)
 
 @policy_service.route("re_understand/", methods=["POST"])
 def re_understand():
@@ -138,12 +136,23 @@ def recommend():
             labels_match_count_for_validation = label_validation(company_id, one_result_without_label["guide_id"],
                                                                  labels, labels_with_match_count)
             update_labels_match_count(total_labels_match_count, labels_match_count_for_validation)
-            # TODO: 将one_result_with_label覆盖带标签的历史纪录（插入数据库）
+            # 将one_result_with_label覆盖带标签的历史纪录（插入数据库）
+            py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
+                                                         "guide_id": one_result_without_label["guide_id"]})
+            py_client.ai_system["recommend_record_with_label"].insert_one(copy.deepcopy(one_result_with_label))
             formatted_record = format_record(one_result_with_label)
             if is_above_threshold(formatted_record, threshold):
                 records.append(formatted_record)
-    # TODO: 检查每个label的match_count将有用标签添加到标签库(使用Label类函数)
-    records = sorted(records, key=lambda e: e["score"], reverse=True)
+    # 检查每个label的match_count将有用标签添加到标签库(使用Label类函数)
+    expired_match_count = py_client.ai_system["config"].find_one({"expired_match_count": {'$exists': True}})[
+            "expired_match_count"]
+    expired_match_count = float(expired_match_count)
+    for label in total_labels_match_count:
+        if label["match_count"] > expired_match_count:
+            Label.add_label(label["text"])
+    # 返回的记录按score倒序
+    if records:
+        records = sorted(records, key=lambda e: e["score"], reverse=True)
     response_dict["result"] = records
     return jsonify(response_dict)
 
@@ -178,7 +187,8 @@ def label_validation(company_id, guide_id, labels, default_labels_with_match_cou
     """
     if default_labels_with_match_count is None:
         default_labels_with_match_count = dict()
-    old_result_with_label = None  # TODO:从数据库取出带标签的历史记录
+    old_result_with_label = py_client.ai_system["recommend_record_with_label"].find_one(
+        {"company_id":company_id, "guide_id":guide_id})  # 从数据库取出带标签的历史记录
     if old_result_with_label is None:
         return default_labels_with_match_count
     _, labels_with_match_count = match_with_labels(old_result_with_label, labels)
@@ -251,12 +261,12 @@ def format_record(one_result_with_label):
             for clause in sentence["clauses"]:
                 result = clause.get("result", "unrecognized")
                 count[result] += 1
-                all_count += 1
+                all_count[result] += 1
             ret["match"].append({
-                "score": count["match"] / (count["mismatch"] + count["unrecognized"]),
+                "score": count["match"] / (count["match"] + count["mismatch"] + count["unrecognized"]),
                 "sentence": sentence["text"]
             })
-    ret["score"] = all_count["match"] / (all_count["mismatch"] + all_count["unrecognized"])
+    ret["score"] = all_count["match"] / (all_count["match"] + all_count["mismatch"] + all_count["unrecognized"] + 1)
     return ret
 
 
@@ -314,6 +324,7 @@ def match_with_labels(recommend_record_no_label, labels):
        "match_count":0,},
        ]
     """
+    labels_with_match_count = copy.deepcopy(labels)
     recommend_record_with_label = copy.deepcopy(recommend_record_no_label)
     recommend_record_with_label["has_label"] = True
     recommend_record_with_label["label"] = []
@@ -322,7 +333,7 @@ def match_with_labels(recommend_record_no_label, labels):
             continue
         for clause in sentence["clauses"]:
             if clause["result"] != "match" and clause.get("value", None) is not None:
-                for label in labels:
+                for label in labels_with_match_count:
                     is_match = is_match_label(clause["value"], label)
                     if is_match:
                         clause["result"] = "match"
@@ -331,10 +342,10 @@ def match_with_labels(recommend_record_no_label, labels):
                             label["match_count"] = 1
                         else:
                             label["match_count"] += 1
-    for label in labels:
+    for label in labels_with_match_count:
         if label.get("match_count", 0) != 0:
             recommend_record_with_label["label"].append(label["text"])
-    return recommend_record_with_label, labels
+    return recommend_record_with_label, labels_with_match_count
 
 
 def create_task_if_not_executing(company_id, guide_ids):

@@ -26,12 +26,12 @@ class Label:
                 if oid is None:
                     continue
                 else:
-                    label["text"] = py_client.ai_system["label"].find_one({"_id": oid})
+                    label["text"] = py_client.ai_system["label"].find_one({"_id": oid})["text"]
                     ret.append(label)
-            if "text" in label:
+            elif "text" in label:
                 oid = py_client.ai_system["label"].find_one({"text": label["text"]})
                 if oid is not None:
-                    label["_id"] = str(oid)
+                    label["_id"] = str(oid["_id"])
                 ret.append(label)
         return ret
 
