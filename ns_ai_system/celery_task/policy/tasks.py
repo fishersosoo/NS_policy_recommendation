@@ -10,6 +10,7 @@ from celery_task import celery_app, log, config, rpc_server
 from data_management.config import py_client, redis_cache
 from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
+from service.base_func import format_record
 
 
 @unique
@@ -65,6 +66,7 @@ def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
         rpc_server().rabbitmq.push_message("task", routing_key,
                                            {"company_id": company_id, "guide_id": guide_id, "score": None})
     else:
+        record = format_record(record)
         rpc_server().rabbitmq.push_message("task", routing_key,
                                            {"company_id": company_id, "guide_id": guide_id, "score": record["score"]})
     return record
@@ -175,11 +177,11 @@ def _check_single_guide(company_id, guide_id, threshold=.0):
         if has_match:
             sentence["result"] = "match"
         record["sentences"].append(sentence)
-        record["company_id"] = company_id
-        record["guide_id"] = guide_id
-        record["time"] = datetime.datetime.utcnow()
-        record["latest"] = True
 
+    record["company_id"] = company_id
+    record["guide_id"] = guide_id
+    record["time"] = datetime.datetime.utcnow()
+    record["latest"] = True
     start = time.time()
     py_client.ai_system["recommend_record"].delete_many({"company_id": company_id,
                                                          "guide_id": guide_id})

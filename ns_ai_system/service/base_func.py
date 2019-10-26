@@ -52,3 +52,77 @@ def get_needed_check_guides(company_id, expired=None, recommend_records=None):
         if is_expired(one, expired):
             needed_update.add(one["guide_id"])
     return needed_update
+
+def format_record(one_result_with_label):
+    """
+    将数据格式化到输出形式
+    Args:
+        one_result_with_label:
+
+    Returns:
+         {
+                "_id": "5da989d9cbd02963add9218e",
+                "company_id": "91440101668125196C",
+                "guide_id": "220",
+                "latest": true,
+                "label":["匹配的企业标签1","匹配的企业标签2"],
+                "match": [
+                    {
+                        "score": 0.5,
+                        "sentence": "部分匹配的条件1"
+                    },
+                    {
+                        "score": 0.5,
+                        "sentence": "部分匹配的条件2"
+                    }
+                ],
+                "mismatch": [
+                    {
+                        "sentence": "不匹配的条件1"
+                    },
+                    {
+                        "sentence": "不匹配的条件2"
+                    }
+                ],
+                "score": 0.5,
+                "time": "Fri, 18 Oct 2019 09:46:01 GMT",
+                "unrecognized": [
+                    {
+                        "sentence": "未识别条件1"
+                    }]
+            }
+    """
+    ret = {
+        "company_id": one_result_with_label["company_id"],
+        "guide_id": one_result_with_label["guide_id"],
+        "latest": True,
+        "label": one_result_with_label.get("label",[]),
+        "match": [],
+        "mismatch": [],
+        "unrecognized": [],
+        "time": one_result_with_label["time"],
+    }
+    all_count = {"match": 0,
+                 "mismatch": 0,
+                 "unrecognized": 0}
+    for sentence in one_result_with_label["sentences"]:
+        if sentence["result"] == "unrecognized":
+            ret["unrecognized"].append({"sentence": sentence["text"]})
+        if sentence["result"] == "mismatch":
+            ret["mismatch"].append({"sentence": sentence["text"]})
+            all_count["mismatch"] += len(sentence["clauses"])
+        if sentence["result"] == "match":
+            # 计算条件匹配度
+            count = {"match": 0,
+                     "mismatch": 0,
+                     "unrecognized": 0}
+            for clause in sentence["clauses"]:
+                result = clause.get("result", "unrecognized")
+                count[result] += 1
+                all_count[result] += 1
+            ret["match"].append({
+                "score": count["match"] / (count["match"] + count["mismatch"] + count["unrecognized"]),
+                "sentence": sentence["text"]
+            })
+    ret["score"] = all_count["match"] / (all_count["match"] + all_count["mismatch"] + all_count["unrecognized"] + 1)
+    return ret
