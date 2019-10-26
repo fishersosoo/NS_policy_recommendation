@@ -56,7 +56,9 @@ def constructTripleBySentence(originSentenceByPolicyLines):
         for sentence in sentences:
             if sentence:
                 triples.extend(constructTriples(sentence))
-        triples.extend(contructLabelTriples(originSentence.text))
+        # 如果没有三元组才会构造标签三元组
+        if len(triples)==0:
+            triples.extend(contructLabelTriples(originSentence.text))
         originSentence.clauses = triples
     return originSentenceByPolicyLines
 
@@ -109,8 +111,8 @@ def constructTriples(sentence):
             triple.fields = search_field_sameword(triples_dict[key], sentence)
         # 人工规则
         triple = adjust_byrule(triple)
-        # 提取单纯数字
-        if triple.fields:
+        if triple and triple.fields:
+            # 提取单纯数字
             triple = extract_num(triple)
             triples.append(triple)
     return triples
