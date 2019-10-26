@@ -9,7 +9,7 @@ import pika.exceptions
 from celery_task.policy.tasks import check_single_guide
 from data_management.api.rpc_proxy import rpc_server
 from data_management.config import py_client
-from service.base_func import is_expired, need_to_update_guides
+from service.base_func import is_expired, get_needed_check_guides, format_record
 from service.rabbitmq.rabbit_mq import connect_channel
 
 
@@ -47,6 +47,7 @@ def single_guide_callback(ch, method, properties, body):
         # 阻塞直到任务队列有空位
         create_task(ch, input["company_id"], input["guide_id"], routing_key="task.single.output")
     else:
+        recommend_record = format_record(recommend_record)
         rpc_server().rabbitmq.push_message("task", "task.single.output",
                                          {"company_id": input["company_id"], "guide_id": input["guide_id"],
                                           "score": recommend_record["score"]})
@@ -66,7 +67,7 @@ def multi_guide_callback(ch, method, properties, body):
     """
     # 获取需要计算的企业id
     input = json.loads(body)
-    for guide_id in need_to_update_guides(input["company_id"]):
+    for guide_id in get_needed_check_guides(input["company_id"]):
         create_task(ch, input["company_id"], guide_id, routing_key="task.multi.output")
 
 

@@ -22,3 +22,4 @@ ns_ai_system/pid
 ns_ai_system/config.local.ini
 .DS_Store
 .vscode
+bin/linux/celery.local.sh
