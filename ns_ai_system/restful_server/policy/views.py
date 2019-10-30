@@ -147,9 +147,10 @@ def recommend():
             formatted_record = format_record(one_result_with_label)
             if is_above_threshold(formatted_record, threshold):
                 records.append(formatted_record)
-    py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
+    if record_to_update:
+        py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
                                             "guide_id": {"$in": guide_ids_with_label}})
-    py_client.ai_system["recommend_record_with_label"].insert_many(record_to_update)
+        py_client.ai_system["recommend_record_with_label"].insert_many(record_to_update)
     # 检查每个label的match_count将有用标签添加到标签库(使用Label类函数)
     expired_match_count = py_client.ai_system["config"].find_one({"expired_match_count": {'$exists': True}})[
             "expired_match_count"]
