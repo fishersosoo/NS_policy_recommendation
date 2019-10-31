@@ -88,6 +88,10 @@ def set_guide():
     guide_id = params.get("guide_id")
     effective = params.get("effective")
     result = mongo.db.guide_file.update_one({"guide_id": guide_id}, {"$set": {"effective": effective}}, upsert=False)
+    if effective:
+        rpc_server().rabbitmq.push_message("event.file", "event.file.enable", {"guide_id": guide_id, "event": "enable"})
+    else:
+        rpc_server().rabbitmq.push_message("event.file", "event.file.disable", {"guide_id": guide_id, "event": "disable"})
     return jsonify(result.raw_result)
 
 
