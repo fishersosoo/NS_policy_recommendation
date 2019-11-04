@@ -57,7 +57,7 @@ def constructTripleBySentence(originSentenceByPolicyLines):
             if sentence:
                 triples.extend(constructTriples(sentence))
         # 如果没有三元组才会构造标签三元组
-        if len(triples)==0:
+        if len(triples)==0 and originSentence.type!='条件':
             triples.extend(contructLabelTriples(originSentence.text))
         originSentence.clauses = triples
     return originSentenceByPolicyLines
