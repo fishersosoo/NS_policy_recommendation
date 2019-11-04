@@ -27,7 +27,7 @@ def list_guide_id():
     Returns:
 
     """
-    return [one["guide_id"] for one in list(py_client.ai_system["guide_file"].find())]
+    return [one for one in list(py_client.ai_system["guide_file"].find({},{"guide_id":1,"effective":1,"_id":0}))]
 
 
 @jsonrpc.method("file.register")
