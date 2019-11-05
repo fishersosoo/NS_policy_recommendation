@@ -49,8 +49,13 @@ def constructTripleBySentence(originSentenceByPolicyLines):
 
     """
 
-
+    flag = True
     for originSentence in originSentenceByPolicyLines:
+        # 去掉第一行
+        if flag:
+            flag = False
+            continue
+
         sentences = sentenceFilter(originSentence)
         triples = []
         for sentence in sentences:
