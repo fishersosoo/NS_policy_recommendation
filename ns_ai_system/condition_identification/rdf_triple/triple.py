@@ -39,7 +39,7 @@ class OriginSentenceByPolicyLine:
         :param clauses:
         """
         self.text = text
-        self.type = []
+        self.type = '无'
         if clauses is None:
             self.clauses = list()
 
