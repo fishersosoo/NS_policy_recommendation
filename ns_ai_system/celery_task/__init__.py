@@ -40,6 +40,7 @@ celery_app.conf.CELERY_ROUTES = {
     'celery_task.policy.tasks.push_single_guide_result': {'queue': 'batch_check_callback'},
     'celery_task.policy.tasks.check_single_guide': {'queue': 'check_single_guide'},
     'celery_task.policy.tasks.recommend_task': {'queue': 'recommend_task'},
+    'celery_task.policy.tasks.update_recommend_record_with_label': {'queue': 'batch_check_callback'},
 }
 
 log = logging.getLogger(__name__)

@@ -338,3 +338,13 @@ def is_above_threshold(result, threshold):
         return float(result["score"]) >= float(threshold)
     except:
         return False
+
+@celery_app.task
+def update_recommend_record_with_label(company_id, guide_ids_with_label, record_to_update):
+    guide_ids_with_label = json.loads(guide_ids_with_label)
+    record_to_update = json.loads(record_to_update)
+    for one in record_to_update:
+        one["time"] = datetime.datetime.utcnow()
+    py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
+                                            "guide_id": {"$in": guide_ids_with_label}})
+    py_client.ai_system["recommend_record_with_label"].insert_many(record_to_update)

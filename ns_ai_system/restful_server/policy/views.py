@@ -3,11 +3,14 @@ import copy
 import os
 import json
 import tempfile
+import time
 
 from flask import request, jsonify, abort
 from flask_restful import Api
 
-from celery_task.policy.tasks import understand_guide_task, recommend_task, is_above_threshold
+from celery import group
+from celery.result import GroupResult
+from celery_task.policy.tasks import understand_guide_task, recommend_task, is_above_threshold, update_recommend_record_with_label
 from condition_identification.api.text_parsing import Document
 from data_management.api.rpc_proxy import rpc_server
 from data_management.models.guide import Guide
@@ -126,10 +129,17 @@ def recommend():
     valid_guides = [one["guide_id"] for one in Guide.list_valid_guides()]  # 有效政策
     # 根据企业id获取推荐，返回结果并异步更新结果
     recommend_records_no_label = [one for one in mongo.db.recommend_record.find(
-        {"company_id": company_id, "has_label": False, "guide_id": {"$in": valid_guides}, "latest": True})]
+        {"company_id": company_id, "has_label": False, "guide_id": {"$in": valid_guides}, "latest": True},{"_id":0})]
     # TODO: 如mongoDB压力较大这里的in操作改在代码中实现
     guide_ids = get_needed_check_guides(company_id, expired, recommend_records_no_label)
-    create_task_if_not_executing(company_id, guide_ids)
+    task_id = create_task_if_not_executing(company_id, guide_ids)
+    # 如果task_id有的话
+    if task_id:
+        # 等待缓存的task状态变为已完成
+        while redis_cache.get(task_id) is not None and int(redis_cache.get(task_id)) != 1:
+            time.sleep(1)
+        recommend_records_no_label = [one for one in mongo.db.recommend_record.find(
+        {"company_id": company_id, "has_label": False, "guide_id": {"$in": valid_guides}, "latest": True},{"_id":0})]
     records = []  # 保存记录返回结果
     total_labels_match_count = copy.deepcopy(labels)  # 保存label使用情况
     for label in total_labels_match_count:
@@ -152,9 +162,13 @@ def recommend():
             if is_above_threshold(formatted_record, threshold):
                 records.append(formatted_record)
     if record_to_update:
-        py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
-                                            "guide_id": {"$in": guide_ids_with_label}})
-        py_client.ai_system["recommend_record_with_label"].insert_many(record_to_update)
+        # 转换成字符串格式，才能作为消息传到队列中
+        for one in record_to_update:
+            del one["time"]
+        update_recommend_record_with_label.delay(company_id, json.dumps(guide_ids_with_label), json.dumps(record_to_update))
+        # py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
+        #                                     "guide_id": {"$in": guide_ids_with_label}})
+        # py_client.ai_system["recommend_record_with_label"].insert_many(record_to_update)
     # 检查每个label的match_count将有用标签添加到标签库(使用Label类函数)
     expired_match_count = py_client.ai_system["config"].find_one({"expired_match_count": {'$exists': True}})[
             "expired_match_count"]
@@ -300,18 +314,41 @@ def create_task_if_not_executing(company_id, guide_ids):
     Returns:
 
     """
-    executing_ids = redis_cache.get("executing_ids")
-    if executing_ids is None:
-        redis_cache.set('executing_ids', company_id, ex=900)
-        for guide_id in guide_ids:
-            recommend_task.delay(company_id, guide_id)
-    else:
-        executing_ids_list = executing_ids.split(",")
-        if company_id not in executing_ids_list:
-            executing_ids = f"{executing_ids},{company_id}"
-            redis_cache.set('executing_ids', executing_ids, ex=900)
-            for guide_id in guide_ids:
-                recommend_task.delay(company_id, guide_id)
+    if not guide_ids:
+        return None
+    # 先从缓存中查看是否正在进行计算
+    executing_task_id = redis_cache.get(f"executing-{company_id}")
+    # 如果没有
+    if executing_task_id is None:
+        recommend_tasks = [recommend_task.s(company_id, guide_id) for guide_id in guide_ids]
+        promise = group(recommend_tasks)()
+        # 将company_id作为键，task_id作为值存起来
+        redis_cache.set(f"executing-{company_id}", promise.id, ex=900)
+        # 缓存task的状态
+        redis_cache.set(promise.id, 0, ex=900)
+        # 阻塞等待结果返回
+        promise.get()
+        # 结果返回后修改缓存的状态
+        redis_cache.set(promise.id, 1, ex=900)
+        executing_task_id = promise.id
+    # 返回任务id
+    return executing_task_id
+    # executing_ids = redis_cache.get("executing_ids")
+    # if executing_ids is None:
+    #     redis_cache.set('executing_ids', company_id, ex=90)
+    #     recommend_tasks = [recommend_task.s(company_id, guide_id) for guide_id in guide_ids]
+    #     return group(recommend_tasks)
+    #     # for guide_id in guide_ids:
+    #     #     recommend_task.delay(company_id, guide_id)
+    # else:
+    #     executing_ids_list = executing_ids.split(",")
+    #     if company_id not in executing_ids_list:
+    #         executing_ids = f"{executing_ids},{company_id}"
+    #         redis_cache.set('executing_ids', executing_ids, ex=90)
+    #         recommend_tasks = [recommend_task.s(company_id, guide_id) for guide_id in guide_ids]
+    #         return group(recommend_tasks)
+    #         # for guide_id in guide_ids:
+    #         #     recommend_task.delay(company_id, guide_id)
 
 
 @policy_service.route("check_recommend/", methods=["GET"])
