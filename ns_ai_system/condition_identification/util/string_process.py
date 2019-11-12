@@ -1,4 +1,5 @@
 # coding=utf-8
+from condition_identification.args import STOPWORDS
 def getNumofCommonSubstr(str1, str2):
     """python实现求两个字符串的最长公共子串方法
 
@@ -37,7 +38,17 @@ def cmp_stringlist(sl1,sl2):
             return False
         else:
             return True
+def getNouns(str):
+    from pyhanlp import HanLP
+    result = []
 
+    for term in HanLP.segment(str):
+
+        nature = term.nature.toString()
+        word = term.word
+        if 'n' in nature and word not in STOPWORDS:
+            result.append(word)
+    return result
 
 if __name__ == '__main__':
     print(cmp_stringlist(['sds','sds1'],['sds1','sds']))

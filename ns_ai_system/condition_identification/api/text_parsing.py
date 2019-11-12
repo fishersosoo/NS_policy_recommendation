@@ -5,7 +5,7 @@ from condition_identification.doctree_contruction.DocTree import *
 from condition_identification.rdf_triple.triple_tree import constructTriple
 from condition_identification.doctree_contruction.DocTreeOp import getTitle
 from condition_identification.doctree_contruction.util import str_to_list
-from condition_identification.industry_filter.industryFilter import industryFilter
+from condition_identification.industry_filter.newindustry import industryFilter
 
 
 class Document:
@@ -34,7 +34,8 @@ class Document:
         document._tree = tree
         if document.title is None:
             document.title = getTitle(text)
-            document.industries = document._get_industry(text)
+        document.content = ''.join(str_to_list(text))
+        document.industries = document._get_industry(document)
         return document
 
 
@@ -60,10 +61,6 @@ class Document:
         if self._tree is not None:
             self.sentences = constructTriple(self._tree)
 
-    def _get_industry(self, text):
-        text = ''.join(str_to_list(text))
-        if self.title is None:
-            raise RuntimeError('请获取标题')
-        text += self.title
-        industry = industryFilter(text)
+    def _get_industry(self, document):
+        industry = industryFilter(document)
         return industry

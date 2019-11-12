@@ -59,67 +59,21 @@ if __name__ == '__main__':
     value = []
     sentence = []
 
-    # # 多个跑
-    # for j in range(1, 10):
-    #     print(j)
-    #     with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
-    #         text = f.read()
-    #     paragraph_extract_output = paragraph_extract(text)
-    #     triples, tree, all_sentence = triple_extract(paragraph_extract_output)
-    #     fields.extend([x['fields'] for x in triples])
-    #     relation.extend([x['relation'] for x in triples])
-    #     value.extend([x['value'] for x in triples])
-    #     sentence.extend([x['sentence'] for x in triples])
-    #
-    # pd.DataFrame({"fields": fields, "relation": relation,'value':value,'sentence':sentence}).to_csv("输出结果.csv", index=False)
-    # pd.DataFrame({"sentence":sentences,"length":[len(x) for x in sentences]}).to_csv("输出句子.csv",index=False)
 
-
-
-# 单个跑
-#     with open(os.path.join(policy_file_dir,"申请高管人才奖办事指南"), encoding="utf8") as f:
-#         text = f.read()
-#     paragraph_extract_output = paragraph_extract(text)
-#     triples, all_sentence = triple_extract(paragraph_extract_output)
-#     print(triples)
-#     print(all_sentence)
-
-    # 多个跑分数
-    true_df = pd.read_csv(true_file,encoding = 'gbk')
-    score_record = open(score_file, 'a')
-    #
-    # 计算
-    # a = []
-    # b = []
-    # for j in range(0,len(policy_file_list)):
-    #     print(j)
-    #     a.append(policy_file_list[j])
-    #     with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
-    #         text = f.read()
-    #     doc = Document.paragraph_extract(text)
-    #     b.append(doc.title)
-    #
-    # pd.DataFrame({'文件':a,'标题':b}).to_csv("测试标题.csv",index=False)
-
+    print('------------')
     for j in range(0, len(policy_file_list)):
-        print(policy_file_list[j])
+    # for j in range(0, 1):
         with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
             text = f.read()
         doc = Document.paragraph_extract(text)
-        print(doc.get_industry(text))
-
-    # print('------------')
-    # for j in range(0, len(policy_file_list)):
-    #     print(policy_file_list[j])
-    #     with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
-    #         text = f.read()
-    #     doc = Document.paragraph_extract(text)
-    #     print(doc.title)
-    #     triples = doc.triple_extract()
-    #     for triple in triples:
-    #         print(triple.text)
-    #         print(triple.type)
-    #         print('\n')
-    #         for t in triple.clauses:
-    #             print(t)
-    #             print('\n')
+        print(doc.title)
+        print(doc.industries)
+        # doc.triple_extract()
+        # triples =doc.sentences
+        # for triple in triples:
+        #     print(triple.text)
+        #     print(triple.type)
+        #     print('\n')
+        #     for t in triple.clauses:
+        #         print(t)
+        #         print('\n')
