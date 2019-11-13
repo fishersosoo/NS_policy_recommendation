@@ -340,11 +340,15 @@ def is_above_threshold(result, threshold):
         return False
 
 @celery_app.task
-def update_recommend_record_with_label(company_id, guide_ids_with_label, record_to_update):
-    guide_ids_with_label = json.loads(guide_ids_with_label)
+def update_recommend_record_with_label(company_id, guide_id, record_to_update):
+    # guide_ids_with_label = json.loads(guide_ids_with_label)
     record_to_update = json.loads(record_to_update)
-    for one in record_to_update:
-        one["time"] = datetime.datetime.utcnow()
+    record_to_update["time"] = datetime.datetime.utcnow()
     py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
-                                            "guide_id": {"$in": guide_ids_with_label}})
-    py_client.ai_system["recommend_record_with_label"].insert_many(record_to_update)
+                                                    "guide_id": guide_id})
+    py_client.ai_system["recommend_record_with_label"].insert_one(copy.deepcopy(record_to_update))
+    # for one in record_to_update:
+    #     one["time"] = datetime.datetime.utcnow()
+    # py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
+    #                                         "guide_id": {"$in": guide_ids_with_label}})
+    # py_client.ai_system["recommend_record_with_label"].insert_many(record_to_update)

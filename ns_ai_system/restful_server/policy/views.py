@@ -9,7 +9,6 @@ from flask import request, jsonify, abort
 from flask_restful import Api
 
 from celery import group
-from celery.result import GroupResult
 from celery_task.policy.tasks import understand_guide_task, recommend_task, is_above_threshold, update_recommend_record_with_label
 from condition_identification.api.text_parsing import Document
 from data_management.api.rpc_proxy import rpc_server
@@ -146,8 +145,6 @@ def recommend():
     total_labels_match_count = copy.deepcopy(labels)  # 保存label使用情况
     for label in total_labels_match_count:
         label["match_count"] = 0
-    guide_ids_with_label = [] # 记录要插入recommend_record_with_label表中的政策id
-    record_to_update = [] # 记录带有标签的匹配结果
     for one_result_without_label in recommend_records_no_label:
         if not one_result_without_label.get("mismatch_industry", None):
             one_result_with_label, labels_with_match_count = match_with_labels(one_result_without_label, labels)
@@ -155,22 +152,17 @@ def recommend():
                                                                  labels, labels_with_match_count)
             update_labels_match_count(total_labels_match_count, labels_match_count_for_validation)
             # 将one_result_with_label覆盖带标签的历史纪录（插入数据库）
-            guide_ids_with_label.append(one_result_without_label["guide_id"])
-            record_to_update.append(copy.deepcopy(one_result_with_label))
+            # guide_ids_with_label.append(one_result_without_label["guide_id"])
+            # record_to_update.append(copy.deepcopy(one_result_with_label))
+            record_to_update = copy.deepcopy(one_result_with_label)
+            del record_to_update["time"]
+            update_recommend_record_with_label.delay(company_id, one_result_without_label["guide_id"], json.dumps(record_to_update))
             # py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
             #                                              "guide_id": one_result_without_label["guide_id"]})
             # py_client.ai_system["recommend_record_with_label"].insert_one(copy.deepcopy(one_result_with_label))
             formatted_record = format_record(one_result_with_label)
             if is_above_threshold(formatted_record, threshold):
                 records.append(formatted_record)
-    if record_to_update:
-        # 转换成字符串格式，才能作为消息传到队列中
-        for one in record_to_update:
-            del one["time"]
-        update_recommend_record_with_label.delay(company_id, json.dumps(guide_ids_with_label), json.dumps(record_to_update))
-        # py_client.ai_system["recommend_record_with_label"].delete_many({"company_id": company_id,
-        #                                     "guide_id": {"$in": guide_ids_with_label}})
-        # py_client.ai_system["recommend_record_with_label"].insert_many(record_to_update)
     # 检查每个label的match_count将有用标签添加到标签库(使用Label类函数)
     expired_match_count = py_client.ai_system["config"].find_one({"expired_match_count": {'$exists': True}})[
             "expired_match_count"]
