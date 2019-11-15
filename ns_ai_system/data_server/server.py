@@ -4,6 +4,7 @@ from flask import Flask
 from flask_jsonrpc import JSONRPC
 from flask_pymongo import PyMongo
 from zeep import Client
+from zeep.transports import Transport
 
 from model.bert_vec import tokenization
 from read_config import config
@@ -15,7 +16,8 @@ from service.rabbitmq.rabbit_mq import connect_channel
 
 url = f"http://{ config.get('data_server','ip') }/webService/services/ws?wsdl"
 uid = f"{config.get('data_server','uid')}"
-client = Client(url)
+transport = Transport(operation_timeout=3)
+client = Client(url, transport=transport)
 
 app = Flask("data_server", )
 app.config["MONGO_URI"] = f"mongodb://{config.get('mongoDB','host')}:{config.get('mongoDB','port')}/ai_system"

@@ -86,12 +86,15 @@ def sendRequest(comp_id, params):
     :param params: 查询参数
     :return:
     """
-    value = client.service.getParamInfo(uid, comp_id, params)._value_1
-    value = json.loads(value)
-    if value["Status"] == "Success":
-        result = value["Result"]
-        return [list(one.values())[0] for one in result]
-    else:
+    try:
+        value = client.service.getParamInfo(uid, comp_id, params)._value_1
+        value = json.loads(value)
+        if value["Status"] == "Success":
+            result = value["Result"]
+            return [list(one.values())[0] for one in result]
+        else:
+            return None
+    except:
         return None
 
 
