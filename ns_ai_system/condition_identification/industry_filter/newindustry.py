@@ -7,10 +7,7 @@ def industryFilter(document):
     result.extend(contentFileter(document))
     result=nameProcess(result)
     result = list(set(result))
-    if '居民服务、修理和其他服务业' in result:
-        result.remove('居民服务、修理和其他服务业')
-    if '水利、环境和公共设施管理业' in result:
-        result.remove('水利、环境和公共设施管理业')
+    result=relationProcess(result)
     return result
 
 
@@ -21,14 +18,16 @@ def titleFilter(document):
     title = document.title
     for label in INDUSTRY_LIST:
         category_nouns = get_industry_standard(label)
-
-        for children in category_nouns['children']:
-            nouns = [children['label']]
-            nouns.extend([x['label'] for x in children['children']])
-            for noun in nouns:
-                if noun in title:
-                    result.append(label)
-                    similarWord.append(noun)
+        nouns = getNouns(label)
+        if 'children' in category_nouns:
+            for children in category_nouns['children']:
+                nouns.extend([children['label']])
+                if 'children' in children:
+                    nouns.extend([x['label'] for x in children['children']])
+        for noun in nouns:
+            if noun in title:
+                result.append(label)
+                similarWord.append(noun)
     print(similarWord)
     return result
 
@@ -40,13 +39,16 @@ def contentFileter(document):
     text = document.content
     for label in INDUSTRY_LIST:
         category_nouns = get_industry_standard(label)
-        for children in category_nouns['children']:
-            nouns = getNouns(children['label'])
-            nouns.extend([x['label'] for x in children['children']])
-            for noun in nouns:
-                if noun in text:
-                    result.append(label)
-                    similarWord.append(noun)
+        nouns =[label]
+        if 'children' in category_nouns:
+            for children in category_nouns['children']:
+                nouns.extend([children['label']])
+                if 'children' in children:
+                    nouns.extend([x['label'] for x in children['children']])
+        for noun in nouns:
+            if noun in text:
+                result.append(label)
+                similarWord.append(noun)
     print(similarWord)
     return result
 
@@ -87,5 +89,7 @@ def nameProcess(result):
             result[i] = '农、林、牧、渔业'
         i+=1
     return result
-
-
+def relationProcess(result):
+    if '农、林、牧、渔业' in result and len(result)>1:
+        result.remove('农、林、牧、渔业')
+    return result
