@@ -53,4 +53,15 @@ def get_industry_standard(label):
     return py_client.ai_system["industry_standard"].find_one({"label": label})
 
 
+def list_all_industry_name():
+    """
+    获取所有field的名称
 
+    Returns:
+        field : list
+        example: ["企业基本信息","企业股东及出资信息","企业主要管理人员信息"]
+    """
+    return [x['label'] for x in py_client.ai_system["industry_standard"].find()]
+
+if __name__=='__main__':
+    print(list_all_industry_name())
