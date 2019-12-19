@@ -11,7 +11,6 @@ from read_config import config
 from my_log import Loggers
 import logging
 
-
 from service.rabbitmq.rabbit_mq import connect_channel
 
 url = f"http://{ config.get('data_server','ip') }/webService/services/ws?wsdl"
