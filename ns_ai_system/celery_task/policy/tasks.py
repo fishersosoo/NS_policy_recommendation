@@ -11,6 +11,7 @@ from data_management.config import py_client, redis_cache
 from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
 from service.base_func import format_record
+from data_server.server import client, uid
 
 
 @unique
@@ -241,10 +242,20 @@ def check_single_requirement(company_id, triple, cached_data, guide_id):
     if data is None:
         # query_data
         start = time.time()
-        return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
+        #return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
+        try:
+            value = client.service.getParamInfo(uid, company_id, f"{field_info['resource_id']}.{field_info['item_id']}")._value_1
+            value = json.loads(value)
+            if value["Status"] == "Success":
+                result = value["Result"]
+                data = [list(one.values())[0] for one in result]
+            else:
+                data = None
+        except:
+            data = None
         end = time.time()
-        log.info(f"request time: {end-start} seconds")
-        data = return_data.get("result", None)
+        log.info(f"{company_id} request time: {end-start} seconds")
+        #data = return_data.get("result", None)
         # 用"null"来代表请求回来仍为空的字段，缓存起来，不再重复请求
         if data is None:
             redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", 'null', ex=600)

@@ -44,6 +44,7 @@ def upload_guide():
     上传政策指南
     :return:
     """
+    app.logger.info("upload_guide: 调用接口")
     guide_file = request.files['file']
     guide_id = request.form.get("guide_id")
     effective = request.form.get("effective", True)
@@ -59,6 +60,7 @@ def upload_guide():
         return jsonify({"status": "ERROR", "message": "非doc或txt文件，文件已保存，但是不会提交理解"})
 
     info = None
+    app.logger.info("upload_guide: 进行get_text_from_doc_bytes")
     try:
         text = get_text_from_doc_bytes(doc_temp_file, remove_file=False)
         document = Document.paragraph_extract(text)
@@ -67,6 +69,7 @@ def upload_guide():
     except Exception as e:
         os.remove(doc_temp_file.name)
         return jsonify({"status": "ERROR", "message": e})
+    app.logger.info("upload_guide: 创建Guide类")
     with open(doc_temp_file.name, "rb") as f:
         Guide.create(guide_id, guide_file.filename, f, effective=effective)
     rpc_server().rabbitmq.push_message("event.file", "event.file.add", {"guide_id": guide_id, "event": "add"})
@@ -121,6 +124,9 @@ def recommend():
     response_dict = dict()
     params = request.json
     company_id = params.get("company_id", None)
+    log_info = f"{company_id} received task: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+    app.logger.info(log_info)
+    start = time.time()
     if company_id is None:
         raise MissingParam("company_id")
     labels = params.get("label", [])
@@ -174,6 +180,8 @@ def recommend():
     if records:
         records = sorted(records, key=lambda e: e["score"], reverse=True)
     response_dict["result"] = records
+    end = time.time()
+    app.logger.info(f"{company_id} recommend time: {end - start} seconds")
     return jsonify(response_dict)
 
 
@@ -314,6 +322,7 @@ def create_task_if_not_executing(company_id, guide_ids):
     executing_task_id = redis_cache.get(f"executing-{company_id}")
     # 如果没有
     if executing_task_id is None:
+        start = time.time()
         recommend_tasks = [recommend_task.s(company_id, guide_id) for guide_id in guide_ids]
         promise = group(recommend_tasks)()
         # 将company_id作为键，task_id作为值存起来
@@ -322,6 +331,8 @@ def create_task_if_not_executing(company_id, guide_ids):
         redis_cache.set(promise.id, 0, ex=900)
         # 阻塞等待结果返回
         promise.get()
+        end = time.time()
+        app.logger.info(f"{company_id} calculate time: {end-start} seconds")
         # 结果返回后修改缓存的状态
         redis_cache.set(promise.id, 1, ex=900)
         executing_task_id = promise.id
