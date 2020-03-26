@@ -50,7 +50,7 @@ def get_acc_pre(true_df_txt, triples):
 
 
 if __name__ == '__main__':
-    policy_file_dir = 'new_policy_withtitle/'
+    policy_file_dir = 'other_policy/'
     policy_file_list = os.listdir(policy_file_dir) #列出文件夹下所有的目录与文件
     true_file = r'/data/政策标注.csv'
     score_file = 'score0603.txt'
@@ -62,6 +62,7 @@ if __name__ == '__main__':
 
     print('------------')
     for j in range(0, len(policy_file_list)):
+        print("===================%s===================" % policy_file_list[j])
     # for j in range(0, 1):
         with open(os.path.join(policy_file_dir,policy_file_list[j]), encoding="utf8") as f:
             text = f.read()
