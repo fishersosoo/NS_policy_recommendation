@@ -26,6 +26,7 @@ policy_api = Api(policy_service)
 
 @policy_service.route("re_understand/", methods=["POST"])
 def re_understand():
+    app.logger.info("re_understand：调用接口")
     guide_id = request.form.get("guide_id", None)
     if guide_id is None:
         guides = list(mongo.db.guide_file.find({}))
