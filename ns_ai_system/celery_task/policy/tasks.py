@@ -231,60 +231,76 @@ def check_single_requirement(company_id, triple, cached_data, guide_id):
 
     if "独立法人资格" in triple["value"]:
         return MatchResult.MATCH, "", cached_data
-    field = triple["fields"][0]
-    field_info = py_client.ai_system["field"].find_one({"item_name": field})
-    if field_info is None:
-        log.info(f"no field {field}")
-        return MatchResult.UNRECOGNIZED, "", cached_data
-    log.info(f"item: {field_info['resource_id']}.{field_info['item_id']}")
-    # data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
-    data = redis_cache.get(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}")
-    if data is None:
-        # query_data
-        start = time.time()
-        #return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
-        try:
-            value = client.service.getParamInfo(uid, company_id, f"{field_info['resource_id']}.{field_info['item_id']}")._value_1
-            value = json.loads(value)
-            if value["Status"] == "Success":
-                result = value["Result"]
-                data = [list(one.values())[0] for one in result]
+    # field = triple["fields"][0]
+    for index, field in enumerate(triple["fields"]):
+        field_info = py_client.ai_system["field"].find_one({"item_name": field})
+        if field_info is None:
+            log.info(f"no field {field}")
+            if index == len(triple["fields"]) - 1:
+                return MatchResult.UNRECOGNIZED, "", cached_data
             else:
-                data = None
-        except:
-            data = None
-        end = time.time()
-        log.info(f"{company_id} request time: {end-start} seconds")
-        #data = return_data.get("result", None)
-        # 用"null"来代表请求回来仍为空的字段，缓存起来，不再重复请求
+                continue
+        log.info(f"item: {field_info['resource_id']}.{field_info['item_id']}")
+        # data = cached_data.get(f"{field_info['resource_id']}.{field_info['item_id']}", None)
+        data = redis_cache.get(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}")
         if data is None:
-            redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", 'null', ex=600)
-    elif data != 'null':
-        data = json.loads(data)
-    if data is None or data == 'null':
-        return MatchResult.UNRECOGNIZED, "", cached_data
-    else:
-        redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", json.dumps(data), ex=600)
-        cached_data[f"{field_info['resource_id']}.{field_info['item_id']}"] = data
-    if triple["relation"] in ["大于", "小于"]:
-        match, data = compare_literal(data, triple)
-        return match, data, cached_data
-    else:
-        if triple["relation"] == "位于":
-            if triple["value"] in data[0]:
-                return MatchResult.MATCH, data[0], cached_data
+            # query_data
+            start = time.time()
+            #return_data = rpc_server().data.sendRequest(company_id, f"{field_info['resource_id']}.{field_info['item_id']}")
+            try:
+                value = client.service.getParamInfo(uid, company_id, f"{field_info['resource_id']}.{field_info['item_id']}")._value_1
+                value = json.loads(value)
+                if value["Status"] == "Success":
+                    result = value["Result"]
+                    data = [list(one.values())[0] for one in result]
+                else:
+                    data = None
+            except:
+                data = None
+            end = time.time()
+            log.info(f"{company_id} request time: {end-start} seconds")
+            #data = return_data.get("result", None)
+            # 用"null"来代表请求回来仍为空的字段，缓存起来，不再重复请求
+            if data is None:
+                redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", 'null', ex=600)
+        elif data != 'null':
+            data = json.loads(data)
+        if data is None or data == 'null':
+            if index == len(triple["fields"]) - 1:
+                return MatchResult.UNRECOGNIZED, "", cached_data
             else:
-                return MatchResult.MISMATCH, data[0], cached_data
-        if triple["relation"] == "否":
-            if triple["value"] not in data[0]:
-                return MatchResult.MATCH, data[0], cached_data
-            else:
-                return MatchResult.MISMATCH, data[0], cached_data
-        if triple["relation"] == "是":
-            if triple["value"] in data[0]:
-                return MatchResult.MATCH, data[0], cached_data
-            else:
-                return MatchResult.MISMATCH, data[0], cached_data
+                continue
+        else:
+            redis_cache.set(f"{company_id}.{field_info['resource_id']}.{field_info['item_id']}", json.dumps(data), ex=600)
+            cached_data[f"{field_info['resource_id']}.{field_info['item_id']}"] = data
+        if triple["relation"] in ["大于", "小于"]:
+            match, data = compare_literal(data, triple)
+            return match, data, cached_data
+        else:
+            if triple["relation"] == "位于":
+                if triple["value"] in data[0]:
+                    return MatchResult.MATCH, data[0], cached_data
+                else:
+                    if index == len(triple["fields"]) - 1:
+                        return MatchResult.MISMATCH, data[0], cached_data
+                    else:
+                        continue
+            if triple["relation"] == "否":
+                if triple["value"] not in data[0]:
+                    return MatchResult.MATCH, data[0], cached_data
+                else:
+                    if index == len(triple["fields"]) - 1:
+                        return MatchResult.MISMATCH, data[0], cached_data
+                    else:
+                        continue
+            if triple["relation"] == "是":
+                if triple["value"] in data[0]:
+                    return MatchResult.MATCH, data[0], cached_data
+                else:
+                    if index == len(triple["fields"]) - 1:
+                        return MatchResult.MISMATCH, data[0], cached_data
+                    else:
+                        continue
 
 
 def compare_literal(data, triple):
