@@ -309,9 +309,9 @@ POST
 
 ### 添加任务
 
-如果进行单个企业和单个政策的匹配，则使用`task.single.input`作为routing_key，输入队列的信息形如`{"guide_id": guide_id, "company_id": company_id}`的序列化json。
+如果进行单个企业和单个政策的匹配，则使用`task.single.input`作为routing_key，输入队列的信息形如`{"guide_id": guide_id, "company_id": company_id, "label": {"text": "xxx"}}`的序列化json。
 
-如果进行单个企业和多个政策的匹配，则使用`task.muilt.input`作为routing_key，输入队列的信息形如`{"company_id": company_id}`的序列化json。
+如果进行单个企业和多个政策的匹配，则使用`task.muilt.input`作为routing_key，输入队列的信息形如`{"company_id": company_id, "label": {"text": "xxx"}}`的序列化json。
 
 python例子如下：
 
