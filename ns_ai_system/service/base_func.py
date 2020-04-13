@@ -1,5 +1,6 @@
 # coding=utf-8
 import datetime
+import copy
 
 from data_management.config import py_client
 from data_management.models.guide import Guide
@@ -126,3 +127,85 @@ def format_record(one_result_with_label):
             })
     ret["score"] = all_count["match"] / (all_count["match"] + all_count["mismatch"] + all_count["unrecognized"] + 1)
     return ret
+
+def match_with_labels(recommend_record_no_label, labels):
+    """
+    使用标签对异步计算的结果进行调整
+    Args:
+        recommend_record_no_label: 单个异步计算结果
+        labels: 标签列表.[{"_id":"","text":""}]
+
+    Returns:
+       recommend_record_with_label.和recommend_record_no_label结果相似，多了label字段
+
+        {
+        "company_id": "",
+        "label":["",],
+        "guide_id": "",
+        "time": datetime.datetime.utcnow(),
+        "latest": True,
+        "has_label": False,
+        "sentences": [
+            {
+                "text":"",
+                "type": "正常",
+                "result": "",
+                "clauses":[
+                    {
+                        "fields":["专利名称",],
+                        "relation":"是",
+                        "value":"规定航运物流",
+                        "result":"mismatch"
+                    },
+                ]
+            }
+        ]
+    }
+
+       labels.每个label增加了match_count表示匹配了多少个条件
+       [
+       {"_id":"",
+       "text":"",
+       "match_count":0,},
+       ]
+    """
+    labels_with_match_count = copy.deepcopy(labels)
+    recommend_record_with_label = copy.deepcopy(recommend_record_no_label)
+    recommend_record_with_label["has_label"] = True
+    recommend_record_with_label["label"] = []
+    for sentence in recommend_record_with_label["sentences"]:
+        if sentence["type"] != "正常" and len(sentence["clauses"]) != 0:
+            continue
+        for clause in sentence["clauses"]:
+            if clause["result"] != "match" and clause.get("value", None) is not None:
+                for label in labels_with_match_count:
+                    is_match = is_match_label(clause["value"], label)
+                    if is_match:
+                        clause["result"] = "match"
+                        sentence["result"] = "match"
+                        if "match_count" not in label:
+                            label["match_count"] = 1
+                        else:
+                            label["match_count"] += 1
+    for label in labels_with_match_count:
+        if label.get("match_count", 0) != 0:
+            recommend_record_with_label["label"].append(label["text"])
+    return recommend_record_with_label, labels_with_match_count
+
+def is_match_label(value, label):
+    """
+
+    Args:
+        label: {"_id":"","text":""}
+        value: "政策文本"
+
+    Returns:
+        bool. 标签和文本是否匹配
+    """
+    if type(value) == list:
+        for v in value:
+            if label["text"] in v:
+                return True
+        return False
+    else:
+        return label["text"] in value

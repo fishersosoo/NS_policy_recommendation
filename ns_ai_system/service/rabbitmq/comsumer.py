@@ -9,11 +9,12 @@ import pika.exceptions
 from celery_task.policy.tasks import check_single_guide
 from data_management.api.rpc_proxy import rpc_server
 from data_management.config import py_client
-from service.base_func import is_expired, get_needed_check_guides, format_record
+from service.base_func import is_expired, get_needed_check_guides, format_record, match_with_labels
 from service.rabbitmq.rabbit_mq import connect_channel
+from data_management.models.label import Label
 
 
-def create_task(ch, company_id, guide_id, routing_key):
+def create_task(ch, company_id, guide_id, labels, routing_key):
     """
 
     Args:
@@ -29,7 +30,7 @@ def create_task(ch, company_id, guide_id, routing_key):
     MAX_RETRY_TIME = 5
     while True:
         if rpc_server().rabbitmq.get_message_count("check_single_guide").get("result",0) <= MAX_LEN:
-            check_single_guide.delay(company_id, guide_id, routing_key)
+            check_single_guide.delay(company_id, guide_id, labels, routing_key)
             return
         else:
             time.sleep(RETRY_AFTER)
@@ -45,8 +46,11 @@ def single_guide_callback(ch, method, properties, body):
         {"company_id": input["company_id"], "guide_id": input["guide_id"]})
     if recommend_record is None or is_expired(recommend_record):
         # 阻塞直到任务队列有空位
-        create_task(ch, input["company_id"], input["guide_id"], routing_key="task.single.output")
+        create_task(ch, input["company_id"], input["guide_id"], input.get("label", []), routing_key="task.single.output")
     else:
+        labels = input.get("label", [])
+        labels = Label.convert_texts(labels)
+        recommend_record, _ = match_with_labels(recommend_record, labels)
         recommend_record = format_record(recommend_record)
         rpc_server().rabbitmq.push_message("task", "task.single.output",
                                          {"company_id": input["company_id"], "guide_id": input["guide_id"],
@@ -68,7 +72,7 @@ def multi_guide_callback(ch, method, properties, body):
     # 获取需要计算的企业id
     input = json.loads(body)
     for guide_id in get_needed_check_guides(input["company_id"]):
-        create_task(ch, input["company_id"], guide_id, routing_key="task.multi.output")
+        create_task(ch, input["company_id"], guide_id, input.get("label", []), routing_key="task.multi.output")
 
 
 def start_consuming(callback, queue):

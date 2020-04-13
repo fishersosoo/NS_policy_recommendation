@@ -10,8 +10,9 @@ from celery_task import celery_app, log, config, rpc_server
 from data_management.config import py_client, redis_cache
 from service import conert_ch2num
 from service.policy_graph_construct import understand_guide
-from service.base_func import format_record
+from service.base_func import format_record, match_with_labels
 from data_server.server import client, uid
+from data_management.models.label import Label
 
 
 @unique
@@ -46,7 +47,7 @@ def understand_guide_task(guide_id, text):
 
 
 @celery_app.task
-def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
+def check_single_guide(company_id, guide_id, labels, routing_key, threshold=.0):
     """
 
     Args:
@@ -67,6 +68,8 @@ def check_single_guide(company_id, guide_id, routing_key, threshold=.0):
         rpc_server().rabbitmq.push_message("task", routing_key,
                                            {"company_id": company_id, "guide_id": guide_id, "score": None})
     else:
+        labels = Label.convert_texts(labels)
+        record, _ = match_with_labels(record, labels)
         record = format_record(record)
         rpc_server().rabbitmq.push_message("task", routing_key,
                                            {"company_id": company_id, "guide_id": guide_id, "score": record["score"]})
