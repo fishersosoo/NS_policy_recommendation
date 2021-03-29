@@ -40,7 +40,7 @@ prompt-toolkit==1.0.15
 ptyprocess==0.6.0
 py==1.7.0
 py2neo==4.1.0
-Pygments==2.2.0
+Pygments==2.7.4
 pyhanlp==0.1.44
 pymongo==3.7.2
 pytest==4.0.0
